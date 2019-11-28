@@ -115,6 +115,7 @@ type
     function existsService: boolean; overload;
     function createService(path_my_ini: string; forceInstall: boolean = false): boolean;
     procedure mysqldump(username, password, database, fileName: string);
+    procedure mysqlpump(username, password, database, fileName: string);
     procedure importScript(username, password, fileName: string);
   end;
 
@@ -146,6 +147,7 @@ function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean =
 procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
 procedure grantAllPermissionObject(user, source: string);
 function readStringWithEnvVariables(source: string): string;
+procedure executeAndWait(const aCommando: string);
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
 
@@ -155,6 +157,37 @@ function getIPAddress: string;
 procedure deleteDirectory(const dirName: string);
 
 implementation
+
+procedure executeAndWait(const aCommando: string); // full path più eventuali parametri
+var
+  tmpStartupInfo: TStartupInfo;
+  tmpProcessInformation: TProcessInformation;
+  tmpProgram: String;
+begin
+  tmpProgram := trim(aCommando);
+  fillChar(tmpStartupInfo, sizeOf(tmpStartupInfo), 0);
+  with tmpStartupInfo do
+  begin
+    cb := SizeOf(TStartupInfo);
+    wShowWindow := SW_HIDE;
+  end;
+
+  if createProcess(nil, pchar(tmpProgram), nil, nil, true, CREATE_NO_WINDOW,
+    nil, nil, tmpStartupInfo, tmpProcessInformation) then
+  begin
+    // loop every 10 ms
+    while WaitForSingleObject(tmpProcessInformation.hProcess, 10) > 0 do
+    begin
+      application.ProcessMessages;
+    end;
+    closeHandle(tmpProcessInformation.hProcess);
+    closeHandle(tmpProcessInformation.hThread);
+  end
+  else
+  begin
+    raiseLastOSError;
+  end;
+end;
 
 function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err: LPDWORD): DWORD; stdcall;
   external 'NetAPI32.dll' name 'NetShareAdd';
@@ -259,6 +292,15 @@ var
 begin
   parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
   parametriShell := '/K ""' + pathMysqlBin + '\mysqldump.exe" ' + parametriMysqldump + '"';
+  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' && EXIT'));
+end;
+
+procedure TMySQLService.mysqlpump(username, password, database, fileName: string);
+var
+  parametriMysqlpump, parametriShell: string;
+begin
+  parametriMysqlpump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
+  parametriShell := '/K ""' + pathMysqlBin + '\mysqlpump.exe" ' + parametriMysqlpump + '"';
   shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' && EXIT'));
 end;
 
