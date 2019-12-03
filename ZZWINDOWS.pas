@@ -482,7 +482,7 @@ begin
         end;
 
         //stato servizio a partire...
-        while not(SERVICE_RUNNING = statusS.dwCurrentState) and (cont < 10) do
+        while not(SERVICE_RUNNING = statusS.dwCurrentState) and (cont < 15) do
         begin
           dwChkP := statusS.dwCheckPoint;
           dwWaitTime := statusS.dwWaitHint div 10;
