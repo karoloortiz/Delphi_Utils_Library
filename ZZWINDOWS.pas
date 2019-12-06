@@ -155,8 +155,14 @@ function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgD
   Caption: ARRAY OF string; dlgcaption: string): Integer;
 function getIPAddress: string;
 procedure deleteDirectory(const dirName: string);
+function getDirExe: string;
 
 implementation
+
+function getDirExe: string;
+begin
+  result := ExtractFileDir(ParamStr(0));
+end;
 
 procedure executeAndWait(const aCommando: string); // full path più eventuali parametri
 var
