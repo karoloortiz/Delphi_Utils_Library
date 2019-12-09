@@ -474,12 +474,16 @@ begin
         if (statusS.dwCurrentState = SERVICE_RUNNING) then
         begin
           Result := True;
+          CloseServiceHandle(handleS);
+          CloseServiceHandle(handleSCM);
           Exit;
         end;
 
         if not startService(handleS, 0, PPChar(nil)^) then
         begin
           Result := false;
+          CloseServiceHandle(handleS);
+          CloseServiceHandle(handleSCM);
           Exit;
         end
         else
