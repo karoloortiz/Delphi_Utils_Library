@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, AccCtrl,
   ACLAPI, ShellAPI, system.IOUtils, System.Zip, Vcl.ComCtrls, Winsvc, ComObj,
   ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Winsock,
-  Vcl.StdCtrls, Vcl.ExtCtrls;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Registry;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -139,6 +139,7 @@ type
     procedure stop;
   end;
 
+function runUnderWine: boolean;
 function getVersionSO: string;
 function shellExecuteAndWait(FileName, Params: string; Admin: boolean = true; showWindow: cardinal = SW_HIDE): boolean;
 function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
@@ -817,6 +818,25 @@ begin
     tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
     tempStringPos := tempStringDir;
   until posStart < 0;
+end;
+
+function runUnderWine: boolean;
+begin
+  //check if application runs under Wine
+  with TRegistry.Create do
+    try
+      RootKey := HKEY_LOCAL_MACHINE;
+      if OpenKeyReadOnly('Software\Wine') then
+      begin
+        Result := true;
+      end
+      else
+      begin
+        Result := false;
+      end;
+    finally
+      Free;
+    end;
 end;
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
