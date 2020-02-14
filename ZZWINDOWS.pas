@@ -299,7 +299,7 @@ var
 begin
   parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
   parametriShell := '/K ""' + pathMysqlBin + '\mysqldump.exe" ' + parametriMysqldump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' && EXIT'));
+  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
 
 procedure TMySQLService.mysqlpump(username, password, database, fileName: string);
@@ -308,7 +308,7 @@ var
 begin
   parametriMysqlpump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
   parametriShell := '/K ""' + pathMysqlBin + '\mysqlpump.exe" ' + parametriMysqlpump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' && EXIT'));
+  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
 
 procedure TMySQLService.importScript(username, password, fileName: string);
@@ -317,7 +317,7 @@ var
 begin
   parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' < ' + fileName;
   parametriShell := '/K ""' + pathMysqlBin + '\mysql.exe" ' + parametriMysqldump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' && EXIT'));
+  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
 
 function TMySQLService.createService(path_my_ini: string; forceInstall: boolean = false): boolean;
@@ -341,7 +341,7 @@ begin
     end;
   end;
 
-  shellExecuteAndWait('cmd.exe', PCHAR(comandoCreazioneServizio + ' && EXIT'));
+  shellExecuteAndWait('cmd.exe', PCHAR(comandoCreazioneServizio + ' & EXIT'));
 
   if (existsService(nameService)) then
   begin
@@ -427,7 +427,7 @@ function TWindowsService.deleteService(nameService: string): boolean;
 begin
   if (existsService(nameService)) then
   begin
-    shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' && EXIT'));
+    shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' & EXIT'));
     if (existsService(nameService)) then
     begin
       result := false;
@@ -562,7 +562,7 @@ begin
         if (force) then
         begin
           //kill processo servizio
-          shellExecuteAndWait('cmd.exe', PCHAR('/K taskkill /f /fi "SERVICES eq ' + nameService + '" && EXIT'));
+          shellExecuteAndWait('cmd.exe', PCHAR('/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT'));
         end;
       end;
       QueryServiceStatus(handleS, statusS);
