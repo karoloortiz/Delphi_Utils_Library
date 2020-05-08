@@ -7,7 +7,8 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, AccCtrl,
   ACLAPI, ShellAPI, system.IOUtils, System.Zip, Vcl.ComCtrls, Winsvc, ComObj,
   ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Winsock,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Registry;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Registry,
+  TLHelp32;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -30,7 +31,7 @@ const
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
 type
-
+  //----------------------------------
   SHARE_INFO_2 = record
     shi2_netname: pWideChar;
     shi2_type: DWORD;
@@ -44,13 +45,50 @@ type
 
   PSHARE_INFO_2 = ^SHARE_INFO_2;
 
+  //----------------------------------
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
   public
     function GetPreamble: TBytes; override;
   end;
 
+  //----------------------------------
   TExplicitAccess = EXPLICIT_ACCESS_A;
 
+  //----------------------------------
+  TEnumInfo = record
+    ProcessID: DWORD;
+    HWND: THandle;
+  end;
+
+  PEnumInfo = ^TEnumInfo;
+
+  //----------------------------------
+  TPIDCredentials = record
+    ownerUserName: string;
+    domain: string;
+  end;
+
+  //----------------------------------
+  _TOKEN_USER = record
+    User: TSidAndAttributes;
+  end;
+
+  PTOKEN_USER = ^_TOKEN_USER;
+
+  //----------------------------------
+  TMemoryRam = class
+  private
+    class var RamStats: TMemoryStatusEx;
+  public
+    class procedure initialize;
+    class function getTotalMemoryString: string; overload;
+    class function getTotalMemoryDouble: double;
+    class function getTotalFreeMemoryString: string;
+    class function getTotalFreeMemoryDouble: double;
+    class function getPercentageFreeMemory: string;
+  end;
+
+  //----------------------------------
   TWindowsService = class
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = ''); overload;
     class function start(nameService: string; nameMachine: string = ''): Boolean; overload;
@@ -93,18 +131,6 @@ type
     function createService: boolean; overload; virtual; abstract;
   end;
 
-  TMemoryRam = class
-  private
-    class var RamStats: TMemoryStatusEx;
-  public
-    class procedure initialize;
-    class function getTotalMemoryString: string; overload;
-    class function getTotalMemoryDouble: double;
-    class function getTotalFreeMemoryString: string;
-    class function getTotalFreeMemoryDouble: double;
-    class function getPercentageFreeMemory: string;
-  end;
-
   TMySQLService = class(TWindowsService)
   public
     pathMysqlBin: string;
@@ -119,6 +145,7 @@ type
     procedure importScript(username, password, fileName: string);
   end;
 
+  //----------------------------------
   TLabel_loading = class
   private
     originalText: string;
@@ -158,6 +185,28 @@ function getIPAddress: string;
 procedure deleteDirectory(const dirName: string);
 function getDirExe: string;
 
+//-----------------------------------------------------------------
+function setProcessWindowToForeground(processName: string): boolean;
+function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
+function checkUserOfProcess(userName: String; PID: DWORD): boolean;
+function GetPIDCredentials(PID: DWORD): TPIDCredentials;
+function getPIDByProcessName(nameProcess: string): DWORD;
+function getWindowsUsername: string;
+
+function getMainWindowHandleByPID(PID: DWORD): DWORD;
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
+
+//prove
+type
+  TProcessCompare = record
+    username: string;
+    nameProcess: string;
+  end;
+
+  TFunctionProcessCompare = function(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean;
+function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
+
+//------------------------------------------------------------------
 implementation
 
 function getDirExe: string;
@@ -988,5 +1037,228 @@ class function TMemoryRam.getPercentageFreeMemory: string;
 begin
   result := inttostr(RamStats.dwMemoryLoad) + '%';
 end;
+
+//----------------------------------------------------------------------------------------
+function setProcessWindowToForeground(processName: string): boolean;
+var
+  PIDProcess: DWORD;
+  WindowHandle: THandle;
+  currentThreadHandle: THandle;
+  foregroundThreadHandle: THandle;
+begin
+  PIDProcess := getPIDOfCurrentUserByProcessName(processName);
+  WindowHandle := getMainWindowHandleByPID(PIDProcess);
+
+  if WindowHandle <> 0 then
+  begin
+    //TODO: DOPO PERIODO PROVA DA ELIMINARE
+    //    LA SINCRONIZAZZIONE TRA THREAD NON DOVREBBE ESSERE PIU' NECCESSARIA PERCHE' PRELEVO L'ENUM DEL WINDOW
+    //
+    //    currentThreadHandle := GetCurrentThreadId;
+    //    foregroundThreadHandle := GetWindowThreadProcessId(GetForegroundWindow, nil);
+    //    AttachThreadInput(foregroundThreadHandle, currentThreadHandle, true);
+    //    SetForegroundWindow(windowHandle);
+    //    AttachThreadInput(foregroundThreadHandle, currentThreadHandle, false);
+
+    SetForegroundWindow(WindowHandle);
+
+    postMessage(WindowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+    result := true;
+  end
+  else
+  begin
+    result := false;
+  end;
+end;
+
+function getMainWindowHandleByPID(PID: DWORD): DWORD;
+var
+  enumInfo: TEnumInfo;
+begin
+  enumInfo.ProcessID := PID;
+  enumInfo.HWND := 0;
+  EnumWindows(@enumWindowsProc, LPARAM(@enumInfo));
+  Result := enumInfo.HWND;
+end;
+
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
+var
+  PID: DWORD;
+  PEI: PEnumInfo;
+begin
+  // Param matches the address of the param that is passed
+
+  PEI := PEnumInfo(Param);
+  GetWindowThreadProcessID(Wnd, @PID);
+
+  Result := (PID <> PEI^.ProcessID) or
+    (not IsWindowVisible(WND)) or
+    (not IsWindowEnabled(WND));
+
+  if not Result then
+    PEI^.HWND := WND; //break on return FALSE
+end;
+
+//TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
+function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
+begin
+  if processEntry.szExeFile = processCompare.nameProcess then
+  begin
+    result := true;
+  end
+  else
+  begin
+    result := false;
+  end;
+end;
+
+function checkProcessUserName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
+var
+  sameProcessName: boolean;
+  sameUserOfProcess: boolean;
+begin
+  sameProcessName := checkProcessName(processEntry, processCompare);
+  sameUserOfProcess := checkUserOfProcess(processCompare.username, processEntry.th32ProcessID);
+  if sameProcessName and sameUserOfProcess then
+  begin
+    result := true;
+  end
+  else
+  begin
+    result := false;
+  end;
+end;
+
+function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
+var
+  processCompare: TProcessCompare;
+begin
+  processCompare.nameProcess := nameProcess;
+  processCompare.username := getWindowsUsername();
+  result := getPID(nameProcess, checkProcessUserName, processCompare);
+end;
+
+function getPIDByProcessName(nameProcess: string): DWORD;
+var
+  processCompare: TProcessCompare;
+begin
+  processCompare.nameProcess := nameProcess;
+  result := getPID(nameProcess, checkProcessName, processCompare);
+end;
+
+function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
+var
+  processEntry: TProcessEntry32;
+  handleSnap, handleProcess: THandle;
+  processID: DWORD;
+begin
+  processID := 0;
+  handleSnap := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  processEntry.dwSize := sizeof(TProcessEntry32);
+  Process32First(handleSnap, processEntry);
+  repeat //loop su tutti i processi nello snapshot acquisito
+    with processEntry do
+    begin
+      //esegui confronto
+      if (fn(processEntry, processCompare)) then
+      begin
+        processID := th32ProcessID;
+        break;
+      end;
+    end;
+  until (not(Process32Next(handleSnap, processEntry)));
+  CloseHandle(handleSnap);
+
+  result := processID;
+end;
+//FINE TODO?
+
+function checkUserOfProcess(userName: String; PID: DWORD): boolean;
+var
+  PIDCredentials: TPIDCredentials;
+begin
+  PIDCredentials := GetPIDCredentials(PID);
+  if PIDCredentials.ownerUserName = userName then
+  begin
+    Result := true;
+  end
+  else
+  begin
+    Result := false;
+  end;
+end;
+
+function getWindowsUsername: string;
+var
+  userName: string;
+  userNameLen: DWORD;
+begin
+  userNameLen := 256;
+  SetLength(userName, userNameLen);
+  if GetUserName(PChar(userName), userNameLen)
+  then
+    Result := Copy(userName, 1, userNameLen - 1)
+  else
+    Result := '';
+end;
+
+function GetPIDCredentials(PID: DWORD): TPIDCredentials;
+var
+  hToken: THandle;
+  cbBuf: Cardinal;
+  ptiUser: PTOKEN_USER;
+  snu: SID_NAME_USE;
+  ProcessHandle: THandle;
+  UserSize, DomainSize: DWORD;
+  bSuccess: Boolean;
+  user: string;
+  domain: string;
+  PIDCredentials: TPIDCredentials;
+begin
+  ProcessHandle := OpenProcess(PROCESS_QUERY_INFORMATION, False, PID);
+  if ProcessHandle <> 0 then
+  begin
+    if OpenProcessToken(ProcessHandle, TOKEN_QUERY, hToken) then
+    begin
+      bSuccess := GetTokenInformation(hToken, TokenUser, nil, 0, cbBuf);
+      ptiUser := nil;
+      while (not bSuccess) and (GetLastError = ERROR_INSUFFICIENT_BUFFER) do
+      begin
+        ReallocMem(ptiUser, cbBuf);
+        bSuccess := GetTokenInformation(hToken, TokenUser, ptiUser, cbBuf, cbBuf);
+      end;
+      CloseHandle(hToken);
+
+      if not bSuccess then
+      begin
+        Exit;
+      end;
+
+      UserSize := 0;
+      DomainSize := 0;
+      LookupAccountSid(nil, ptiUser.User.Sid, nil, UserSize, nil, DomainSize, snu);
+      if (UserSize <> 0) and (DomainSize <> 0) then
+      begin
+        SetLength(User, UserSize);
+        SetLength(Domain, DomainSize);
+        if LookupAccountSid(nil, ptiUser.User.Sid, PChar(User), UserSize,
+          PChar(Domain), DomainSize, snu) then
+        begin
+          PIDCredentials.ownerUserName := StrPas(PChar(User));
+          PIDCredentials.domain := StrPas(PChar(Domain));
+        end;
+      end;
+
+      if bSuccess then
+      begin
+        FreeMem(ptiUser);
+      end;
+    end;
+    CloseHandle(ProcessHandle);
+  end;
+
+  Result := PIDCredentials;
+end;
+//----------------------------------------------------------------------------------------
 
 end.
