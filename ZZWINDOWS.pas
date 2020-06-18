@@ -181,6 +181,7 @@ function netShare(pathFolder: string; netName: string = ''; netPassw: string = '
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
+procedure setComponentInMiddlePosition(control: TControl);
 function getIPAddress: string;
 procedure deleteDirectory(const dirName: string);
 function getDirExe: string;
@@ -972,6 +973,15 @@ begin
     end;
   end;
   Result := aMsgdlg.Showmodal;
+  FreeAndNil(aMsgdlg);
+end;
+
+procedure setComponentInMiddlePosition(control: TControl);
+var
+  _left: integer;
+begin
+  _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
+  control.Left := _left;
 end;
 
 function getIPAddress: string;
