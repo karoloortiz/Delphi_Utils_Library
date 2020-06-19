@@ -8,7 +8,8 @@ uses
   ACLAPI, ShellAPI, system.IOUtils, System.Zip, Vcl.ComCtrls, Winsvc, ComObj,
   ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Winsock,
   Vcl.StdCtrls, Vcl.ExtCtrls, Registry,
-  TLHelp32;
+  TLHelp32,
+  MyAccess, inifiles;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -140,9 +141,46 @@ type
     procedure stop; overload;
     function existsService: boolean; overload;
     function createService(path_my_ini: string; forceInstall: boolean = false): boolean;
-    procedure mysqldump(username, password, database, fileName: string);
-    procedure mysqlpump(username, password, database, fileName: string);
-    procedure importScript(username, password, fileName: string);
+    procedure mysqldump(username, password, database, fileNameOut: string);
+    procedure mysqlpump(username, password, database, fileNameOut: string);
+    procedure importScript(username, password, fileNameIn: string);
+  end;
+
+  TCredentials = record
+    username: string;
+    password: string;
+  end;
+
+  TMySQLInfo = record
+  private
+    _path_bin: string;
+    procedure setPath_bin(path_bin: string);
+  public
+    path_ini: string;
+    property path_bin: string read _path_bin write setPath_bin;
+    function getPath_mysqladmin: string;
+    function getPath_mysqld: string;
+  end;
+
+  TMySQL = class
+  private
+    active: boolean;
+    commandCredentials: string;
+    _credentials: TCredentials;
+    procedure setCredentials(credentials: TCredentials);
+    procedure initialCheckAndSetup;
+    function checkLibVisualStudio2013: boolean;
+    procedure installLibVisualStudio2013;
+    procedure waitUntilProcessStart;
+  public
+    database: string;
+    MySQLInfo: TMySQLInfo;
+    iniFileManipulator: TIniFile;
+    property credentials: TCredentials read _credentials write setCredentials;
+    constructor create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
+    procedure start;
+    procedure stop;
+    function getPortFromIni: integer;
   end;
 
   //----------------------------------
@@ -343,29 +381,29 @@ begin
   Result := existsService(nameService);
 end;
 
-procedure TMySQLService.mysqldump(username, password, database, fileName: string);
+procedure TMySQLService.mysqldump(username, password, database, fileNameOut: string);
 var
   parametriMysqldump, parametriShell: string;
 begin
-  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
+  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileNameOut;
   parametriShell := '/K ""' + pathMysqlBin + '\mysqldump.exe" ' + parametriMysqldump + '"';
   shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
 
-procedure TMySQLService.mysqlpump(username, password, database, fileName: string);
+procedure TMySQLService.mysqlpump(username, password, database, fileNameOut: string);
 var
   parametriMysqlpump, parametriShell: string;
 begin
-  parametriMysqlpump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileName;
+  parametriMysqlpump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileNameOut;
   parametriShell := '/K ""' + pathMysqlBin + '\mysqlpump.exe" ' + parametriMysqlpump + '"';
   shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
 
-procedure TMySQLService.importScript(username, password, fileName: string);
+procedure TMySQLService.importScript(username, password, fileNameIn: string);
 var
   parametriMysqldump, parametriShell: string;
 begin
-  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' < ' + fileName;
+  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' < ' + fileNameIn;
   parametriShell := '/K ""' + pathMysqlBin + '\mysql.exe" ' + parametriMysqldump + '"';
   shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
 end;
@@ -400,6 +438,178 @@ begin
   else
   begin
     Result := false;
+  end;
+end;
+
+procedure TMySQLInfo.setPath_bin(path_bin: string);
+begin
+  _path_bin := ExcludeTrailingPathDelimiter(path_bin);
+end;
+
+function TMySQLInfo.getPath_mysqladmin: string;
+begin
+  Result := path_bin + '\mysqladmin.exe';
+end;
+
+function TMySQLInfo.getPath_mysqld: string;
+begin
+  Result := path_bin + '\mysqld.exe';
+end;
+
+constructor TMySQL.create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
+begin
+  Self.credentials := credentials;
+  self.MySQLInfo := MySQLInfo;
+  iniFileManipulator := TIniFile.Create(MySQLInfo.path_ini);
+  initialCheckAndSetup;
+end;
+
+procedure TMySQL.setCredentials(credentials: TCredentials);
+begin
+  _credentials := credentials;
+  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password + ' ';
+end;
+
+procedure TMySQL.start; // possible exception raised
+var
+  mysqld_command: string;
+  path_myIni: string;
+  path_mysqld: string;
+begin
+  path_myIni := ExcludeTrailingPathDelimiter(MySQLInfo.path_ini);
+  path_mysqld := MySQLInfo.getPath_mysqld;
+  if not fileexists(path_mysqld) and not fileexists(path_myIni) then
+  begin
+    raise Exception.Create('path_myIni or path_bin not exists.');
+  end;
+  mysqld_command := ' --defaults-file="' + path_myIni + '"';
+  shellExecute(0, 'open', pchar(path_mysqld), PCHAR(mysqld_command), nil, SW_HIDE);
+
+  waitUntilProcessStart;
+end;
+
+procedure TMySQL.waitUntilProcessStart;
+var
+  i: integer;
+  _exit: boolean;
+  _connected: boolean;
+  connection: TMyConnection;
+begin
+  i := 0;
+  _exit := false;
+  _connected := false;
+  connection := TMyConnection.Create(nil);
+  connection.Username := credentials.username;
+  connection.Password := credentials.password;
+  connection.Port := getPortFromIni;
+  while not _exit do
+  begin
+    if (i > 10) then
+    begin
+      if messagedlg('Apparentely MySQL takes long time to start, would you wait?',
+        mtCustom, [mbYes, mbCancel], 0) = mrYes then
+      begin
+        i := 0;
+      end
+      else
+      begin
+        _exit := true;
+      end;
+    end;
+    try
+      connection.Connected := true;
+      connection.Connected := false;
+      _connected := true;
+      _exit := true;
+    except
+      Inc(i, 1);
+      sleep(3000);
+    end;
+  end;
+
+  FreeAndNil(connection);
+  if not _connected then
+  begin
+    raise Exception.Create('MySQL not started.');
+  end;
+end;
+
+procedure TMySQL.stop;
+var
+  mysqld_command: string;
+begin
+  mysqld_command := commandCredentials + 'shutdown ';
+  shellExecute(0, 'open', pchar(MySQLInfo.getPath_mysqladmin), PCHAR(mysqld_command), nil, SW_HIDE);
+end;
+
+function TMySQL.getPortFromIni: integer;
+begin
+  Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
+end;
+
+procedure TMySQL.initialCheckAndSetup;
+begin
+  active := true;
+  try
+    if not checkLibVisualStudio2013 then
+    begin
+      installLibVisualStudio2013;
+    end;
+  except
+    on E: Exception do
+    begin
+      active := false;
+      ShowMessage(e.Message);
+    end;
+  end;
+end;
+
+function TMySQL.checkLibVisualStudio2013: boolean;
+var
+  reg: TRegistry;
+  carica_risorsa: TResourceStream;
+begin
+  result := true;
+  //VERIFICA la presenza di Visual C++ Redistributable Package per Visual Studio 2013
+  with TRegistry.Create do
+    try
+      RootKey := HKEY_LOCAL_MACHINE;
+      if (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) and
+        (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
+      begin
+        result := false;
+      end;
+    finally
+      Free;
+    end;
+end;
+
+procedure TMySQL.installLibVisualStudio2013;
+var
+  carica_risorsa: TResourceStream;
+begin
+  ShowMessage('MySQL needs:' + #13#10 +
+    'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
+    'The installer will run.');
+  // TO-DO? check version of system and install correct version (32 or 64 bit)?
+  //------------------------------------------------------------
+  //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" al file risorse DEL PROGETTO
+  //-----------------------------------------------------------
+  if (FindResource(hInstance, PChar('VCREDIST_32_bit'), PChar('EXE')) <> 0) then
+  begin
+    carica_risorsa := TResourceStream.Create(HInstance, PChar('VCREDIST_32_bit'), PChar('EXE'));
+    try
+      carica_risorsa.Position := 0;
+      carica_risorsa.SaveToFile('vcredist.exe');
+    finally
+      carica_risorsa.Free;
+    end;
+  end;
+  ExecuteAndWait(GetCurrentDir + '\vcredist.exe');
+  DeleteFile('vcredist.exe');
+  if not checkLibVisualStudio2013 then
+  begin
+    raise Exception.Create('Visual C++ Redistributable Visual Studio 2013 not correctly installed.');
   end;
 end;
 
