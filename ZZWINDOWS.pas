@@ -181,6 +181,7 @@ type
     procedure start;
     procedure stop;
     function getPortFromIni: integer;
+    procedure setCommandCredentials;
   end;
 
   //----------------------------------
@@ -458,16 +459,16 @@ end;
 
 constructor TMySQL.create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
 begin
+  iniFileManipulator := TIniFile.Create(MySQLInfo.path_ini);
   Self.credentials := credentials;
   self.MySQLInfo := MySQLInfo;
-  iniFileManipulator := TIniFile.Create(MySQLInfo.path_ini);
   initialCheckAndSetup;
 end;
 
 procedure TMySQL.setCredentials(credentials: TCredentials);
 begin
   _credentials := credentials;
-  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password + ' ';
+  setCommandCredentials;
 end;
 
 procedure TMySQL.start; // possible exception raised
@@ -545,6 +546,12 @@ end;
 function TMySQL.getPortFromIni: integer;
 begin
   Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
+end;
+
+procedure TMySQL.setCommandCredentials;
+begin
+  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password +
+    ' --port ' + IntToStr(getPortFromIni) + ' ';
 end;
 
 procedure TMySQL.initialCheckAndSetup;
