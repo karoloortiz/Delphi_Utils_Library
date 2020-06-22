@@ -172,16 +172,19 @@ type
     function checkLibVisualStudio2013: boolean;
     procedure installLibVisualStudio2013;
     procedure waitUntilProcessStart;
+    procedure setCommandCredentials;
+    procedure setPortToIni(port: integer);
+    function getPortFromIni: integer;
   public
     database: string;
     MySQLInfo: TMySQLInfo;
     iniFileManipulator: TIniFile;
     property credentials: TCredentials read _credentials write setCredentials;
+    property port: integer read getPortFromIni write setPortToIni;
     constructor create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
     procedure start;
     procedure stop;
-    function getPortFromIni: integer;
-    procedure setCommandCredentials;
+
   end;
 
   //----------------------------------
@@ -225,6 +228,8 @@ function getIPAddress: string;
 procedure deleteDirectory(const dirName: string);
 function getDirExe: string;
 
+function getFirstPortAvaliable(defaultPort: integer): integer;
+
 //-----------------------------------------------------------------
 function setProcessWindowToForeground(processName: string): boolean;
 function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
@@ -252,6 +257,18 @@ implementation
 function getDirExe: string;
 begin
   result := ExtractFileDir(ParamStr(0));
+end;
+
+function getFirstPortAvaliable(defaultPort: integer): integer;
+var
+  _port: integer;
+begin
+  _port := defaultPort;
+  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
+  begin
+    inc(_port);
+  end;
+  result := _port;
 end;
 
 procedure executeAndWait(const aCommando: string); // full path più eventuali parametri
@@ -502,7 +519,7 @@ begin
   connection := TMyConnection.Create(nil);
   connection.Username := credentials.username;
   connection.Password := credentials.password;
-  connection.Port := getPortFromIni;
+  connection.Port := port;
   while not _exit do
   begin
     if (i > 10) then
@@ -543,15 +560,21 @@ begin
   shellExecute(0, 'open', pchar(MySQLInfo.getPath_mysqladmin), PCHAR(mysqld_command), nil, SW_HIDE);
 end;
 
-function TMySQL.getPortFromIni: integer;
-begin
-  Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
-end;
-
 procedure TMySQL.setCommandCredentials;
 begin
   self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password +
-    ' --port ' + IntToStr(getPortFromIni) + ' ';
+    ' --port ' + IntToStr(port) + ' ';
+end;
+
+procedure TMySQL.setPortToIni(port: integer);
+begin
+  iniFileManipulator.WriteInteger('mysqld', 'port', Self.port);
+  setCommandCredentials;
+end;
+
+function TMySQL.getPortFromIni: integer;
+begin
+  Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
 end;
 
 procedure TMySQL.initialCheckAndSetup;
