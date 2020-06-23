@@ -207,6 +207,29 @@ begin
   setCommandCredentials;
 end;
 
+procedure TMySQL.setCommandCredentials;
+begin
+  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password +
+    ' --port ' + IntToStr(port) + ' ';
+end;
+
+procedure TMySQL.initialCheckAndSetup;
+begin
+  active := true;
+  try
+    if not checkLibVisualStudio2013 then
+    begin
+      installLibVisualStudio2013;
+    end;
+  except
+    on E: Exception do
+    begin
+      active := false;
+      ShowMessage(e.Message);
+    end;
+  end;
+end;
+
 procedure TMySQL.start; // possible exception raised
 var
   mysqld_command: string;
@@ -230,15 +253,16 @@ var
   i: integer;
   _exit: boolean;
   _connected: boolean;
-  connection: TMyConnection;
+  connectionDB: TMyConnection;
 begin
   i := 0;
   _exit := false;
   _connected := false;
-  connection := TMyConnection.Create(nil);
-  connection.Username := credentials.username;
-  connection.Password := credentials.password;
-  connection.Port := port;
+  connectionDB := TMyConnection.Create(nil);
+  connectionDB.server := 'localhost';
+  connectionDB.Username := credentials.username;
+  connectionDB.Password := credentials.password;
+  connectionDB.Port := port;
   while not _exit do
   begin
     if (i > 10) then
@@ -254,8 +278,8 @@ begin
       end;
     end;
     try
-      connection.Connected := true;
-      connection.Connected := false;
+      connectionDB.Connected := true;
+      connectionDB.Connected := false;
       _connected := true;
       _exit := true;
     except
@@ -264,7 +288,7 @@ begin
     end;
   end;
 
-  FreeAndNil(connection);
+  FreeAndNil(connectionDB);
   if not _connected then
   begin
     raise Exception.Create('MySQL not started.');
@@ -279,38 +303,15 @@ begin
   shellExecute(0, 'open', pchar(MySQLInfo.getPath_mysqladmin), PCHAR(mysqld_command), nil, SW_HIDE);
 end;
 
-procedure TMySQL.setCommandCredentials;
-begin
-  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password +
-    ' --port ' + IntToStr(port) + ' ';
-end;
-
 procedure TMySQL.setPortToIni(port: integer);
 begin
-  iniFileManipulator.WriteInteger('mysqld', 'port', Self.port);
+  iniFileManipulator.WriteInteger('mysqld', 'port', port);
   setCommandCredentials;
 end;
 
 function TMySQL.getPortFromIni: integer;
 begin
   Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
-end;
-
-procedure TMySQL.initialCheckAndSetup;
-begin
-  active := true;
-  try
-    if not checkLibVisualStudio2013 then
-    begin
-      installLibVisualStudio2013;
-    end;
-  except
-    on E: Exception do
-    begin
-      active := false;
-      ShowMessage(e.Message);
-    end;
-  end;
 end;
 
 function TMySQL.checkLibVisualStudio2013: boolean;
@@ -371,9 +372,9 @@ begin
   Self.path_MySQL := path_MySQL;
   self.numberConnections := numberConnections;
   createTMySQL;
+  Self.port := mysql.port;
   createConnectionDB;
   createQuery;
-  port := mysql.port;
 end;
 
 procedure TMySQLProcess.createTMySQL;
@@ -391,9 +392,10 @@ end;
 procedure TMySQLProcess.createConnectionDB;
 begin
   connectionDB := TMyConnection.Create(nil);
+  connectionDB.server := 'localhost';
   connectionDB.Username := credentials.username;
   connectionDB.Password := credentials.password;
-  connectionDB.Port := mysql.port;
+  connectionDB.Port := self.port;
 end;
 
 procedure TMySQLProcess.createQuery;
