@@ -1,15 +1,13 @@
-unit ZZWINDOWS;
+unit KLib.Windows;
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, AccCtrl,
-  ACLAPI, ShellAPI, system.IOUtils, System.Zip, Vcl.ComCtrls, Winsvc, ComObj,
-  ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Winsock,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Registry,
-  TLHelp32,
-  MyAccess, inifiles;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Forms, Vcl.Dialogs, AccCtrl,
+  ACLAPI, ShellAPI, system.IOUtils, Vcl.ComCtrls, Winsvc, ComObj,
+  ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Registry,
+  TLHelp32;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -32,51 +30,11 @@ const
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
 type
-  //----------------------------------
-  SHARE_INFO_2 = record
-    shi2_netname: pWideChar;
-    shi2_type: DWORD;
-    shi2_remark: pWideChar;
-    shi2_permissions: DWORD;
-    shi2_max_uses: DWORD;
-    shi2_current_uses: DWORD;
-    shi2_path: pWideChar;
-    shi2_passwd: pWideChar;
-  end;
-
-  PSHARE_INFO_2 = ^SHARE_INFO_2;
-
-  //----------------------------------
-  TUTF8NoBOMEncoding = class(TUTF8Encoding)
-  public
-    function GetPreamble: TBytes; override;
-  end;
-
-  //----------------------------------
-  TExplicitAccess = EXPLICIT_ACCESS_A;
-
-  //----------------------------------
-  TEnumInfo = record
-    ProcessID: DWORD;
-    HWND: THandle;
-  end;
-
-  PEnumInfo = ^TEnumInfo;
-
-  //----------------------------------
   TPIDCredentials = record
     ownerUserName: string;
     domain: string;
   end;
 
-  //----------------------------------
-  _TOKEN_USER = record
-    User: TSidAndAttributes;
-  end;
-
-  PTOKEN_USER = ^_TOKEN_USER;
-
-  //----------------------------------
   TMemoryRam = class
   private
     class var RamStats: TMemoryStatusEx;
@@ -89,7 +47,6 @@ type
     class function getPercentageFreeMemory: string;
   end;
 
-  //----------------------------------
   TWindowsService = class
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = ''); overload;
     class function start(nameService: string; nameMachine: string = ''): Boolean; overload;
@@ -98,8 +55,6 @@ type
     function deleteService(nameService: string): boolean; overload;
     class function isPortAvaliable(host: string; port: Word): boolean;
   private
-    name_s: string;
-    port_s: integer;
     class var handleSCM, handleS: SC_HANDLE;
     class var statusS: TServiceStatus;
     class var dwChkP, dwWaitT: DWord;
@@ -118,6 +73,8 @@ type
     class function getDwWaitTime: DWord; static;
     class procedure setDwWaitTime(const Value: DWord); static;
   protected
+    name_s: string;
+    port_s: integer;
     property nameService: string read getNameService write setNameService;
     property portService: integer read getPortService write setPortService;
     class property handleService_control_manager: SC_HANDLE read getHandleSCM write setHandleSCM;
@@ -132,152 +89,41 @@ type
     function createService: boolean; overload; virtual; abstract;
   end;
 
-  TMySQLService = class(TWindowsService)
-  public
-    pathMysqlBin: string;
-    constructor create(nameService: string; portService: integer; pathMysqlBin: string);
-    function deleteService: boolean; overload;
-    procedure aStart(handleSender: HWND); overload;
-    procedure stop; overload;
-    function existsService: boolean; overload;
-    function createService(path_my_ini: string; forceInstall: boolean = false): boolean;
-    procedure mysqldump(username, password, database, fileNameOut: string);
-    procedure mysqlpump(username, password, database, fileNameOut: string);
-    procedure importScript(username, password, fileNameIn: string);
-  end;
-
-  TCredentials = record
-    username: string;
-    password: string;
-  end;
-
-  TMySQLInfo = record
-  private
-    _path_bin: string;
-    procedure setPath_bin(path_bin: string);
-  public
-    path_ini: string;
-    property path_bin: string read _path_bin write setPath_bin;
-    function getPath_mysqladmin: string;
-    function getPath_mysqld: string;
-  end;
-
-  TMySQL = class
-  private
-    active: boolean;
-    commandCredentials: string;
-    _credentials: TCredentials;
-    procedure setCredentials(credentials: TCredentials);
-    procedure initialCheckAndSetup;
-    function checkLibVisualStudio2013: boolean;
-    procedure installLibVisualStudio2013;
-    procedure waitUntilProcessStart;
-    procedure setCommandCredentials;
-    procedure setPortToIni(port: integer);
-    function getPortFromIni: integer;
-  public
-    database: string;
-    MySQLInfo: TMySQLInfo;
-    iniFileManipulator: TIniFile;
-    property credentials: TCredentials read _credentials write setCredentials;
-    property port: integer read getPortFromIni write setPortToIni;
-    constructor create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
-    procedure start;
-    procedure stop;
-
-  end;
-
   //----------------------------------
-  TLabel_loading = class
-  private
-    originalText: string;
-    timer: TTimer;
-    count: integer;
-    lblSource: TLabel;
-    procedure on_timer(Sender: TObject);
-    procedure setLabelSource(const Value: TLabel);
-    function getLabelSource: TLabel;
-  public
-    repeatMax: integer;
-    textToRepeat: string;
-    property labelSource: TLabel read getLabelSource write setLabelSource;
-    constructor Create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3); overload;
-    constructor Create(textToRepeat: string; countRepeatMax: integer = 3); overload;
-    destructor Destroy; override;
-    procedure start;
-    procedure stop;
-  end;
+function getFirstPortAvaliable(defaultPort: integer): integer;
 
 function runUnderWine: boolean;
 function getVersionSO: string;
+
 function shellExecuteAndWait(FileName, Params: string; Admin: boolean = true; showWindow: cardinal = SW_HIDE): boolean;
-function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
+procedure executeAndWaitExe(const pathExe: string);
 function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
-function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
-procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
-procedure grantAllPermissionObject(user, source: string);
-function readStringWithEnvVariables(source: string): string;
-procedure executeAndWait(const aCommando: string);
+
+function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
-
-function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
-  Caption: ARRAY OF string; dlgcaption: string): Integer;
-procedure setComponentInMiddlePosition(control: TControl);
-function getIPAddress: string;
-procedure deleteDirectory(const dirName: string);
-function getDirExe: string;
-
-function getFirstPortAvaliable(defaultPort: integer): integer;
+procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
+procedure grantAllPermissionObject(user, source: string);
 
 //-----------------------------------------------------------------
 function setProcessWindowToForeground(processName: string): boolean;
 function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
-function GetPIDCredentials(PID: DWORD): TPIDCredentials;
+function getPIDCredentials(PID: DWORD): TPIDCredentials;
 function getPIDByProcessName(nameProcess: string): DWORD;
 function getWindowsUsername: string;
-
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
-
-//prove
-type
-  TProcessCompare = record
-    username: string;
-    nameProcess: string;
-  end;
-
-  TFunctionProcessCompare = function(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean;
-function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
 
 //------------------------------------------------------------------
 implementation
 
-function getDirExe: string;
-begin
-  result := ExtractFileDir(ParamStr(0));
-end;
-
-function getFirstPortAvaliable(defaultPort: integer): integer;
-var
-  _port: integer;
-begin
-  _port := defaultPort;
-  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
-  begin
-    inc(_port);
-  end;
-  result := _port;
-end;
-
-procedure executeAndWait(const aCommando: string); // full path più eventuali parametri
+procedure executeAndWaitExe(const pathExe: string); // full path più eventuali parametri
 var
   tmpStartupInfo: TStartupInfo;
   tmpProcessInformation: TProcessInformation;
   tmpProgram: String;
 begin
-  tmpProgram := trim(aCommando);
+  tmpProgram := trim(pathExe);
   fillChar(tmpStartupInfo, sizeOf(tmpStartupInfo), 0);
   with tmpStartupInfo do
   begin
@@ -302,345 +148,16 @@ begin
   end;
 end;
 
-function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err: LPDWORD): DWORD; stdcall;
-  external 'NetAPI32.dll' name 'NetShareAdd';
-
-function TUTF8NoBOMEncoding.getPreamble: TBytes;
-begin
-  SetLength(Result, 0);
-end;
-
-constructor TLabel_loading.Create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3);
-begin
-  Self.labelSource := labelSource;
-  Create(textToRepeat, countRepeatMax);
-end;
-
-constructor TLabel_loading.Create(textToRepeat: string; countRepeatMax: integer = 3);
-begin
-  Self.textToRepeat := textToRepeat;
-  Self.repeatMax := countRepeatMax;
-  Self.count := 0;
-  Self.originalText := labelSource.Caption;
-  timer := TTimer.Create(nil);
-  Timer.Interval := 600;
-  Timer.OnTimer := on_timer;
-  Timer.Enabled := false;
-end;
-
-destructor TLabel_loading.Destroy;
-begin
-  FreeAndNil(timer);
-  inherited Destroy;
-end;
-
-procedure TLabel_loading.setLabelSource(const Value: TLabel);
-begin
-  Self.stop;
-  lblSource := Value;
-  Self.originalText := Value.Caption;
-  Self.start;
-end;
-
-function TLabel_loading.getLabelSource: TLabel;
-begin
-  Result := lblSource;
-end;
-
-procedure TLabel_loading.on_timer(Sender: TObject);
-begin
-  if (count = repeatMax) then
-  begin
-    labelSource.Caption := originalText;
-    count := 0;
-  end
-  else
-  begin
-    labelSource.Caption := labelSource.Caption + textToRepeat;
-    inc(count);
-  end;
-end;
-
-procedure TLabel_loading.start;
-begin
-  timer.Enabled := true;
-end;
-
-procedure TLabel_loading.stop;
-begin
-  timer.Enabled := false;
-  lblSource.Caption := originalText;
-end;
-
-constructor TMySQLService.Create(nameService: string; portService: integer; pathMysqlBin: string);
-begin
-  Self.nameService := nameService;
-  Self.pathMysqlBin := pathMysqlBin;
-  self.portService := portService;
-end;
-
-function TMySQLService.deleteService: boolean;
-begin
-  Result := deleteService(Self.nameService);
-end;
-
-procedure TMySQLService.aStart(handleSender: HWND);
-begin
-  aStart(handleSender, nameService);
-end;
-
-procedure TMySQLService.Stop;
-begin
-  stop(nameService);
-end;
-
-function TMySQLService.existsService: boolean;
-begin
-  Result := existsService(nameService);
-end;
-
-procedure TMySQLService.mysqldump(username, password, database, fileNameOut: string);
+function getFirstPortAvaliable(defaultPort: integer): integer;
 var
-  parametriMysqldump, parametriShell: string;
+  _port: integer;
 begin
-  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileNameOut;
-  parametriShell := '/K ""' + pathMysqlBin + '\mysqldump.exe" ' + parametriMysqldump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
-end;
-
-procedure TMySQLService.mysqlpump(username, password, database, fileNameOut: string);
-var
-  parametriMysqlpump, parametriShell: string;
-begin
-  parametriMysqlpump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' --databases ' + database + ' --skip-triggers > ' + fileNameOut;
-  parametriShell := '/K ""' + pathMysqlBin + '\mysqlpump.exe" ' + parametriMysqlpump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
-end;
-
-procedure TMySQLService.importScript(username, password, fileNameIn: string);
-var
-  parametriMysqldump, parametriShell: string;
-begin
-  parametriMysqldump := '-u ' + username + ' -p' + password + ' --port ' + inttostr(port_s) + ' < ' + fileNameIn;
-  parametriShell := '/K ""' + pathMysqlBin + '\mysql.exe" ' + parametriMysqldump + '"';
-  shellExecuteAndWait('cmd.exe', PCHAR(parametriShell + ' & EXIT'));
-end;
-
-function TMySQLService.createService(path_my_ini: string; forceInstall: boolean = false): boolean;
-var
-  parametri, comandoCreazioneServizio: string;
-begin
-  parametri := '--install ' + nameService + ' --defaults-file="' + path_my_ini + '"';
-  comandoCreazioneServizio := '/K ""' + pathMysqlBin + '\mysqld.exe" ' + parametri + '"';
-
-  //installazione servizio con wait
-  if (existsService(nameService)) then
+  _port := defaultPort;
+  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
   begin
-    if (forceInstall) then
-    begin
-      deleteService;
-    end
-    else
-    begin
-      result := false;
-      exit;
-    end;
+    inc(_port);
   end;
-
-  shellExecuteAndWait('cmd.exe', PCHAR(comandoCreazioneServizio + ' & EXIT'));
-
-  if (existsService(nameService)) then
-  begin
-    result := true;
-  end
-  else
-  begin
-    Result := false;
-  end;
-end;
-
-procedure TMySQLInfo.setPath_bin(path_bin: string);
-begin
-  _path_bin := ExcludeTrailingPathDelimiter(path_bin);
-end;
-
-function TMySQLInfo.getPath_mysqladmin: string;
-begin
-  Result := path_bin + '\mysqladmin.exe';
-end;
-
-function TMySQLInfo.getPath_mysqld: string;
-begin
-  Result := path_bin + '\mysqld.exe';
-end;
-
-constructor TMySQL.create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
-begin
-  iniFileManipulator := TIniFile.Create(MySQLInfo.path_ini);
-  Self.credentials := credentials;
-  self.MySQLInfo := MySQLInfo;
-  initialCheckAndSetup;
-end;
-
-procedure TMySQL.setCredentials(credentials: TCredentials);
-begin
-  _credentials := credentials;
-  setCommandCredentials;
-end;
-
-procedure TMySQL.start; // possible exception raised
-var
-  mysqld_command: string;
-  path_myIni: string;
-  path_mysqld: string;
-begin
-  path_myIni := ExcludeTrailingPathDelimiter(MySQLInfo.path_ini);
-  path_mysqld := MySQLInfo.getPath_mysqld;
-  if not fileexists(path_mysqld) and not fileexists(path_myIni) then
-  begin
-    raise Exception.Create('path_myIni or path_bin not exists.');
-  end;
-  mysqld_command := ' --defaults-file="' + path_myIni + '"';
-  shellExecute(0, 'open', pchar(path_mysqld), PCHAR(mysqld_command), nil, SW_HIDE);
-
-  waitUntilProcessStart;
-end;
-
-procedure TMySQL.waitUntilProcessStart;
-var
-  i: integer;
-  _exit: boolean;
-  _connected: boolean;
-  connection: TMyConnection;
-begin
-  i := 0;
-  _exit := false;
-  _connected := false;
-  connection := TMyConnection.Create(nil);
-  connection.Username := credentials.username;
-  connection.Password := credentials.password;
-  connection.Port := port;
-  while not _exit do
-  begin
-    if (i > 10) then
-    begin
-      if messagedlg('Apparentely MySQL takes long time to start, would you wait?',
-        mtCustom, [mbYes, mbCancel], 0) = mrYes then
-      begin
-        i := 0;
-      end
-      else
-      begin
-        _exit := true;
-      end;
-    end;
-    try
-      connection.Connected := true;
-      connection.Connected := false;
-      _connected := true;
-      _exit := true;
-    except
-      Inc(i, 1);
-      sleep(3000);
-    end;
-  end;
-
-  FreeAndNil(connection);
-  if not _connected then
-  begin
-    raise Exception.Create('MySQL not started.');
-  end;
-end;
-
-procedure TMySQL.stop;
-var
-  mysqld_command: string;
-begin
-  mysqld_command := commandCredentials + 'shutdown ';
-  shellExecute(0, 'open', pchar(MySQLInfo.getPath_mysqladmin), PCHAR(mysqld_command), nil, SW_HIDE);
-end;
-
-procedure TMySQL.setCommandCredentials;
-begin
-  self.commandCredentials := '-u ' + _credentials.username + ' -p' + _credentials.password +
-    ' --port ' + IntToStr(port) + ' ';
-end;
-
-procedure TMySQL.setPortToIni(port: integer);
-begin
-  iniFileManipulator.WriteInteger('mysqld', 'port', Self.port);
-  setCommandCredentials;
-end;
-
-function TMySQL.getPortFromIni: integer;
-begin
-  Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
-end;
-
-procedure TMySQL.initialCheckAndSetup;
-begin
-  active := true;
-  try
-    if not checkLibVisualStudio2013 then
-    begin
-      installLibVisualStudio2013;
-    end;
-  except
-    on E: Exception do
-    begin
-      active := false;
-      ShowMessage(e.Message);
-    end;
-  end;
-end;
-
-function TMySQL.checkLibVisualStudio2013: boolean;
-var
-  reg: TRegistry;
-  carica_risorsa: TResourceStream;
-begin
-  result := true;
-  //VERIFICA la presenza di Visual C++ Redistributable Package per Visual Studio 2013
-  with TRegistry.Create do
-    try
-      RootKey := HKEY_LOCAL_MACHINE;
-      if (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) and
-        (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
-      begin
-        result := false;
-      end;
-    finally
-      Free;
-    end;
-end;
-
-procedure TMySQL.installLibVisualStudio2013;
-var
-  carica_risorsa: TResourceStream;
-begin
-  ShowMessage('MySQL needs:' + #13#10 +
-    'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
-    'The installer will run.');
-  // TO-DO? check version of system and install correct version (32 or 64 bit)?
-  //------------------------------------------------------------
-  //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" al file risorse DEL PROGETTO
-  //-----------------------------------------------------------
-  if (FindResource(hInstance, PChar('VCREDIST_32_bit'), PChar('EXE')) <> 0) then
-  begin
-    carica_risorsa := TResourceStream.Create(HInstance, PChar('VCREDIST_32_bit'), PChar('EXE'));
-    try
-      carica_risorsa.Position := 0;
-      carica_risorsa.SaveToFile('vcredist.exe');
-    finally
-      carica_risorsa.Free;
-    end;
-  end;
-  ExecuteAndWait(GetCurrentDir + '\vcredist.exe');
-  DeleteFile('vcredist.exe');
-  if not checkLibVisualStudio2013 then
-  begin
-    raise Exception.Create('Visual C++ Redistributable Visual Studio 2013 not correctly installed.');
-  end;
+  result := _port;
 end;
 
 function TWindowsService.getNameService: string;
@@ -994,6 +511,9 @@ begin
   Result := true;
 end;
 
+type
+  TExplicitAccess = EXPLICIT_ACCESS_A;
+
 procedure grantAllPermissionObject(user, source: string);
 var
   NewDacl, OldDacl: PACl;
@@ -1004,18 +524,6 @@ begin
   BuildExplicitAccessWithName(@EA, PChar(user), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
   SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
   SetNamedSecurityInfo(PChar(source), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
-end;
-
-procedure grantAllPermissionNet(user, source: string);
-var
-  NewDacl, OldDacl: PACl;
-  SD: PSECURITY_DESCRIPTOR;
-  EA: TExplicitAccess;
-begin
-  GetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
-  BuildExplicitAccessWithName(@EA, PChar(user), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
-  SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
-  SetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
 end;
 
 function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
@@ -1061,55 +569,6 @@ begin
   end;
 end;
 
-function extractZip(ZipFile, ExtractPath: string; delete_file: boolean = false): boolean;
-begin
-  if tzipfile.isvalid(zipfile) then
-  begin
-    tzipfile.extractZipfile(zipfile, extractpath);
-    if (delete_file) then
-    begin
-      deletefile(zipfile);
-    end;
-    result := true;
-  end
-  else
-  begin
-    result := false;
-  end;
-end;
-
-function readStringWithEnvVariables(source: string): string;
-var
-  tempStringDir: string;
-  tempStringPos: string;
-  posStart, posEnd: integer;
-  valueToReplace, newValue: string;
-begin
-  tempStringPos := source;
-  tempStringDir := source;
-  result := source;
-  repeat
-    posStart := pos('%', tempStringPos);
-    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
-    posEnd := posStart + pos('%', tempStringPos);
-    if (posStart > 0) and (posEnd > 1) then
-    begin
-      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
-      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
-      if newValue <> '' then
-      begin
-        result := stringreplace(Result, valueToReplace, newValue, []);
-      end;
-    end
-    else
-    begin
-      exit;
-    end;
-    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
-    tempStringPos := tempStringDir;
-  until posStart < 0;
-end;
-
 function runUnderWine: boolean;
 begin
   //check if application runs under Wine
@@ -1128,6 +587,36 @@ begin
       Free;
     end;
 end;
+
+type
+  //----------------------------------
+  SHARE_INFO_2 = record
+    shi2_netname: pWideChar;
+    shi2_type: DWORD;
+    shi2_remark: pWideChar;
+    shi2_permissions: DWORD;
+    shi2_max_uses: DWORD;
+    shi2_current_uses: DWORD;
+    shi2_path: pWideChar;
+    shi2_passwd: pWideChar;
+  end;
+
+  PSHARE_INFO_2 = ^SHARE_INFO_2;
+
+procedure grantAllPermissionNet(user, source: string);
+var
+  NewDacl, OldDacl: PACl;
+  SD: PSECURITY_DESCRIPTOR;
+  EA: TExplicitAccess;
+begin
+  GetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
+  BuildExplicitAccessWithName(@EA, PChar(user), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
+  SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
+  SetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
+end;
+
+function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err: LPDWORD): DWORD; stdcall;
+  external 'NetAPI32.dll' name 'NetShareAdd';
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
 var
@@ -1188,72 +677,6 @@ begin
   finally
     FreeMem(AShareInfo, SizeOf(PSHARE_INFO_2));
   end;
-end;
-
-function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
-Caption: ARRAY OF string; dlgcaption: string): Integer;
-var
-  aMsgdlg: TForm;
-  i: Integer;
-  Dlgbutton: Tbutton;
-  Captionindex: Integer;
-begin
-  aMsgdlg := createMessageDialog(Msg, DlgTypt, button);
-  aMsgdlg.Caption := dlgcaption;
-  aMsgdlg.BiDiMode := bdLeftToRight;
-  Captionindex := 0;
-  for i := 0 to aMsgdlg.componentcount - 1 Do
-  begin
-    if (aMsgdlg.components[i] is Tbutton) then
-    Begin
-      Dlgbutton := Tbutton(aMsgdlg.components[i]);
-      if Captionindex <= High(Caption) then
-        Dlgbutton.Caption := Caption[Captionindex];
-      inc(Captionindex);
-    end;
-  end;
-  Result := aMsgdlg.Showmodal;
-  FreeAndNil(aMsgdlg);
-end;
-
-procedure setComponentInMiddlePosition(control: TControl);
-var
-  _left: integer;
-begin
-  _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
-  control.Left := _left;
-end;
-
-function getIPAddress: string;
-type
-  pu_long = ^u_long;
-var
-  varTWSAData: TWSAData;
-  varPHostEnt: PHostEnt;
-  varTInAddr: TInAddr;
-  namebuf: Array [0 .. 255] of ansichar;
-begin
-  if WSAStartup($101, varTWSAData) <> 0 Then
-    Result := '-'
-  else
-  begin
-    getHostName(nameBuf, sizeOf(nameBuf));
-    varPHostEnt := getHostByName(nameBuf);
-    varTInAddr.S_addr := u_long(pu_long(varPHostEnt^.h_addr_list^)^);
-    Result := inet_ntoa(varTInAddr);
-  end;
-  WSACleanup;
-end;
-
-procedure deleteDirectory(const dirName: string);
-var
-  FileOp: TSHFileOpStruct;
-begin
-  FillChar(FileOp, SizeOf(FileOp), 0);
-  FileOp.wFunc := FO_DELETE;
-  FileOp.pFrom := PChar(DirName + #0); //double zero-terminated
-  FileOp.fFlags := FOF_SILENT or FOF_NOERRORUI or FOF_NOCONFIRMATION;
-  SHFileOperation(FileOp);
 end;
 
 class procedure TMemoryRam.initialize;
@@ -1321,6 +744,16 @@ begin
   end;
 end;
 
+type
+  TEnumInfo = record
+    ProcessID: DWORD;
+    HWND: THandle;
+  end;
+
+  PEnumInfo = ^TEnumInfo;
+
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall; forward;
+
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
 var
   enumInfo: TEnumInfo;
@@ -1350,6 +783,15 @@ begin
 end;
 
 //TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
+type
+  TProcessCompare = record
+    username: string;
+    nameProcess: string;
+  end;
+
+  TFunctionProcessCompare = function(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean;
+function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD; forward;
+
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
 begin
   if processEntry.szExeFile = processCompare.nameProcess then
@@ -1451,6 +893,13 @@ begin
   else
     Result := '';
 end;
+
+type
+  _TOKEN_USER = record
+    User: TSidAndAttributes;
+  end;
+
+  PTOKEN_USER = ^_TOKEN_USER;
 
 function GetPIDCredentials(PID: DWORD): TPIDCredentials;
 var
