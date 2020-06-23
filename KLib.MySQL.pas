@@ -68,6 +68,7 @@ type
     path_MySQL: string;
     connectionDB: TMyConnection;
     query: TMyQuery;
+    allPersonalConnectionsAreClosed: boolean;
     numberConnections: integer;
     procedure createTMySQL;
     procedure createConnectionDB;
@@ -78,11 +79,14 @@ type
     procedure setInnodbSettingsInIni;
     procedure setPathsInIni;
     function IsMysqlActive: boolean;
-    function existsOthersActiveConnections: boolean;
+    function canYouShutdown: boolean;
+    function canYouShutdown_closed: boolean;
+    function canYouShutdown_actived: boolean;
   public
     port: integer;
     mysql: TMySQL;
-    constructor create(credentialsMysql: TCredentials; path_Mysql: string; numberConnections: integer);
+    constructor create(credentialsMysql: TCredentials; path_Mysql: string; numberConnections: integer;
+      allConnectionsAreClosed: boolean = true);
     procedure connectToDatabase;
     procedure shutdownMySQL;
     destructor destroy; override;
@@ -366,11 +370,13 @@ end;
 const
   portMySQL = 3306;
 
-constructor TMySQLProcess.create(credentialsMysql: TCredentials; path_MySQL: string; numberConnections: integer);
+constructor TMySQLProcess.create(credentialsMysql: TCredentials; path_MySQL: string; numberConnections: integer;
+  allConnectionsAreClosed: boolean = true);
 begin
   self.credentials := credentialsMysql;
   Self.path_MySQL := path_MySQL;
   self.numberConnections := numberConnections;
+  self.allPersonalConnectionsAreClosed := allConnectionsAreClosed;
   createTMySQL;
   Self.port := mysql.port;
   createConnectionDB;
@@ -511,26 +517,63 @@ procedure TMySQLProcess.shutdownMySQL;
 var
   _close: boolean;
 begin
-  _close := true;
-  if IsMysqlActive and existsOthersActiveConnections then
+  if IsMysqlActive then
   begin
-    if messagedlg('Altri programmi sono collegati al database, forzare la chiusura?',
-      mtCustom, [mbYes, mbCancel], 0) <> mrYes then
+    _close := canYouShutdown;
+    if _close then
     begin
-      _close := false;
+      mysql.stop;
     end;
-  end;
-
-  if _close then
-  begin
-    mysql.stop;
   end;
 end;
 
-function TMySQLProcess.existsOthersActiveConnections: boolean;
+function TMySQLProcess.canYouShutdown: boolean;
+begin
+  if allPersonalConnectionsAreClosed then
+  begin
+    result := canYouShutdown_closed;
+  end
+  else
+  begin
+    result := canYouShutdown_actived;
+  end;
+end;
+
+function TMySQLProcess.canYouShutdown_closed: boolean;
 var
   _realNumberConnections: integer;
 begin
+  query.SQL.Clear;
+  query.SQL.Add('SELECT  USER');
+  query.SQL.Add('FROM information_schema.PROCESSLIST');
+  query.Open;
+  _realNumberConnections := query.RecordCount - 1;
+  if _realNumberConnections = 0 then
+  begin
+    result := true;
+  end
+  else
+  begin
+    if (_realNumberConnections > 0) and (_realNumberConnections < numberConnections) then
+    begin
+      if messagedlg('Altri programmi sono collegati al database, forzare la chiusura di quest''ultimo?',
+        mtCustom, [mbYes, mbCancel], 0) = mrYes then
+      begin
+        result := true;
+      end;
+    end
+    else
+    begin
+      result := false;
+    end;
+  end;
+end;
+
+function TMySQLProcess.canYouShutdown_actived: boolean;
+var
+  _realNumberConnections: integer;
+begin
+  result := false;
   _realNumberConnections := numberConnections + 1;
 
   query.SQL.Clear;
@@ -562,11 +605,15 @@ begin
   query.Open;
   if query.RecordCount = 0 then
   begin
-    Result := false;
+    result := true;
   end
   else
   begin
-    Result := true;
+    if messagedlg('Altri programmi sono collegati al database, forzare la chiusura di quest''ultimo?',
+      mtCustom, [mbYes, mbCancel], 0) = mrYes then
+    begin
+      result := true;
+    end;
   end;
 end;
 
