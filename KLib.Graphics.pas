@@ -3,8 +3,8 @@ unit KLib.Graphics;
 interface
 
 uses
-  Vcl.Graphics,Vcl.ExtCtrls, Vcl.StdCtrls,System.SysUtils,System.Classes,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs;
+  Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, System.SysUtils, System.Classes,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit;
 
 type
   TLabelLoading = class
@@ -30,6 +30,7 @@ type
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
 procedure setComponentInMiddlePosition(control: TControl);
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string);
 
 implementation
 
@@ -128,6 +129,15 @@ var
 begin
   _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
   control.Left := _left;
+end;
+
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string);
+begin
+  if myEdit.Text = '' then
+  begin
+    myForm.FocusControl(myEdit);
+    raise Exception.Create('Il campo ' + fieldName + ' non può essere nullo');
+  end;
 end;
 
 end.
