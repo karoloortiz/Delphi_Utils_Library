@@ -30,6 +30,9 @@ const
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
 type
+
+  TProcedureOfObject = procedure of object;
+
   TPIDCredentials = record
     ownerUserName: string;
     domain: string;

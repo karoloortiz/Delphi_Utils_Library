@@ -66,6 +66,7 @@ type
   private
     credentials: TCredentials;
     path_MySQL: string;
+    path_MySQL_datadir: string;
     connectionDB: TMyConnection;
     query: TMyQuery;
     allPersonalConnectionsAreClosed: boolean;
@@ -85,8 +86,11 @@ type
   public
     port: integer;
     mysql: TMySQL;
-    constructor create(credentialsMysql: TCredentials; path_Mysql: string; numberConnections: integer;
-      allConnectionsAreClosed: boolean = true);
+    errorException: Exception;
+    constructor create(credentialsMysql: TCredentials; path_Mysql: string; path_Mysql_datadir: string = '';
+      numberConnections: integer = 1; allConnectionsAreClosed: boolean = true);
+    procedure AConnectToDatabase(reply: TAsyncifyProcedureReply);
+    procedure promiseConnectToDatabase(resolve: TProcedureOfObject; reject: TProcedureOfObject);
     procedure connectToDatabase;
     procedure shutdownMySQL;
     destructor destroy; override;
@@ -370,17 +374,19 @@ end;
 const
   portMySQL = 3306;
 
-constructor TMySQLProcess.create(credentialsMysql: TCredentials; path_MySQL: string; numberConnections: integer;
-  allConnectionsAreClosed: boolean = true);
+constructor TMySQLProcess.create(credentialsMysql: TCredentials; path_MySQL: string; path_Mysql_datadir: string = '';
+  numberConnections: integer = 1; allConnectionsAreClosed: boolean = true);
 begin
   self.credentials := credentialsMysql;
   Self.path_MySQL := path_MySQL;
+  Self.path_MySQL_datadir := path_Mysql_datadir;
   self.numberConnections := numberConnections;
   self.allPersonalConnectionsAreClosed := allConnectionsAreClosed;
   createTMySQL;
   Self.port := mysql.port;
   createConnectionDB;
   createQuery;
+  errorException := Exception.Create('');
 end;
 
 procedure TMySQLProcess.createTMySQL;
@@ -408,6 +414,29 @@ procedure TMySQLProcess.createQuery;
 begin
   query := TMyQuery.Create(nil);
   query.Connection := connectionDB;
+end;
+
+procedure TMySQLProcess.AConnectToDatabase(reply: TAsyncifyProcedureReply);
+begin
+  asyncifyProcedure(connectToDatabase, reply);
+end;
+
+procedure TMySQLProcess.promiseConnectToDatabase(resolve: TProcedureOfObject; reject: TProcedureOfObject);
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      try
+        connectToDatabase;
+        resolve;
+      except
+        on E: Exception do
+        begin
+          errorException := e;
+          reject;
+        end;
+      end;
+    end).Start;
 end;
 
 procedure TMySQLProcess.connectToDatabase;
@@ -467,8 +496,14 @@ var
   _path_keyring: string;
 begin
   _path_mysql := ExpandFileName(path_mysql);
-
-  _path_datadir := '"' + _path_mysql + 'data"';
+  if path_MySQL_datadir <> '' then
+  begin
+    _path_datadir := ExpandFileName(path_MySQL_datadir);
+  end
+  else
+  begin
+    _path_datadir := '"' + _path_mysql + 'data"';
+  end;
   mysql.iniFileManipulator.WriteString('mysqld', 'datadir', _path_datadir);
   _path_securefilepriv := '"' + _path_mysql + 'Uploads"';
   mysql.iniFileManipulator.WriteString('mysqld', 'secure-file-priv', _path_securefilepriv);

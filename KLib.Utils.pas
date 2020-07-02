@@ -3,7 +3,8 @@ unit KLib.Utils;
 interface
 
 uses
-  System.SysUtils, Winsock, ShellAPI, System.Zip;
+  System.SysUtils, Winsock, ShellAPI, System.Zip,
+  Winapi.Messages, System.Classes, Winapi.Windows;
 
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
@@ -11,11 +12,20 @@ type
     function GetPreamble: TBytes; override;
   end;
 
+  TProcedureOfObject = procedure of object;
+
+  TAsyncifyProcedureReply = record
+    handle: THandle;
+    msg_resolve: Cardinal;
+    msg_reject: Cardinal;
+  end;
+
 function getDirExe: string;
 procedure deleteDirectory(const dirName: string);
 function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
+procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
 
 implementation
 
@@ -100,7 +110,7 @@ begin
     tzipfile.extractZipfile(zipfile, extractpath);
     if (delete_file) then
     begin
-      deletefile(zipfile);
+      System.SysUtils.deletefile(zipfile);
     end;
     result := true;
   end
@@ -108,6 +118,23 @@ begin
   begin
     result := false;
   end;
+end;
+
+procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      try
+        myProcedureWithThrowException;
+        PostMessage(reply.handle, reply.msg_resolve, 0, 0);
+      except
+        on E: Exception do
+        begin
+          PostMessage(reply.handle, reply.msg_reject, 0, 0);
+        end;
+      end;
+    end).Start;
 end;
 
 end.
