@@ -4,7 +4,7 @@ interface
 
 uses
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, System.SysUtils, System.Classes,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit, Winapi.Windows;
 
 type
   TLabelLoading = class
@@ -27,6 +27,24 @@ type
     procedure stop;
   end;
 
+  TRGB = record
+  private
+    _red: integer;
+    _green: integer;
+    _blue: integer;
+    procedure setRedColor(color: integer);
+    procedure setGreenColor(color: integer);
+    procedure setBlueColor(color: integer);
+    function getValidColor(color: integer): integer;
+  public
+    property red: integer read _red write setRedColor;
+    property green: integer read _green write setGreenColor;
+    property blue: integer read _blue write setBlueColor;
+  end;
+
+procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
+function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
+
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
 procedure setComponentInMiddlePosition(control: TControl);
@@ -34,7 +52,9 @@ procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: stri
 
 implementation
 
-
+//-------------------------------------------------------------------------------------------------
+//  TLabelLoading
+//-------------------------------------------------------------------------------------------------
 constructor TLabelLoading.Create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3);
 begin
   Self.labelSource := labelSource;
@@ -95,6 +115,112 @@ procedure TLabelLoading.stop;
 begin
   timer.Enabled := false;
   lblSource.Caption := originalText;
+end;
+
+//-------------------------------------------------------------------------------------------------
+//  TRGB
+//-------------------------------------------------------------------------------------------------
+procedure TRGB.setRedColor(color: integer);
+begin
+  _red := getValidColor(color);
+end;
+
+procedure TRGB.setGreenColor(color: integer);
+begin
+  _green := getValidColor(color);
+end;
+
+procedure TRGB.setBlueColor(color: integer);
+begin
+  _blue := getValidColor(color);
+end;
+
+function TRGB.getValidColor(color: integer): integer;
+var
+  _validColor: integer;
+begin
+  if color < 0 then
+  begin
+    _validColor := 0;
+  end
+  else if color > 255 then
+  begin
+    _validColor := 255;
+  end
+  else
+  begin
+    _validColor := color;
+  end;
+  Result := _validColor;
+end;
+
+//-------------------------------------------------------------------------------------------------
+procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
+begin
+  component.ParentBackground := false;
+  component.ParentColor := false;
+  component.Color := getLighterTColor(color, levelLighter);
+end;
+
+function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
+var
+  _RGB_source: TRGB;
+  _RGB_lighterColor: TRGB;
+  _addColor: integer;
+const
+  LIGHTER1_VALUE = 30;
+  LIGHTER2_VALUE = 50;
+  LIGHTER3_VALUE = 70;
+begin
+  with _RGB_source do
+  begin
+    red := GetRValue(color);
+    green := GetGValue(color);
+    blue := GetBValue(color);
+  end;
+
+  if levelLighter = 1 then
+  begin
+    _addColor := LIGHTER1_VALUE;
+  end
+  else if levelLighter = 2 then
+  begin
+    _addColor := LIGHTER2_VALUE;
+  end
+  else if levelLighter = 3 then
+  begin
+    _addColor := LIGHTER3_VALUE;
+  end;
+
+  with _RGB_lighterColor do
+  begin
+    if _RGB_source.red > 0 then
+    begin
+      red := _RGB_source.red + _addColor;
+    end
+    else
+    begin
+      red := 0;
+    end;
+    if _RGB_source.green > 0 then
+    begin
+      green := _RGB_source.green + _addColor;
+    end
+    else
+    begin
+      green := 0;
+    end;
+    if _RGB_source.blue > 0 then
+    begin
+      blue := _RGB_source.blue + _addColor;
+    end
+    else
+    begin
+      blue := 0;
+    end;
+  end;
+
+  Result := TColor(RGB(_RGB_lighterColor.Red, _RGB_lighterColor.Green, _RGB_lighterColor.Blue));
 end;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
