@@ -45,7 +45,10 @@ type
   end;
 
 procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
+procedure setDarkerTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
+function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
+
 procedure setTColorToTPanel(component: TPanel; color: TColor);
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
@@ -178,16 +181,71 @@ begin
   setTColorToTPanel(component, _color);
 end;
 
+procedure setDarkerTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
+var
+  _color: TColor;
+begin
+  _color := getDarkerTColor(color, levelLighter);
+  setTColorToTPanel(component, _color);
+end;
+
+function getVariationOfTColor(color: TColor; typeOfVaration: String; level: integer = 1): TColor; forward;
+
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
+begin
+  Result := getVariationOfTColor(color, 'light', levelLighter);
+end;
+
+function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
+begin
+  Result := getVariationOfTColor(color, 'dark', levelDarker);
+end;
+
+function getRGBColorVariation(RGB_source: TRGB; variationColorValue: integer): TRGB;
+var
+  _RGB_colorVariation: TRGB;
+begin
+  with _RGB_colorVariation do
+  begin
+    if RGB_source.red > 0 then
+    begin
+      red := RGB_source.red + variationColorValue;
+    end
+    else
+    begin
+      red := 0;
+    end;
+    if RGB_source.green > 0 then
+    begin
+      green := RGB_source.green + variationColorValue;
+    end
+    else
+    begin
+      green := 0;
+    end;
+    if RGB_source.blue > 0 then
+    begin
+      blue := RGB_source.blue + variationColorValue;
+    end
+    else
+    begin
+      blue := 0;
+    end;
+  end;
+  Result := _RGB_colorVariation;
+end;
+
+function getVariationOfTColor(color: TColor; typeOfVaration: String; level: integer = 1): TColor;
 var
   _RGB_source: TRGB;
-  _RGB_lighterColor: TRGB;
-  _addColor: integer;
+  _RGB_colorVariation: TRGB;
+  _colorVariationValue: integer;
 const
-  LIGHTER1_VALUE = 30;
-  LIGHTER2_VALUE = 50;
-  LIGHTER3_VALUE = 70;
+  VARIATION1_VALUE = 30;
+  VARIATION2_VALUE = 50;
+  VARIATION3_VALUE = 70;
 begin
+  _colorVariationValue := 0;
   with _RGB_source do
   begin
     red := GetRValue(color);
@@ -195,48 +253,27 @@ begin
     blue := GetBValue(color);
   end;
 
-  if levelLighter = 1 then
+  if level = 1 then
   begin
-    _addColor := LIGHTER1_VALUE;
+    _colorVariationValue := VARIATION1_VALUE;
   end
-  else if levelLighter = 2 then
+  else if level = 2 then
   begin
-    _addColor := LIGHTER2_VALUE;
+    _colorVariationValue := VARIATION2_VALUE;
   end
-  else if levelLighter = 3 then
+  else if level = 3 then
   begin
-    _addColor := LIGHTER3_VALUE;
+    _colorVariationValue := VARIATION3_VALUE;
   end;
 
-  with _RGB_lighterColor do
+  if typeOfVaration = 'dark' then
   begin
-    if _RGB_source.red > 0 then
-    begin
-      red := _RGB_source.red + _addColor;
-    end
-    else
-    begin
-      red := 0;
-    end;
-    if _RGB_source.green > 0 then
-    begin
-      green := _RGB_source.green + _addColor;
-    end
-    else
-    begin
-      green := 0;
-    end;
-    if _RGB_source.blue > 0 then
-    begin
-      blue := _RGB_source.blue + _addColor;
-    end
-    else
-    begin
-      blue := 0;
-    end;
+    _colorVariationValue := -_colorVariationValue;
   end;
 
-  Result := _RGB_lighterColor.getTColor;
+  _RGB_colorVariation := getRGBColorVariation(_RGB_source, _colorVariationValue);
+
+  Result := _RGB_colorVariation.getTColor;
 end;
 
 procedure setTColorToTPanel(component: TPanel; color: TColor);
