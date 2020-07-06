@@ -40,10 +40,13 @@ type
     property red: integer read _red write setRedColor;
     property green: integer read _green write setGreenColor;
     property blue: integer read _blue write setBlueColor;
+    procedure loadFromString(colorString: String);
+    function getTColor: TColor;
   end;
 
 procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
+procedure setTColorToTPanel(component: TPanel; color: TColor);
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
@@ -120,6 +123,18 @@ end;
 //-------------------------------------------------------------------------------------------------
 //  TRGB
 //-------------------------------------------------------------------------------------------------
+procedure TRGB.loadFromString(colorString: String);
+begin
+  red := StrToInt(copy(colorString, 1, 3));
+  green := StrToInt(copy(colorString, 4, 3));
+  blue := StrToInt(copy(colorString, 7, 3));
+end;
+
+function TRGB.getTColor: TColor;
+begin
+  Result := TColor(RGB(red, green, blue));
+end;
+
 procedure TRGB.setRedColor(color: integer);
 begin
   _red := getValidColor(color);
@@ -156,10 +171,11 @@ end;
 
 //-------------------------------------------------------------------------------------------------
 procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
+var
+  _color: TColor;
 begin
-  component.ParentBackground := false;
-  component.ParentColor := false;
-  component.Color := getLighterTColor(color, levelLighter);
+  _color := getLighterTColor(color, levelLighter);
+  setTColorToTPanel(component, _color);
 end;
 
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
@@ -220,7 +236,14 @@ begin
     end;
   end;
 
-  Result := TColor(RGB(_RGB_lighterColor.Red, _RGB_lighterColor.Green, _RGB_lighterColor.Blue));
+  Result := _RGB_lighterColor.getTColor;
+end;
+
+procedure setTColorToTPanel(component: TPanel; color: TColor);
+begin
+  component.ParentBackground := false;
+  component.ParentColor := false;
+  component.Color := color;
 end;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
