@@ -23,6 +23,7 @@ type
 function getDirExe: string;
 procedure deleteDirectory(const dirName: string);
 function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
+function loadResourceAsString(nameResource: String; typeResource: string): String;
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
 procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
@@ -80,6 +81,32 @@ begin
     tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
     tempStringPos := tempStringDir;
   until posStart < 0;
+end;
+
+function loadResourceAsString(nameResource: String; typeResource: string): String;
+var
+  resourceStream: TResourceStream;
+  _stringList: TStringList;
+  resourceAsString: String;
+begin
+  resourceAsString := '';
+  if (FindResource(hInstance, PChar(nameResource), PChar(typeResource)) <> 0) then
+  begin
+    resourceStream := TResourceStream.Create(HInstance, PChar(nameResource), PChar(typeResource));
+    try
+      resourceStream.Position := 0;
+      _stringList := TStringList.Create;
+      _stringList.LoadFromStream(resourceStream);
+      resourceAsString := _stringList.Text;
+    finally
+      resourceStream.Free;
+    end;
+  end
+  else
+  begin
+    raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
+  end;
+  Result := resourceAsString;
 end;
 
 function getIPAddress: string;
