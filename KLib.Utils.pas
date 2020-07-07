@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, Winsock, ShellAPI, System.Zip,
-  Winapi.Messages, System.Classes, Winapi.Windows;
+  Winapi.Messages, System.Classes, Winapi.Windows, Vcl.ExtCtrls, PngImage;
 
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
@@ -23,12 +23,19 @@ type
 function getDirExe: string;
 procedure deleteDirectory(const dirName: string);
 function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
-function loadResourceAsString(nameResource: String; typeResource: string): String;
+
+function getPNGResource(nameResource: String): TPngImage;
+function getResourceAsString(nameResource: String; typeResource: string): String;
+function getResourceAsStream(nameResource: String; typeResource: string): TResourceStream;
+
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
 procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
 
 implementation
+
+const
+  PNG_RESOURCE = 'PNG';
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
@@ -83,30 +90,53 @@ begin
   until posStart < 0;
 end;
 
-function loadResourceAsString(nameResource: String; typeResource: string): String;
+function getPNGResource(nameResource: String): TPngImage;
+var
+  resourceStream: TResourceStream;
+  resourceAsPNG: TPngImage;
+begin
+  resourceStream := getResourceAsStream(nameResource, PNG_RESOURCE);
+  try
+    resourceAsPNG := TPngImage.Create;
+    resourceAsPNG.LoadFromStream(resourceStream);
+  finally
+    resourceStream.Free;
+  end;
+  Result := resourceAsPNG;
+end;
+
+function getResourceAsString(nameResource: String; typeResource: string): String;
 var
   resourceStream: TResourceStream;
   _stringList: TStringList;
   resourceAsString: String;
 begin
   resourceAsString := '';
+  resourceStream := getResourceAsStream(nameResource, typeResource);
+  try
+    _stringList := TStringList.Create;
+    _stringList.LoadFromStream(resourceStream);
+    resourceAsString := _stringList.Text;
+  finally
+    resourceStream.Free;
+  end;
+  Result := resourceAsString;
+end;
+
+function getResourceAsStream(nameResource: String; typeResource: string): TResourceStream;
+var
+  resourceStream: TResourceStream;
+begin
   if (FindResource(hInstance, PChar(nameResource), PChar(typeResource)) <> 0) then
   begin
     resourceStream := TResourceStream.Create(HInstance, PChar(nameResource), PChar(typeResource));
-    try
-      resourceStream.Position := 0;
-      _stringList := TStringList.Create;
-      _stringList.LoadFromStream(resourceStream);
-      resourceAsString := _stringList.Text;
-    finally
-      resourceStream.Free;
-    end;
+    resourceStream.Position := 0;
   end
   else
   begin
     raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
   end;
-  Result := resourceAsString;
+  Result := resourceStream;
 end;
 
 function getIPAddress: string;
