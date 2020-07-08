@@ -4,7 +4,7 @@ interface
 
 uses
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, System.SysUtils, System.Classes,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit, Winapi.Windows;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit, cxTextEdit, Winapi.Windows;
 
 type
   TLabelLoading = class
@@ -54,7 +54,8 @@ procedure setTColorToTPanel(component: TPanel; color: TColor);
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
 procedure setComponentInMiddlePosition(control: TControl);
-procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string);
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string); overload;
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxTextEdit; fieldName: string); overload;
 
 implementation
 
@@ -322,7 +323,16 @@ begin
   if myEdit.Text = '' then
   begin
     myForm.FocusControl(myEdit);
-    raise Exception.Create('Il campo ' + fieldName + ' non può essere nullo');
+    raise Exception.Create('Il campo ' + QuotedStr(fieldName) + ' non può essere nullo');
+  end;
+end;
+
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxTextEdit; fieldName: string);
+begin
+  if myEdit.Text = '' then
+  begin
+    myForm.FocusControl(myEdit);
+    raise Exception.Create('Il campo ' + QuotedStr(fieldName) + ' non può essere nullo');
   end;
 end;
 
