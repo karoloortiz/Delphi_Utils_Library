@@ -4,20 +4,13 @@ interface
 
 uses
   System.SysUtils, Winsock, ShellAPI, System.Zip,
-  Winapi.Messages, System.Classes, Winapi.Windows, Vcl.ExtCtrls, PngImage;
+  Winapi.Messages, System.Classes, Winapi.Windows, Vcl.ExtCtrls, PngImage,
+  KLib.Types;
 
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
   public
     function GetPreamble: TBytes; override;
-  end;
-
-  TProcedureOfObject = procedure of object;
-
-  TAsyncifyProcedureReply = record
-    handle: THandle;
-    msg_resolve: Cardinal;
-    msg_reject: Cardinal;
   end;
 
 function getDirExe: string;

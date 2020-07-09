@@ -5,14 +5,9 @@ interface
 uses
   Winapi.Windows, inifiles, System.SysUtils, ShellAPI, MyAccess, Vcl.Dialogs,
   Vcl.Controls, Registry, System.Classes,
-  KLib.Windows, KLib.Utils;
+  KLib.Windows, KLib.Utils, KLib.Types;
 
 type
-  TCredentials = record
-    username: string;
-    password: string;
-  end;
-
   TMySQLInfo = record
   private
     _path_bin: string;

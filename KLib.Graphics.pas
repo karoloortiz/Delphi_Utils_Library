@@ -4,7 +4,8 @@ interface
 
 uses
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, System.SysUtils, System.Classes,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit, cxTextEdit, Winapi.Windows;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, RzEdit, cxTextEdit, Winapi.Windows,
+  KLib.Types;
 
 type
   TLabelLoading = class
@@ -316,6 +317,11 @@ var
 begin
   _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
   control.Left := _left;
+end;
+
+procedure tryToValidate(validatingProcedure: TProcedureOfObject; errorLabel: TLabel);
+begin
+  //TODO
 end;
 
 procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string);

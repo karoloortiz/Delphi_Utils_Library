@@ -7,7 +7,8 @@ uses
   Vcl.Forms, Vcl.Dialogs, AccCtrl,
   ACLAPI, ShellAPI, system.IOUtils, Vcl.ComCtrls, Winsvc, ComObj,
   ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Registry,
-  TLHelp32;
+  TLHelp32,
+  KLib.Types;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -30,14 +31,6 @@ const
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
 type
-
-  TProcedureOfObject = procedure of object;
-
-  TPIDCredentials = record
-    ownerUserName: string;
-    domain: string;
-  end;
-
   TMemoryRam = class
   private
     class var RamStats: TMemoryStatusEx;
