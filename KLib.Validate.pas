@@ -3,9 +3,14 @@ unit KLib.Validate;
 interface
 
 uses
-  System.RegularExpressions;
-
+  System.RegularExpressions, Vcl.StdCtrls, System.SysUtils, Vcl.Forms, RzEdit, cxTextEdit,
+  KLib.Types;
+//------REGEX----------
 function isValidEmail(email: string): boolean;
+//-------------------
+procedure tryToValidate(validatingProcedure: TProcedureOfObject; errorLabel: TLabel);
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string); overload;
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxTextEdit; fieldName: string); overload;
 
 implementation
 
@@ -35,6 +40,38 @@ begin
   else
   begin
     result := false;
+  end;
+end;
+
+procedure tryToValidate(validatingProcedure: TProcedureOfObject; errorLabel: TLabel);
+begin
+  try
+    validatingProcedure;
+    errorLabel.Visible := false;
+  except
+    on E: Exception do
+    begin
+      errorLabel.Caption := e.Message;
+      errorLabel.Visible := true;
+    end;
+  end;
+end;
+
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string);
+begin
+  if myEdit.Text = '' then
+  begin
+    myForm.FocusControl(myEdit);
+    raise Exception.Create('Il campo ' + QuotedStr(fieldName) + ' non può essere nullo');
+  end;
+end;
+
+procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxTextEdit; fieldName: string);
+begin
+  if myEdit.Text = '' then
+  begin
+    myForm.FocusControl(myEdit);
+    raise Exception.Create('Il campo ' + QuotedStr(fieldName) + ' non può essere nullo');
   end;
 end;
 
