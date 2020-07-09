@@ -344,7 +344,7 @@ begin
   ShowMessage('MySQL needs:' + #13#10 +
     'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
     'The installer will run.');
-  // TO-DO? check version of system and install correct version (32 or 64 bit)?
+  // TODO? check version of system and install correct version (32 or 64 bit)?
   //------------------------------------------------------------
   //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" al file risorse DEL PROGETTO
   //-----------------------------------------------------------

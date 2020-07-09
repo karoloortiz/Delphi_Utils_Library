@@ -13,6 +13,7 @@ type
     function GetPreamble: TBytes; override;
   end;
 
+function fileExistsAndEmpty(filePath: string): Boolean;
 function getDirExe: string;
 procedure deleteDirectory(const dirName: string);
 function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
@@ -33,6 +34,25 @@ const
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
   SetLength(Result, 0);
+end;
+
+function fileExistsAndEmpty(filePath: string): Boolean;
+var
+  _file: file of Byte;
+  size: integer;
+begin
+  result := false;
+  if fileexists(filePath) then
+  begin
+    AssignFile(_file, filePath);
+    Reset(_file);
+    size := FileSize(_file);
+    if size = 0 then
+    begin
+      result := true;
+    end;
+    CloseFile(_file);
+  end;
 end;
 
 function getDirExe: string;
