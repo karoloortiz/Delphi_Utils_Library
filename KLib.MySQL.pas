@@ -76,8 +76,8 @@ type
     procedure setPathsInIni;
     function IsMysqlActive: boolean;
     function canYouShutdown: boolean;
-    function canYouShutdown_closed: boolean;
-    function canYouShutdown_actived: boolean;
+    function canYouShutdown_personalConnectionsClosed: boolean;
+    function canYouShutdown_personalConnectionsActived: boolean;
   public
     port: integer;
     mysql: TMySQL;
@@ -565,15 +565,15 @@ function TMySQLProcess.canYouShutdown: boolean;
 begin
   if allPersonalConnectionsAreClosed then
   begin
-    result := canYouShutdown_closed;
+    result := canYouShutdown_personalConnectionsClosed;
   end
   else
   begin
-    result := canYouShutdown_actived;
+    result := canYouShutdown_personalConnectionsActived;
   end;
 end;
 
-function TMySQLProcess.canYouShutdown_closed: boolean;
+function TMySQLProcess.canYouShutdown_personalConnectionsClosed: boolean;
 var
   _realNumberConnections: integer;
 begin
@@ -603,7 +603,7 @@ begin
   end;
 end;
 
-function TMySQLProcess.canYouShutdown_actived: boolean;
+function TMySQLProcess.canYouShutdown_personalConnectionsActived: boolean;
 var
   _realNumberConnections: integer;
 begin
