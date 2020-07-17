@@ -322,15 +322,16 @@ var
   reg: TRegistry;
   carica_risorsa: TResourceStream;
 begin
-  result := true;
+  result := false;
   //VERIFICA la presenza di Visual C++ Redistributable Package per Visual Studio 2013
   with TRegistry.Create do
     try
       RootKey := HKEY_LOCAL_MACHINE;
-      if (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) and
-        (not OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
+      if (OpenKeyReadOnly('\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
+        (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
+        (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
       begin
-        result := false;
+        result := true;
       end;
     finally
       Free;
@@ -340,17 +341,20 @@ end;
 procedure TMySQL.installLibVisualStudio2013;
 var
   carica_risorsa: TResourceStream;
+  nameResource: string;
 begin
   ShowMessage('MySQL needs:' + #13#10 +
     'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
     'The installer will run.');
-  // TODO? check version of system and install correct version (32 or 64 bit)?
-  //------------------------------------------------------------
-  //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" al file risorse DEL PROGETTO
+
+  //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" e "VCREDIST_64_bit EXE assets\vcredist_x64.exe"
+  //al file risorse DEL PROGETTO
+  nameResource := 'VCREDIST_' + getVersionSO;
+  ShowMessage(getVersionSO);
   //-----------------------------------------------------------
-  if (FindResource(hInstance, PChar('VCREDIST_32_bit'), PChar('EXE')) <> 0) then
+  if (FindResource(hInstance, PChar(nameResource), PChar('EXE')) <> 0) then
   begin
-    carica_risorsa := TResourceStream.Create(HInstance, PChar('VCREDIST_32_bit'), PChar('EXE'));
+    carica_risorsa := TResourceStream.Create(HInstance, PChar(nameResource), PChar('EXE'));
     try
       carica_risorsa.Position := 0;
       carica_risorsa.SaveToFile('vcredist.exe');

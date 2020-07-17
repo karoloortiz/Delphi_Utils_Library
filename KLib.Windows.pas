@@ -397,29 +397,15 @@ begin
 end;
 
 function getVersionSO: string;
-type
-  TIsWow64Process = function(AHandle: THandle; var AIsWow64: BOOL): BOOL; stdcall;
-var
-  vKernel32Handle: DWORD;
-  vIsWow64Process: TIsWow64Process;
-  vIsWow64: BOOL;
 begin
-  //ritorna false se il sistema è a 32_bit
-  Result := '32_bit';
-  // Prova a caricare kernel32.dll  altrimenti esce e ritorna 32_bit
-  vKernel32Handle := LoadLibrary('kernel32.dll');
-  if (vKernel32Handle = 0) then
-    Exit;
-  try
-    // Carica la windows api IsWow64Process altrimenti esce e ritorna 32_bit
-    @vIsWow64Process := GetProcAddress(vKernel32Handle, 'IsWow64Process');
-    if not Assigned(vIsWow64Process) then
-      Exit;
-  finally
-    FreeLibrary(vKernel32Handle); //unload libreria
+  case TOSVersion.Architecture of
+    arIntelX86:
+      Result := '32_bit';
+    arIntelX64:
+      Result := '64_bit';
+  else
+    Result := 'UNKNOWN OS architecture';
   end;
-  //se le librerie sono state caricate il sistema è a 64 bit
-  Result := '64_bit';
 end;
 
 procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
