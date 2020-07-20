@@ -201,7 +201,7 @@ begin
       except
         on E: Exception do
         begin
-          PostMessage(reply.handle, reply.msg_reject, 0, 0);
+          PostMessage(reply.handle, reply.msg_reject, 0, Integer(pansichar(ansistring(e.Message))));
         end;
       end;
     end).Start;

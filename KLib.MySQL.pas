@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, inifiles, System.SysUtils, ShellAPI, MyAccess, Vcl.Dialogs,
   Vcl.Controls, Registry, System.Classes,
-  KLib.Windows, KLib.Utils, KLib.Types;
+  KLib.Windows, KLib.Utils, KLib.Types,
+  KLib.WaitForm;
 
 type
   TMySQLInfo = record
@@ -86,6 +87,7 @@ type
       numberConnections: integer = 1; allConnectionsAreClosed: boolean = true);
     procedure AConnectToDatabase(reply: TAsyncifyProcedureReply);
     procedure promiseConnectToDatabase(resolve: TProcedureOfObject; reject: TProcedureOfObject);
+    procedure connectToDatabaseInWaitForm;
     procedure connectToDatabase;
     procedure shutdownMySQL;
     destructor destroy; override;
@@ -93,6 +95,8 @@ type
 
 implementation
 
+const
+  WAITFORM_MSG_MYSQL_START = 'MySQL si sta avviando,' + #13#10 + 'attendi.';
 
 constructor TMySQLService.Create(nameService: string; portService: integer; pathMysqlBin: string);
 begin
@@ -436,6 +440,11 @@ begin
         end;
       end;
     end).Start;
+end;
+
+procedure TMySQLProcess.connectToDatabaseInWaitForm;
+begin
+  executeProcedureInWaitForm(connectToDatabase, WAITFORM_MSG_MYSQL_START);
 end;
 
 procedure TMySQLProcess.connectToDatabase;
