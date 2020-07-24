@@ -41,6 +41,8 @@ type
     property green: integer read _green write setGreenColor;
     property blue: integer read _blue write setBlueColor;
     procedure loadFromString(colorString: String);
+    procedure loadFromTColor(color: TColor);
+    function getColorAsString: String;
     function getTColor: TColor;
   end;
 
@@ -48,8 +50,9 @@ procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighte
 procedure setDarkerTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
 function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
-
 procedure setTColorToTPanel(component: TPanel; color: TColor);
+
+function TColorToString(color: TColor): string;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
@@ -130,6 +133,27 @@ begin
   red := StrToInt(copy(colorString, 1, 3));
   green := StrToInt(copy(colorString, 4, 3));
   blue := StrToInt(copy(colorString, 7, 3));
+end;
+
+procedure TRGB.loadFromTColor(color: TColor);
+begin
+  red := GetRValue(color);
+  green := GetGValue(color);
+  blue := GetBValue(color);
+end;
+
+function TRGB.getColorAsString: String;
+var
+  _red: String;
+  _green: String;
+  _blue: String;
+  _colorRGB: String;
+begin
+  _red := intToStr(red).PadLeft(3, '0');
+  _green := intToStr(green).PadLeft(3, '0');
+  _blue := intToStr(blue).PadLeft(3, '0');
+  _colorRGB := _red + _green + _blue;
+  Result := _colorRGB;
 end;
 
 function TRGB.getTColor: TColor;
@@ -245,12 +269,8 @@ const
   VARIATION3_VALUE = 70;
 begin
   _colorVariationValue := 0;
-  with _RGB_source do
-  begin
-    red := GetRValue(color);
-    green := GetGValue(color);
-    blue := GetBValue(color);
-  end;
+
+  _RGB_source.loadFromTColor(color);
 
   if level = 1 then
   begin
@@ -280,6 +300,14 @@ begin
   component.ParentBackground := false;
   component.ParentColor := false;
   component.Color := color;
+end;
+
+function TColorToString(color: TColor): string;
+var
+  _rgb: TRGB;
+begin
+  _rgb.loadFromTColor(color);
+  result := _rgb.getColorAsString;
 end;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
