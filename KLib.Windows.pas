@@ -694,36 +694,33 @@ begin
 end;
 
 //----------------------------------------------------------------------------------------
+procedure mySetForegroundWindow(windowHandle: THandle); forward;
+
 function setProcessWindowToForeground(processName: string): boolean;
 var
   PIDProcess: DWORD;
-  WindowHandle: THandle;
+  windowHandle: THandle;
   currentThreadHandle: THandle;
   foregroundThreadHandle: THandle;
 begin
   PIDProcess := getPIDOfCurrentUserByProcessName(processName);
-  WindowHandle := getMainWindowHandleByPID(PIDProcess);
+  windowHandle := getMainWindowHandleByPID(PIDProcess);
 
-  if WindowHandle <> 0 then
+  if windowHandle <> 0 then
   begin
-    //TODO: DOPO PERIODO PROVA DA ELIMINARE
-    //    LA SINCRONIZAZZIONE TRA THREAD NON DOVREBBE ESSERE PIU' NECCESSARIA PERCHE' PRELEVO L'ENUM DEL WINDOW
-    //
-    //    currentThreadHandle := GetCurrentThreadId;
-    //    foregroundThreadHandle := GetWindowThreadProcessId(GetForegroundWindow, nil);
-    //    AttachThreadInput(foregroundThreadHandle, currentThreadHandle, true);
-    //    SetForegroundWindow(windowHandle);
-    //    AttachThreadInput(foregroundThreadHandle, currentThreadHandle, false);
-
-    SetForegroundWindow(WindowHandle);
-
-    postMessage(WindowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+    mySetForegroundWindow(windowHandle);
     result := true;
   end
   else
   begin
     result := false;
   end;
+end;
+
+procedure mySetForegroundWindow(windowHandle: THandle);
+begin
+  SetForegroundWindow(windowHandle);
+  postMessage(windowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
 end;
 
 type
