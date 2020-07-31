@@ -1,2 +1,4 @@
-*.*
+__history/
+__recovery/
+*.~*
 !KLIB.*
