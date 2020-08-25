@@ -4,8 +4,7 @@ interface
 
 uses
   System.SysUtils, Winsock, ShellAPI, System.Zip,
-  Winapi.Messages, System.Classes, Winapi.Windows, Vcl.ExtCtrls, PngImage,
-  KLib.Types;
+  Winapi.Messages, System.Classes, Vcl.ExtCtrls, PngImage;
 
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
@@ -24,7 +23,6 @@ function getResourceAsStream(nameResource: String; typeResource: string): TResou
 
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
-procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
 
 implementation
 
@@ -188,23 +186,6 @@ begin
   begin
     result := false;
   end;
-end;
-
-procedure asyncifyProcedure(myProcedureWithThrowException: TProcedureOfObject; reply: TAsyncifyProcedureReply);
-begin
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      try
-        myProcedureWithThrowException;
-        PostMessage(reply.handle, reply.msg_resolve, 0, 0);
-      except
-        on E: Exception do
-        begin
-          PostMessage(reply.handle, reply.msg_reject, 0, Integer(pansichar(ansistring(e.Message))));
-        end;
-      end;
-    end).Start;
 end;
 
 end.
