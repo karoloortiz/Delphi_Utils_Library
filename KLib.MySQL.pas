@@ -95,6 +95,9 @@ type
 
 implementation
 
+uses
+  KLib.Async;
+
 const
   WAITFORM_MSG_MYSQL_START = 'MySQL si sta avviando,' + #13#10 + 'attendi.';
 
