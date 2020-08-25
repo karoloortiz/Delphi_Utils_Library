@@ -46,17 +46,19 @@ type
     function getTColor: TColor;
   end;
 
+function TColorToString(color: TColor): string;
+function RGBStringToTColor(colorRGB: string): TColor;
+
 procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 procedure setDarkerTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
 function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
 procedure setTColorToTPanel(component: TPanel; color: TColor);
-
-function TColorToString(color: TColor): string;
+procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
+procedure setComponentInMiddlePosition(control: TControl);
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
-procedure setComponentInMiddlePosition(control: TControl);
 
 implementation
 
@@ -195,6 +197,22 @@ begin
   Result := _validColor;
 end;
 
+function TColorToString(color: TColor): string;
+var
+  _rgb: TRGB;
+begin
+  _rgb.loadFromTColor(color);
+  result := _rgb.getColorAsString;
+end;
+
+function RGBStringToTColor(colorRGB: string): TColor;
+var
+  _rgb: TRGB;
+begin
+  _rgb.loadFromString(colorRGB);
+  result := _rgb.getTColor;
+end;
+
 //-------------------------------------------------------------------------------------------------
 procedure setLighterTColorToTPanel(component: TPanel; color: TColor; levelLighter: integer = 1);
 var
@@ -302,12 +320,24 @@ begin
   component.Color := color;
 end;
 
-function TColorToString(color: TColor): string;
-var
-  _rgb: TRGB;
+procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
 begin
-  _rgb.loadFromTColor(color);
-  result := _rgb.getColorAsString;
+  if myString <> '' then
+  begin
+    myPanel.Visible := true;
+  end
+  else
+  begin
+    myPanel.Visible := false;
+  end;
+end;
+
+procedure setComponentInMiddlePosition(control: TControl);
+var
+  _left: integer;
+begin
+  _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
+  control.Left := _left;
 end;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
@@ -334,14 +364,6 @@ begin
   end;
   Result := aMsgdlg.Showmodal;
   FreeAndNil(aMsgdlg);
-end;
-
-procedure setComponentInMiddlePosition(control: TControl);
-var
-  _left: integer;
-begin
-  _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
-  control.Left := _left;
 end;
 
 end.
