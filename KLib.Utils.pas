@@ -3,8 +3,9 @@ unit KLib.Utils;
 interface
 
 uses
-  System.SysUtils, Winsock, ShellAPI, System.Zip,
-  Winapi.Messages, System.Classes, Vcl.ExtCtrls, PngImage;
+  System.SysUtils, System.Classes,
+  PngImage,
+  KLib.Types;
 
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
@@ -13,9 +14,16 @@ type
   end;
 
 function fileExistsAndEmpty(filePath: string): Boolean;
+procedure deleteFileIfExists(fileName: string);
 function getDirExe: string;
+
+procedure createHideDir(const path: string; forceDelete: boolean = false);
 procedure deleteDirectory(const dirName: string);
-function extractZip(ZipFile: string; ExtractPath: string; delete_file: boolean = false): boolean;
+
+procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
+
+function MD5FileChecker(fileName: string; MD5: string): boolean;
+function getMD5FileChecksum(const fileName: string): string;
 
 function getPNGResource(nameResource: String): TPngImage;
 function getResourceAsString(nameResource: String; typeResource: string): String;
@@ -24,7 +32,18 @@ function getResourceAsStream(nameResource: String; typeResource: string): TResou
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
 
+procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
+
+procedure executeProcedure(myProcedure: TProcedure); overload;
+procedure executeProcedure(myProcedure: TCallBack); overload;
+
 implementation
+
+uses
+  System.Zip, Vcl.ExtCtrls,
+  Winapi.Windows, Winapi.Messages, Winapi.Winsock, Winapi.ShellAPI,
+  IdGlobal, IdHash, IdHashMessageDigest,
+  UrlMon;
 
 const
   PNG_RESOURCE = 'PNG';
@@ -53,6 +72,34 @@ begin
   end;
 end;
 
+procedure deleteFileIfExists(fileName: string);
+begin
+  if FileExists(fileName) then
+  begin
+    if not DeleteFile(pchar(fileName)) then
+    begin
+      raise Exception.Create('Error deleting file.');
+    end;
+  end;
+end;
+
+procedure createHideDir(const path: string; forceDelete: boolean = false);
+begin
+  if forceDelete then
+  begin
+    deleteDirectory(path);
+  end;
+
+  if CreateDir(path) then
+  begin
+    SetFileAttributes(pchar(path), FILE_ATTRIBUTE_HIDDEN);
+  end
+  else
+  begin
+    raise Exception.Create('Error creating hide dir');
+  end;
+end;
+
 function getDirExe: string;
 begin
   result := ExtractFileDir(ParamStr(0));
@@ -69,36 +116,50 @@ begin
   SHFileOperation(FileOp);
 end;
 
-function readStringWithEnvVariables(source: string): string;
-var
-  tempStringDir: string;
-  tempStringPos: string;
-  posStart, posEnd: integer;
-  valueToReplace, newValue: string;
+procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
 begin
-  tempStringPos := source;
-  tempStringDir := source;
-  result := source;
-  repeat
-    posStart := pos('%', tempStringPos);
-    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
-    posEnd := posStart + pos('%', tempStringPos);
-    if (posStart > 0) and (posEnd > 1) then
+  if tzipfile.isvalid(zipFile) then
+  begin
+    tzipfile.extractZipfile(zipFile, extractPath);
+    if (forceDelete) then
     begin
-      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
-      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
-      if newValue <> '' then
-      begin
-        result := stringreplace(Result, valueToReplace, newValue, []);
-      end;
-    end
-    else
-    begin
-      exit;
+      deleteFileIfExists(zipFile);
     end;
-    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
-    tempStringPos := tempStringDir;
-  until posStart < 0;
+  end
+  else
+  begin
+    raise Exception.Create('Zip File not valid.');
+  end;
+end;
+
+function MD5FileChecker(fileName: string; MD5: string): boolean;
+var
+  MD5File: string;
+begin
+  MD5File := getMD5FileChecksum(fileName);
+  if UpperCase(MD5File) = UpperCase(MD5) then
+  begin
+    result := true;
+  end
+  else
+  begin
+    result := false;
+  end;
+end;
+
+function getMD5FileChecksum(const fileName: string): string;
+var
+  MD5: TIdHashMessageDigest5;
+  fileStream: TFileStream;
+begin
+  MD5 := TIdHashMessageDigest5.Create;
+  fileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  try
+    Result := MD5.HashStreamAsHex(fileStream)
+  finally
+    fileStream.Free;
+    MD5.Free;
+  end;
 end;
 
 function getPNGResource(nameResource: String): TPngImage;
@@ -150,6 +211,38 @@ begin
   Result := resourceStream;
 end;
 
+function readStringWithEnvVariables(source: string): string;
+var
+  tempStringDir: string;
+  tempStringPos: string;
+  posStart, posEnd: integer;
+  valueToReplace, newValue: string;
+begin
+  tempStringPos := source;
+  tempStringDir := source;
+  result := source;
+  repeat
+    posStart := pos('%', tempStringPos);
+    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
+    posEnd := posStart + pos('%', tempStringPos);
+    if (posStart > 0) and (posEnd > 1) then
+    begin
+      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
+      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
+      if newValue <> '' then
+      begin
+        result := stringreplace(Result, valueToReplace, newValue, []);
+      end;
+    end
+    else
+    begin
+      exit;
+    end;
+    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
+    tempStringPos := tempStringDir;
+  until posStart < 0;
+end;
+
 function getIPAddress: string;
 type
   pu_long = ^u_long;
@@ -171,21 +264,30 @@ begin
   WSACleanup;
 end;
 
-function extractZip(ZipFile, ExtractPath: string; delete_file: boolean = false): boolean;
+procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
 begin
-  if tzipfile.isvalid(zipfile) then
+  with downloadInfo do
   begin
-    tzipfile.extractZipfile(zipfile, extractpath);
-    if (delete_file) then
+    if forceDelete then
     begin
-      System.SysUtils.deletefile(zipfile);
+      deleteFileIfExists(fileName);
     end;
-    result := true;
-  end
-  else
-  begin
-    result := false;
+    if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK)
+      or not(MD5FileChecker(fileName, md5)) then
+    begin
+      raise Exception.Create('Error downloading file.');
+    end;
   end;
+end;
+
+procedure executeProcedure(myProcedure: TProcedure);
+begin
+  myProcedure;
+end;
+
+procedure executeProcedure(myProcedure: TCallBack);
+begin
+  myProcedure('');
 end;
 
 end.

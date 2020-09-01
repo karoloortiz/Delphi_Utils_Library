@@ -6,14 +6,33 @@ uses
   Vcl.Graphics;
 
 type
+
   TCredentials = record
     username: string;
     password: string;
   end;
 
-  TProcedureOfObject = procedure of object;
+  TDownloadInfo = record
+    link: string;
+    fileName: string;
+    typeFile: string;
+    md5: string;
+  end;
 
-  TArrayOfProcedures = array of TProcedureOfObject;
+  TArrayOfDownloadInfo = array of TDownloadInfo;
+
+  TProcedureOfObject = procedure of object;
+  TArrayOfObjectProcedures = array of TProcedureOfObject;
+
+  TProcedure = reference to procedure;
+  TArrayOfProcedures = array of TProcedure;
+
+  TCallBack = reference to procedure(msg: String);
+
+  TCallBacks = record
+    resolve: TCallBack;
+    reject: TCallBack;
+  end;
 
   TAsyncifyProcedureReply = record
     handle: THandle;

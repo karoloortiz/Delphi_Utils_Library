@@ -27,7 +27,6 @@ type
     _credentials: TCredentials;
     procedure setCredentials(credentials: TCredentials);
     procedure initialCheckAndSetup;
-    function checkLibVisualStudio2013: boolean;
     procedure installLibVisualStudio2013;
     procedure waitUntilProcessStart;
     procedure setCommandCredentials;
@@ -39,6 +38,7 @@ type
     iniFileManipulator: TIniFile;
     property credentials: TCredentials read _credentials write setCredentials;
     property port: integer read getPortFromIni write setPortToIni;
+    class function checkLibVisualStudio2013: boolean;
     constructor create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
     procedure start;
     procedure stop;
@@ -324,21 +324,32 @@ begin
   Result := iniFileManipulator.ReadInteger('mysqld', 'port', 0);
 end;
 
-function TMySQL.checkLibVisualStudio2013: boolean;
+class function TMySQL.checkLibVisualStudio2013: boolean;
 var
   reg: TRegistry;
-  carica_risorsa: TResourceStream;
+  versionSO: string;
 begin
   result := false;
+
+  versionSO := getVersionSO;
   //VERIFICA la presenza di Visual C++ Redistributable Package per Visual Studio 2013
   with TRegistry.Create do
     try
       RootKey := HKEY_LOCAL_MACHINE;
-      if (OpenKeyReadOnly('\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
-        (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
-        (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
+      if versionSO = '32_bit' then
       begin
-        result := true;
+        if (OpenKeyReadOnly('\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
+          (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) then
+        begin
+          result := true;
+        end;
+      end
+      else if versionSO = '64_bit' then
+      begin
+        if (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
+        begin
+          result := true;
+        end;
       end;
     finally
       Free;
