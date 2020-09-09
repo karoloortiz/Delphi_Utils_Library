@@ -19,6 +19,16 @@ type
     md5: string;
   end;
 
+  TPIDCredentials = record
+    ownerUserName: string;
+    domain: string;
+  end;
+
+  TColorButtom = record
+    enabled: TColor;
+    disabled: TColor;
+  end;
+
   TArrayOfDownloadInfo = array of TDownloadInfo;
 
   TProcedureOfObject = procedure of object;
@@ -38,16 +48,6 @@ type
     handle: THandle;
     msg_resolve: Cardinal;
     msg_reject: Cardinal;
-  end;
-
-  TPIDCredentials = record
-    ownerUserName: string;
-    domain: string;
-  end;
-
-  TColorButtom = record
-    enabled: TColor;
-    disabled: TColor;
   end;
 
 implementation

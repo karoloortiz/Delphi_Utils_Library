@@ -3,32 +3,13 @@ unit KLib.Windows;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
-  Vcl.Forms, Vcl.Dialogs, AccCtrl,
-  ACLAPI, ShellAPI, system.IOUtils, Vcl.ComCtrls, Winsvc, ComObj,
-  ActiveX, IdHttp, IdComponent, URLMon, IdTCPClient, Registry,
-  TLHelp32,
+  Winapi.Windows, Winapi.Messages,
+  System.Classes,
   KLib.Types;
 
 const
   WM_SERVICE_START = WM_USER + 0;
-  WM_SERVICE_STOP = WM_USER + 1;
   WM_SERVICE_ERROR = WM_USER + 2;
-  WM_DOWNLOAD_COMPLETE = WM_USER + 10;
-
-  NERR_SUCCESS = 0;
-  STYPE_DISKTREE = 0;
-  STYPE_PRINTQ = 1;
-  STYPE_DEVICE = 2;
-  STYPE_IPC = 3;
-  ACCESS_READ = $01;
-  ACCESS_WRITE = $02;
-  ACCESS_CREATE = $04;
-  ACCESS_EXEC = $08;
-  ACCESS_DELETE = $10;
-  ACCESS_ATRIB = $20;
-  ACCESS_PERM = $40;
-  ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
 type
   TMemoryRam = class
@@ -44,45 +25,15 @@ type
   end;
 
   TWindowsService = class
-    class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = ''); overload;
-    class function start(nameService: string; nameMachine: string = ''): Boolean; overload;
-    class function stop(nameService: string; nameMachine: string = ''; force: boolean = false): Boolean; overload;
-    class function existsService(nameService: string; nameMachine: string = ''): Boolean; overload;
-    function deleteService(nameService: string): boolean; overload;
+    class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
+    class function start(nameService: string; nameMachine: string = ''): boolean;
+    class function stop(nameService: string; nameMachine: string = ''; force: boolean = false): boolean;
+    class function isRunning(nameService: string; nameMachine: string = ''): boolean;
+    class function existsService(nameService: string; nameMachine: string = ''): boolean;
+    class procedure deleteService(nameService: string);
     class function isPortAvaliable(host: string; port: Word): boolean;
-  private
-    class var handleSCM, handleS: SC_HANDLE;
-    class var statusS: TServiceStatus;
-    class var dwChkP, dwWaitT: DWord;
-    function getNameService: string;
-    procedure setNameService(const Value: string);
-    function getPortService: integer;
-    procedure setPortService(const Value: integer);
-    class function getHandleSCM: SC_HANDLE; static;
-    class procedure setHandleSCM(const Value: SC_HANDLE); static;
-    class function getHandleS: SC_HANDLE; static;
-    class procedure setHandleS(const Value: SC_HANDLE); static;
-    class function getstatusS: TServiceStatus; static;
-    class procedure setstatusS(const Value: TServiceStatus); static;
-    class function getDwChkP: DWord; static;
-    class procedure setDwChkP(const Value: DWord); static;
-    class function getDwWaitTime: DWord; static;
-    class procedure setDwWaitTime(const Value: DWord); static;
   protected
-    name_s: string;
-    port_s: integer;
-    property nameService: string read getNameService write setNameService;
-    property portService: integer read getPortService write setPortService;
-    class property handleService_control_manager: SC_HANDLE read getHandleSCM write setHandleSCM;
-    class property handleService: SC_HANDLE read getHandleS write setHandleS;
-    class property service_status: TServiceStatus read getstatusS write setstatusS;
-    class property dwCheckpoint: DWord read getDwChkP write setDwChkP;
-    class property dwWaitTime: DWord read getDwWaitTime write setDwWaitTime;
-    procedure aStart; overload; virtual; abstract;
-    function start: boolean; overload; virtual; abstract;
-    function stop: boolean; overload; virtual; abstract;
-    function existsService: boolean; overload; virtual; abstract;
-    function createService: boolean; overload; virtual; abstract;
+    function createService: boolean; overload; virtual; abstract; //TODO
   end;
 
   //----------------------------------
@@ -91,15 +42,20 @@ function getFirstPortAvaliable(defaultPort: integer): integer;
 function runUnderWine: boolean;
 function getVersionSO: string;
 
-function shellExecuteAndWait(FileName, Params: string; Admin: boolean = true; showWindow: cardinal = SW_HIDE): boolean;
+procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
+  showWindow: cardinal = SW_HIDE);
 procedure executeAndWaitExe(const pathExe: string);
 function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
 
 function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
-procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
-procedure grantAllPermissionObject(user, source: string);
+procedure addTCP_IN_FirewallException(name: string; port: Word; description: string = ''; grouping: string = '';
+  executable: String = '');
+procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
+
+procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
+function GetDesktopFolder: string;
 
 //-----------------------------------------------------------------
 function setProcessWindowToForeground(processName: string): boolean;
@@ -112,6 +68,354 @@ function getMainWindowHandleByPID(PID: DWORD): DWORD;
 
 //------------------------------------------------------------------
 implementation
+
+uses
+  System.IOUtils, System.SysUtils,
+  System.Win.ComObj, System.Win.Registry,
+  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.ShellAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj,
+  Vcl.Forms,
+  IdTCPClient,
+  KLib.Utils;
+
+class procedure TMemoryRam.initialize;
+begin
+  FillChar(RamStats, SizeOf(MemoryStatusEx), #0);
+  RamStats.dwLength := SizeOf(MemoryStatusEx);
+  GlobalMemoryStatusEx(RamStats);
+end;
+
+class function TMemoryRam.getTotalMemoryString: string;
+begin
+  result := floattostr(RamStats.ullTotalPhys / 1048576) + ' MB';
+end;
+
+class function TMemoryRam.getTotalMemoryDouble: Double;
+begin
+  result := RamStats.ullTotalPhys / 1048576;
+end;
+
+class function TMemoryRam.getTotalFreeMemoryString: string;
+begin
+  result := floattostr(RamStats.ullAvailPhys / 1048576) + ' MB';
+end;
+
+class function TMemoryRam.getTotalFreeMemoryDouble: Double;
+begin
+  result := RamStats.ullAvailPhys / 1048576;
+end;
+
+class function TMemoryRam.getPercentageFreeMemory: string;
+begin
+  result := inttostr(RamStats.dwMemoryLoad) + '%';
+end;
+
+//----------------------------------------------------------------------------------------
+
+class procedure TWindowsService.aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      if TWindowsService.Start(nameService, nameMachine) then
+      begin
+        PostMessage(handleSender, WM_SERVICE_START, 0, 0);
+      end
+      else
+      begin
+        PostMessage(handleSender, WM_SERVICE_ERROR, 0, 0);
+      end;
+    end).Start;
+end;
+
+class function TWindowsService.Start(nameService: string; nameMachine: string = ''): Boolean;
+var
+  cont: integer;
+  handleServiceControlManager: SC_HANDLE;
+  handleService: SC_HANDLE;
+  serviceStatus: TServiceStatus;
+  dwCheckpoint: DWord;
+  dwWaitTime: DWord;
+
+  _exit: boolean;
+begin
+  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (handleServiceControlManager > 0) then
+  begin
+    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
+    if (handleService > 0) then
+    begin
+      if (QueryServiceStatus(handleService, serviceStatus)) then
+      begin
+        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
+        begin
+          Result := True;
+          CloseServiceHandle(handleService);
+          CloseServiceHandle(handleServiceControlManager);
+          Exit;
+        end;
+
+        if not startService(handleService, 0, PPChar(nil)^) then
+        begin
+          Result := false;
+          CloseServiceHandle(handleService);
+          CloseServiceHandle(handleServiceControlManager);
+          Exit;
+        end;
+        QueryServiceStatus(handleService, serviceStatus);
+
+        //stato servizio a partire...
+        _exit := false;
+        cont := 0;
+        while not(_exit) do
+        begin
+          QueryServiceStatus(handleService, serviceStatus);
+          if (serviceStatus.dwCurrentState = SERVICE_RUNNING) or (cont >= 30) then
+          begin
+            _exit := true;
+          end;
+          Sleep(3000);
+
+          cont := cont + 1;
+        end;
+        //        while not(serviceStatus.dwCurrentState = SERVICE_RUNNING) and (cont < 15) do
+        //        begin
+        //          dwCheckpoint := serviceStatus.dwCheckPoint;
+        //          dwWaitTime := serviceStatus.dwWaitHint div 10;
+        //          Sleep(dwWaitTime);
+        //
+        //          if (not QueryServiceStatus(handleService, serviceStatus)) then
+        //            break;
+        //          if (serviceStatus.dwCheckPoint > dwCheckpoint) then
+        //            break;
+        //          cont := cont + 1;
+        //        end;
+      end;
+    end;
+    QueryServiceStatus(handleService, serviceStatus);
+    if serviceStatus.dwCurrentState = SERVICE_RUNNING then
+    begin
+      Result := true;
+    end
+    else
+    begin
+      Result := false;
+    end;
+    CloseServiceHandle(handleService);
+  end;
+  CloseServiceHandle(handleServiceControlManager);
+end;
+
+class function TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false): Boolean;
+var
+  handleServiceControlManager: SC_HANDLE;
+  handleService: SC_HANDLE;
+  serviceStatus: TServiceStatus;
+  dwCheckpoint: DWord;
+  dwWaitTime: DWord;
+begin
+  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (handleServiceControlManager > 0) then
+  begin
+    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_STOP or SERVICE_QUERY_STATUS);
+    if (handleService > 0) then
+    begin
+      if (ControlService(handleService, SERVICE_CONTROL_STOP, serviceStatus)) then
+      begin
+        if (QueryServiceStatus(handleService, serviceStatus)) then
+        begin
+          while (SERVICE_STOPPED <> serviceStatus.dwCurrentState) do
+          begin
+            dwCheckpoint := serviceStatus.dwCheckPoint;
+            Sleep(250);
+            if (not QueryServiceStatus(handleService, serviceStatus)) then
+              break;
+            if (serviceStatus.dwCheckPoint > dwCheckpoint) then
+              break;
+          end;
+        end;
+      end
+      else
+      begin
+        if (force) then
+        begin
+          //kill processo servizio
+          shellExecuteAndWait('cmd.exe', PCHAR('/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT'));
+        end;
+      end;
+      QueryServiceStatus(handleService, serviceStatus);
+      CloseServiceHandle(handleService);
+    end;
+    CloseServiceHandle(handleService);
+  end;
+  Result := SERVICE_STOPPED = serviceStatus.dwCurrentState;
+end;
+
+class function TWindowsService.isRunning(nameService: string; nameMachine: string = ''): boolean;
+var
+  handleServiceControlManager: SC_HANDLE;
+  handleService: SC_HANDLE;
+  serviceStatus: TServiceStatus;
+begin
+  result := false;
+  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (handleServiceControlManager > 0) then
+  begin
+    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
+    if (handleService > 0) then
+    begin
+      if (QueryServiceStatus(handleService, serviceStatus)) then
+      begin
+        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
+        begin
+          Result := True;
+        end;
+      end;
+    end;
+    CloseServiceHandle(handleService);
+  end;
+  CloseServiceHandle(handleServiceControlManager);
+end;
+
+class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): Boolean;
+var
+  handleServiceControlManager: SC_HANDLE;
+  handleService: SC_HANDLE;
+  serviceStatus: TServiceStatus;
+  dwCheckpoint: DWord;
+  dwWaitTime: DWord;
+begin
+  try
+    handleServiceControlManager := OpenSCManager(nil, nil, SC_MANAGER_CONNECT);
+    handleService := OpenService(handleServiceControlManager, PChar(nameService),
+      SERVICE_ALL_ACCESS);
+  except
+    RaiseLastOSError;
+  end;
+  if (GetLastError() <> ERROR_SUCCESS) then
+  begin
+    Result := false;
+  end
+  else
+  begin
+    Result := true;
+  end;
+  CloseServiceHandle(handleService);
+  CloseServiceHandle(handleServiceControlManager);
+end;
+
+class procedure TWindowsService.deleteService(nameService: string);
+begin
+  if (existsService(nameService)) then
+  begin
+    if isRunning(nameService) then
+    begin
+      stop(nameService, '', true);
+    end;
+    shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' & EXIT'));
+    if (existsService(nameService)) then
+    begin
+      raise Exception.Create('Unable to delete the Windows service.');
+    end;
+  end;
+end;
+
+class function TWindowsService.isPortAvaliable(host: string; port: Word): boolean;
+var
+  IdTCPClient: TIdTCPClient;
+begin
+  Result := True;
+  try
+    IdTCPClient := TIdTCPClient.Create(nil);
+    try
+      IdTCPClient.Host := host;
+      IdTCPClient.Port := port;
+      IdTCPClient.Connect;
+      Result := False;
+    finally
+      IdTCPClient.Free;
+    end;
+  except
+    //Ignore exceptions
+  end;
+end;
+
+function getFirstPortAvaliable(defaultPort: integer): integer;
+var
+  _port: integer;
+begin
+  _port := defaultPort;
+  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
+  begin
+    inc(_port);
+  end;
+  result := _port;
+end;
+
+function runUnderWine: boolean;
+begin
+  //check if application runs under Wine
+  with TRegistry.Create do
+    try
+      RootKey := HKEY_LOCAL_MACHINE;
+      if OpenKeyReadOnly('Software\Wine') then
+      begin
+        Result := true;
+      end
+      else
+      begin
+        Result := false;
+      end;
+    finally
+      Free;
+    end;
+end;
+
+function getVersionSO: string;
+begin
+  case TOSVersion.Architecture of
+    arIntelX86:
+      Result := '32_bit';
+    arIntelX64:
+      Result := '64_bit';
+  else
+    Result := 'Unknown OS architecture';
+  end;
+end;
+
+procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
+showWindow: cardinal = SW_HIDE);
+var
+  exInfo: TShellExecuteInfo;
+  Ph: DWORD;
+begin
+  FillChar(exInfo, SizeOf(exInfo), 0);
+  with exInfo do
+  begin
+    cbSize := SizeOf(exInfo);
+    fMask := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT;
+    Wnd := GetActiveWindow();
+    if (runAsAdmin) then
+    begin
+      exInfo.lpVerb := 'runas';
+    end
+    else
+    begin
+      exInfo.lpVerb := '';
+    end;
+    exInfo.lpParameters := PChar(Params);
+    lpFile := PChar(FileName);
+    nShow := showWindow;
+  end;
+  if ShellExecuteEx(@exInfo) then
+    Ph := exInfo.hProcess
+  else
+  begin
+    raise Exception.Create(SysErrorMessage(GetLastError));
+  end;
+  while WaitForSingleObject(exInfo.hProcess, 50) <> WAIT_OBJECT_0 do
+    Application.ProcessMessages;
+  CloseHandle(Ph);
+end;
 
 procedure executeAndWaitExe(const pathExe: string); // full path più eventuali parametri
 var
@@ -144,368 +448,20 @@ begin
   end;
 end;
 
-function getFirstPortAvaliable(defaultPort: integer): integer;
+function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
 var
-  _port: integer;
+  receiverHandle: THandle;
 begin
-  _port := defaultPort;
-  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
+  //identificazione finestra tramite tipo oggetto e windows name (caption)
+  receiverHandle := 1;
+  while (receiverHandle <> 0) do
   begin
-    inc(_port);
-  end;
-  result := _port;
-end;
-
-function TWindowsService.getNameService: string;
-begin
-  result := name_s;
-end;
-
-procedure TWindowsService.setNameService(const Value: string);
-begin
-  name_s := Value;
-end;
-
-function TWindowsService.getPortService: integer;
-begin
-  result := port_s;
-end;
-
-procedure TWindowsService.setPortService(const Value: integer);
-begin
-  port_s := Value;
-end;
-
-class function TWindowsService.getHandleSCM: SC_HANDLE;
-begin
-  Result := handleSCM;
-end;
-
-class procedure TWindowsService.setHandleSCM(const Value: SC_HANDLE);
-begin
-  handleSCM := Value;
-end;
-
-class function TWindowsService.getHandleS: SC_HANDLE;
-begin
-  Result := handleS;
-end;
-
-class procedure TWindowsService.setHandleS(const Value: SC_HANDLE);
-begin
-  handleSCM := Value;
-end;
-
-class function TWindowsService.getstatusS: TServiceStatus;
-begin
-  Result := statusS;
-end;
-
-class procedure TWindowsService.setstatusS(const Value: TServiceStatus);
-begin
-  statusS := Value;
-end;
-
-class function TWindowsService.getDwChkP: DWord;
-begin
-  Result := dwChkP;
-end;
-
-class procedure TWindowsService.setDwChkP(const Value: DWord);
-begin
-  dwChkP := Value;
-end;
-
-class function TWindowsService.getDwWaitTime: DWord;
-begin
-  Result := dwWaitT;
-end;
-
-class procedure TWindowsService.setDwWaitTime(const Value: DWord);
-begin
-  dwWaitT := Value;
-end;
-
-function TWindowsService.deleteService(nameService: string): boolean;
-begin
-  if (existsService(nameService)) then
-  begin
-    shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' & EXIT'));
-    if (existsService(nameService)) then
+    receiverHandle := FindWindow(PChar(className), PChar(windowsName));
+    if (receiverHandle <> 0) then
     begin
-      result := false;
-    end
-    else
-    begin
-      result := true;
+      SendMessage(receiverHandle, WM_CLOSE, Integer(handleSender), 0);
     end;
-  end
-  else
-  begin
-    result := true;
   end;
-end;
-
-class procedure TWindowsService.aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
-begin
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      if TWindowsService.Start(nameService, nameMachine) then
-      begin
-        PostMessage(handleSender, WM_SERVICE_START, 0, 0);
-      end
-      else
-      begin
-        PostMessage(handleSender, WM_SERVICE_ERROR, 0, 0);
-      end;
-    end).Start;
-end;
-
-class function TWindowsService.Start(nameService: string; nameMachine: string = ''): Boolean;
-var
-  cont: integer;
-begin
-  cont := 0;
-  handleSCM := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleSCM > 0) then
-  begin
-    handleS := OpenService(handleSCM, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-    if (handleS > 0) then
-    begin
-      if (QueryServiceStatus(handleS, statusS)) then
-      begin
-        if (statusS.dwCurrentState = SERVICE_RUNNING) then
-        begin
-          Result := True;
-          CloseServiceHandle(handleS);
-          CloseServiceHandle(handleSCM);
-          Exit;
-        end;
-
-        if not startService(handleS, 0, PPChar(nil)^) then
-        begin
-          Result := false;
-          CloseServiceHandle(handleS);
-          CloseServiceHandle(handleSCM);
-          Exit;
-        end
-        else
-        begin
-          QueryServiceStatus(handleS, statusS);
-        end;
-
-        //stato servizio a partire...
-        while not(SERVICE_RUNNING = statusS.dwCurrentState) and (cont < 15) do
-        begin
-          dwChkP := statusS.dwCheckPoint;
-          dwWaitTime := statusS.dwWaitHint div 10;
-          Sleep(dwWaitTime);
-
-          if (not QueryServiceStatus(handleS, statusS)) then
-            break;
-          if (statusS.dwCheckPoint > dwChkP) then
-            break;
-          cont := cont + 1;
-        end;
-      end;
-    end;
-    QueryServiceStatus(handleS, statusS);
-    Result := SERVICE_RUNNING = statusS.dwCurrentState;
-    CloseServiceHandle(handleS);
-  end;
-  CloseServiceHandle(handleSCM);
-end;
-
-class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): Boolean;
-begin
-  try
-    handleSCM := OpenSCManager(nil, nil, SC_MANAGER_CONNECT);
-    handleS := OpenService(handleSCM, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-  except
-    RaiseLastOSError;
-  end;
-  if (GetLastError() <> ERROR_SUCCESS) then
-  begin
-    Result := false;
-  end
-  else
-  begin
-    Result := true;
-  end;
-  CloseServiceHandle(handleS);
-  CloseServiceHandle(handleSCM);
-end;
-
-class function TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false): Boolean;
-begin
-  handleSCM := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleSCM > 0) then
-  begin
-    handleS := OpenService(handleSCM, PChar(nameService), SERVICE_STOP or SERVICE_QUERY_STATUS);
-    if (handleS > 0) then
-    begin
-      if (ControlService(handleS, SERVICE_CONTROL_STOP, statusS)) then
-      begin
-        if (QueryServiceStatus(handleS, statusS)) then
-        begin
-          while (SERVICE_STOPPED <> statusS.dwCurrentState) do
-          begin
-            dwChkP := statusS.dwCheckPoint;
-            Sleep(250);
-            if (not QueryServiceStatus(handleS, statusS)) then
-              break;
-            if (statusS.dwCheckPoint > dwChkP) then
-              break;
-          end;
-        end;
-      end
-      else
-      begin
-        if (force) then
-        begin
-          //kill processo servizio
-          shellExecuteAndWait('cmd.exe', PCHAR('/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT'));
-        end;
-      end;
-      QueryServiceStatus(handleS, statusS);
-      CloseServiceHandle(handleS);
-    end;
-    CloseServiceHandle(handleSCM);
-  end;
-  Result := SERVICE_STOPPED = statusS.dwCurrentState;
-end;
-
-class function TWindowsService.isPortAvaliable(host: string; port: Word): boolean;
-var
-  IdTCPClient: TIdTCPClient;
-begin
-  Result := True;
-  try
-    IdTCPClient := TIdTCPClient.Create(nil);
-    try
-      IdTCPClient.Host := host;
-      IdTCPClient.Port := port;
-      IdTCPClient.Connect;
-      Result := False;
-    finally
-      IdTCPClient.Free;
-    end;
-  except
-    //Ignore exceptions
-  end;
-end;
-
-function getVersionSO: string;
-begin
-  case TOSVersion.Architecture of
-    arIntelX86:
-      Result := '32_bit';
-    arIntelX64:
-      Result := '64_bit';
-  else
-    Result := 'UNKNOWN OS architecture';
-  end;
-end;
-
-procedure addExceptionFirewall(Name: string; Port: Word; Description: string = ''; Grouping: string = ''; Executable: String = '');
-const
-  NET_FW_PROFILE2_DOMAIN = 1;
-  NET_FW_PROFILE2_PRIVATE = 2;
-  NET_FW_PROFILE2_PUBLIC = 4;
-  NET_FW_IP_PROTOCOL_TCP = 6;
-  NET_FW_ACTION_ALLOW = 1;
-  NET_FW_RULE_DIR_IN = 1;
-  NET_FW_RULE_DIR_OUT = 2;
-var
-  fwPolicy2: OleVariant;
-  RulesObject: OleVariant;
-  Profile: Integer;
-  NewRule: OleVariant;
-begin
-  Profile := NET_FW_PROFILE2_PRIVATE OR NET_FW_PROFILE2_PUBLIC OR NET_FW_PROFILE2_DOMAIN;
-  fwPolicy2 := CreateOleObject('HNetCfg.FwPolicy2');
-  RulesObject := fwPolicy2.Rules;
-
-  NewRule := CreateOleObject('HNetCfg.FWRule');
-  NewRule.Name := Name;
-
-  if (Description <> '') then
-  begin
-    NewRule.Description := Description;
-  end
-  else
-  begin
-    NewRule.Description := Name;
-  end;
-
-  if (Executable <> '') then
-  begin
-    NewRule.Applicationname := Executable;
-  end;
-  NewRule.Protocol := NET_FW_IP_PROTOCOL_TCP;
-  NewRule.LocalPorts := Port;
-  NewRule.Direction := NET_FW_RULE_DIR_IN;
-  NewRule.Enabled := TRUE;
-  if (Grouping <> '') then
-  begin
-    NewRule.Grouping := Grouping;
-  end;
-  NewRule.Profiles := Profile;
-  NewRule.Action := NET_FW_ACTION_ALLOW;
-  RulesObject.Add(NewRule);
-end;
-
-function shellExecuteAndWait(FileName, Params: string; Admin: boolean = true; showWindow: cardinal = SW_HIDE): boolean;
-var
-  exInfo: TShellExecuteInfo;
-  Ph: DWORD;
-begin
-  FillChar(exInfo, SizeOf(exInfo), 0);
-  with exInfo do
-  begin
-    cbSize := SizeOf(exInfo);
-    fMask := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT;
-    Wnd := GetActiveWindow();
-    if (admin) then
-    begin
-      exInfo.lpVerb := 'runas';
-    end
-    else
-    begin
-      exInfo.lpVerb := '';
-    end;
-    exInfo.lpParameters := PChar(Params);
-    lpFile := PChar(FileName);
-    nShow := showWindow;
-  end;
-  if ShellExecuteEx(@exInfo) then
-    Ph := exInfo.hProcess
-  else
-  begin
-    ShowMessage(SysErrorMessage(GetLastError));
-    Result := false;
-    exit;
-  end;
-  while WaitForSingleObject(exInfo.hProcess, 50) <> WAIT_OBJECT_0 do
-    Application.ProcessMessages;
-  CloseHandle(Ph);
-  Result := true;
-end;
-
-type
-  TExplicitAccess = EXPLICIT_ACCESS_A;
-
-procedure grantAllPermissionObject(user, source: string);
-var
-  NewDacl, OldDacl: PACl;
-  SD: PSECURITY_DESCRIPTOR;
-  EA: TExplicitAccess;
-begin
-  GetNamedSecurityInfo(PChar(source), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
-  BuildExplicitAccessWithName(@EA, PChar(user), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
-  SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
-  SetNamedSecurityInfo(PChar(source), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
 end;
 
 function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
@@ -535,41 +491,6 @@ begin
   end;
 end;
 
-function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
-var
-  receiverHandle: THandle;
-begin
-  //identificazione finestra tramite tipo oggetto e windows name (caption)
-  receiverHandle := 1;
-  while (receiverHandle <> 0) do
-  begin
-    receiverHandle := FindWindow(PChar(className), PChar(windowsName));
-    if (receiverHandle <> 0) then
-    begin
-      SendMessage(receiverHandle, WM_CLOSE, Integer(handleSender), 0);
-    end;
-  end;
-end;
-
-function runUnderWine: boolean;
-begin
-  //check if application runs under Wine
-  with TRegistry.Create do
-    try
-      RootKey := HKEY_LOCAL_MACHINE;
-      if OpenKeyReadOnly('Software\Wine') then
-      begin
-        Result := true;
-      end
-      else
-      begin
-        Result := false;
-      end;
-    finally
-      Free;
-    end;
-end;
-
 type
   //----------------------------------
   SHARE_INFO_2 = record
@@ -584,6 +505,8 @@ type
   end;
 
   PSHARE_INFO_2 = ^SHARE_INFO_2;
+
+  TExplicitAccess = EXPLICIT_ACCESS_A;
 
 procedure grantAllPermissionNet(user, source: string);
 var
@@ -601,6 +524,20 @@ function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err
   external 'NetAPI32.dll' name 'NetShareAdd';
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
+const
+  NERR_SUCCESS = 0;
+  STYPE_DISKTREE = 0;
+  STYPE_PRINTQ = 1;
+  STYPE_DEVICE = 2;
+  STYPE_IPC = 3;
+  ACCESS_READ = $01;
+  ACCESS_WRITE = $02;
+  ACCESS_CREATE = $04;
+  ACCESS_EXEC = $08;
+  ACCESS_DELETE = $10;
+  ACCESS_ATRIB = $20;
+  ACCESS_PERM = $40;
+  ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 var
   AShareInfo: PSHARE_INFO_2;
   parmError: DWORD;
@@ -661,39 +598,118 @@ begin
   end;
 end;
 
-class procedure TMemoryRam.initialize;
+procedure addTCP_IN_FirewallException(name: string; port: Word; description: string = ''; grouping: string = '';
+executable: String = '');
+const
+  NET_FW_PROFILE2_DOMAIN = 1;
+  NET_FW_PROFILE2_PRIVATE = 2;
+  NET_FW_PROFILE2_PUBLIC = 4;
+  NET_FW_IP_PROTOCOL_TCP = 6;
+  NET_FW_ACTION_ALLOW = 1;
+  NET_FW_RULE_DIR_IN = 1;
+  NET_FW_RULE_DIR_OUT = 2;
+var
+  fwPolicy2: OleVariant;
+  RulesObject: OleVariant;
+  Profile: Integer;
+  NewRule: OleVariant;
 begin
-  FillChar(RamStats, SizeOf(MemoryStatusEx), #0);
-  RamStats.dwLength := SizeOf(MemoryStatusEx);
-  GlobalMemoryStatusEx(RamStats);
+  CoInitialize(nil);
+
+  Profile := NET_FW_PROFILE2_PRIVATE OR NET_FW_PROFILE2_PUBLIC OR NET_FW_PROFILE2_DOMAIN;
+  fwPolicy2 := CreateOleObject('HNetCfg.FwPolicy2');
+  RulesObject := fwPolicy2.Rules;
+
+  NewRule := CreateOleObject('HNetCfg.FWRule');
+  NewRule.Name := name;
+
+  if (description <> '') then
+  begin
+    NewRule.Description := description;
+  end
+  else
+  begin
+    NewRule.Description := name;
+  end;
+
+  if (executable <> '') then
+  begin
+    NewRule.Applicationname := executable;
+  end;
+  NewRule.Protocol := NET_FW_IP_PROTOCOL_TCP;
+  NewRule.LocalPorts := port;
+  NewRule.Direction := NET_FW_RULE_DIR_IN;
+  NewRule.Enabled := TRUE;
+  if (grouping <> '') then
+  begin
+    NewRule.Grouping := grouping;
+  end;
+  NewRule.Profiles := Profile;
+  NewRule.Action := NET_FW_ACTION_ALLOW;
+  RulesObject.Add(NewRule);
+
+  CoUninitialize;
 end;
 
-class function TMemoryRam.getTotalMemoryString: string;
+procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
+var
+  NewDacl, OldDacl: PACl;
+  SD: PSECURITY_DESCRIPTOR;
+  EA: TExplicitAccess;
 begin
-  result := floattostr(RamStats.ullTotalPhys / 1048576) + ' MB';
+  GetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
+  BuildExplicitAccessWithName(@EA, PChar(windowsUserName), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
+  SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
+  SetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
 end;
 
-class function TMemoryRam.getTotalMemoryDouble: Double;
+procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
+var
+  iobject: iunknown;
+  islink: ishelllink;
+  ipfile: ipersistfile;
+  pidl: pitemidlist;
+  infolder: array [0 .. MAX_PATH] of char;
+  targetName: string;
+  linkname: string;
 begin
-  result := RamStats.ullTotalPhys / 1048576;
+  targetname := getValidFullPath(fileName);
+  IObject := CreateComObject(CLSID_ShellLink);
+  ISLink := IObject as IShellLink;
+  IPFile := IObject as IPersistFile;
+
+  with ISLink do
+  begin
+    SetDescription(PChar(description));
+    SetPath(PChar(targetName));
+    SetWorkingDirectory(PChar(ExtractFilePath(targetName)));
+  end;
+
+  SHGetSpecialFolderLocation(0, CSIDL_DESKTOPDIRECTORY, PIDL);
+  SHGetPathFromIDList(PIDL, InFolder);
+
+  LinkName := IncludeTrailingBackslash(GetDesktopFolder);
+  LinkName := LinkName + nameDesktopLink + '.lnk';
+
+  if not IPFile.Save(PWideChar(LinkName), False) = S_OK then
+  begin
+    raise Exception.Create('Error creating desktop icon.');
+  end;
 end;
 
-class function TMemoryRam.getTotalFreeMemoryString: string;
+function GetDesktopFolder: string;
+var
+  PIDList: PItemIDList;
+  Buffer: array [0 .. MAX_PATH - 1] of Char;
 begin
-  result := floattostr(RamStats.ullAvailPhys / 1048576) + ' MB';
+  Result := '';
+  SHGetSpecialFolderLocation(0, CSIDL_DESKTOP, PIDList);
+  if Assigned(PIDList) then
+    if SHGetPathFromIDList(PIDList, Buffer) then
+      Result := Buffer;
 end;
 
-class function TMemoryRam.getTotalFreeMemoryDouble: Double;
-begin
-  result := RamStats.ullAvailPhys / 1048576;
-end;
-
-class function TMemoryRam.getPercentageFreeMemory: string;
-begin
-  result := inttostr(RamStats.dwMemoryLoad) + '%';
-end;
-
-//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------
 procedure mySetForegroundWindow(windowHandle: THandle); forward;
 
 function setProcessWindowToForeground(processName: string): boolean;
@@ -769,6 +785,7 @@ type
   end;
 
   TFunctionProcessCompare = function(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean;
+
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD; forward;
 
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
@@ -842,7 +859,6 @@ begin
 
   result := processID;
 end;
-//FINE TODO?
 
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
 var

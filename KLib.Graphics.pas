@@ -3,8 +3,7 @@ unit KLib.Graphics;
 interface
 
 uses
-  Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, System.SysUtils, System.Classes,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Winapi.Windows;
+  Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs;
 
 type
   TLabelLoading = class
@@ -57,10 +56,18 @@ procedure setTColorToTPanel(component: TPanel; color: TColor);
 procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
 procedure setComponentInMiddlePosition(control: TControl);
 
+procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
+
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
   Caption: ARRAY OF string; dlgcaption: string): Integer;
 
 implementation
+
+uses
+  Vcl.Forms,
+  System.SysUtils, System.Classes,
+  Winapi.Windows,
+  dxGDIPlusClasses;
 
 //-------------------------------------------------------------------------------------------------
 //  TLabelLoading
@@ -338,6 +345,15 @@ var
 begin
   _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
   control.Left := _left;
+end;
+
+procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
+var
+  _img: TdxSmartImage;
+begin
+  _img := TdxSmartImage.Create;
+  _img.LoadFromFile(pathImgFile);
+  img.Picture.Graphic := _img;
 end;
 
 function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;

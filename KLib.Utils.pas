@@ -17,10 +17,10 @@ function fileExistsAndEmpty(filePath: string): Boolean;
 procedure deleteFileIfExists(fileName: string);
 function getDirExe: string;
 
+procedure createDirIfNotExists(const dirName: string);
 procedure createHideDir(const path: string; forceDelete: boolean = false);
 procedure deleteDirectory(const dirName: string);
-
-procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
+function getValidFullPath(fileName: string): string;
 
 function MD5FileChecker(fileName: string; MD5: string): boolean;
 function getMD5FileChecksum(const fileName: string): string;
@@ -28,11 +28,16 @@ function getMD5FileChecksum(const fileName: string): string;
 function getPNGResource(nameResource: String): TPngImage;
 function getResourceAsString(nameResource: String; typeResource: string): String;
 function getResourceAsStream(nameResource: String; typeResource: string): TResourceStream;
+procedure getResourceAsEXEFile(nameResource: String; destinationPath: string);
+procedure getResourceAsFile(nameResource: String; typeResource: string; destinationPath: string);
 
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
 
+procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
+  forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
 procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
+procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
 
 procedure executeProcedure(myProcedure: TProcedure); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
@@ -40,7 +45,8 @@ procedure executeProcedure(myProcedure: TCallBack); overload;
 implementation
 
 uses
-  System.Zip, Vcl.ExtCtrls,
+  System.Zip, System.IOUtils,
+  Vcl.ExtCtrls,
   Winapi.Windows, Winapi.Messages, Winapi.Winsock, Winapi.ShellAPI,
   IdGlobal, IdHash, IdHashMessageDigest,
   UrlMon;
@@ -83,6 +89,22 @@ begin
   end;
 end;
 
+function getDirExe: string;
+begin
+  result := ExtractFileDir(ParamStr(0));
+end;
+
+procedure createDirIfNotExists(const dirName: string);
+begin
+  if not DirectoryExists(dirName) then
+  begin
+    if not CreateDir(dirName) then
+    begin
+      raise Exception.Create('Error creating dir.');
+    end;
+  end;
+end;
+
 procedure createHideDir(const path: string; forceDelete: boolean = false);
 begin
   if forceDelete then
@@ -100,11 +122,6 @@ begin
   end;
 end;
 
-function getDirExe: string;
-begin
-  result := ExtractFileDir(ParamStr(0));
-end;
-
 procedure deleteDirectory(const dirName: string);
 var
   FileOp: TSHFileOpStruct;
@@ -116,20 +133,14 @@ begin
   SHFileOperation(FileOp);
 end;
 
-procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
+function getValidFullPath(fileName: string): string;
+var
+  _path: string;
 begin
-  if tzipfile.isvalid(zipFile) then
-  begin
-    tzipfile.extractZipfile(zipFile, extractPath);
-    if (forceDelete) then
-    begin
-      deleteFileIfExists(zipFile);
-    end;
-  end
-  else
-  begin
-    raise Exception.Create('Zip File not valid.');
-  end;
+  _path := fileName;
+  _path := ExpandFileName(_path);
+  _path := ExcludeTrailingPathDelimiter(_path);
+  result := _path;
 end;
 
 function MD5FileChecker(fileName: string; MD5: string): boolean;
@@ -177,7 +188,7 @@ begin
   Result := resourceAsPNG;
 end;
 
-function getResourceAsString(nameResource: String; typeResource: string): String;
+function getResourceAsString(nameResource: String; typeResource: string): string;
 var
   resourceStream: TResourceStream;
   _stringList: TStringList;
@@ -209,6 +220,33 @@ begin
     raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
   end;
   Result := resourceStream;
+end;
+
+procedure getResourceAsEXEFile(nameResource: String; destinationPath: string);
+const
+  TYPE_RESOURCE = 'EXE';
+begin
+  getResourceAsFile(nameResource, TYPE_RESOURCE, destinationPath);
+end;
+
+procedure getResourceAsFile(nameResource: String; typeResource: string; destinationPath: string);
+var
+  resourceStream: TResourceStream;
+begin
+  if (FindResource(hInstance, PChar(nameResource), PChar(typeResource)) <> 0) then
+  begin
+    resourceStream := TResourceStream.Create(HInstance, PChar(nameResource), PChar(typeResource));
+    try
+      resourceStream.Position := 0;
+      resourceStream.SaveToFile(destinationPath);
+    finally
+      resourceStream.Free;
+    end;
+  end
+  else
+  begin
+    raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
+  end;
 end;
 
 function readStringWithEnvVariables(source: string): string;
@@ -264,6 +302,16 @@ begin
   WSACleanup;
 end;
 
+procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
+  forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
+var
+  pathZipFile: string;
+begin
+  downloadFile(downloadInfo, forceOverWrite);
+  pathZipFile := TPath.Combine(destinationPath, downloadInfo.fileName);
+  extractZip(pathZipFile, destinationPath, forceDeleteZipFile);
+end;
+
 procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
 begin
   with downloadInfo do
@@ -277,6 +325,22 @@ begin
     begin
       raise Exception.Create('Error downloading file.');
     end;
+  end;
+end;
+
+procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
+begin
+  if tzipfile.isvalid(zipFile) then
+  begin
+    tzipfile.extractZipfile(zipFile, extractPath);
+    if (forceDelete) then
+    begin
+      deleteFileIfExists(zipFile);
+    end;
+  end
+  else
+  begin
+    raise Exception.Create('Zip File not valid.');
   end;
 end;
 
