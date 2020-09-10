@@ -3,7 +3,9 @@ unit KLib.MySQL;
 interface
 
 uses
-  Winapi.Windows, inifiles, MyAccess, System.SysUtils,
+  System.IniFiles, System.SysUtils,
+  Winapi.Windows,
+  MyAccess,
   KLib.Types, KLib.Windows;
 
 type
@@ -22,6 +24,7 @@ type
     function get_innodb_log_file_size: string;
     procedure set_innodb_log_file_size(value: string);
   public
+    constructor Create(const FileName: string); overload;
     property port: integer read getPort write setPort;
     property loose_keyring_file_data: string read get_loose_keyring_file_data write set_loose_keyring_file_data;
     property securefilepriv: string read getSecurefilepriv write setSecurefilepriv;
@@ -128,6 +131,19 @@ uses
   System.Win.Registry, System.Classes, System.IOUtils,
   KLib.Utils, KLib.Async, KLib.WaitForm;
 
+constructor TMySQLIniManipulator.Create(const FileName: string);
+var
+  _pathFile: string;
+begin
+  _pathFile := getValidFullPath(FileName);
+  if not FileExists(_pathFile) then
+  begin
+    raise Exception.Create('File: ' + FileName + ' doesn''t exists.');
+  end;
+
+  inherited Create(_pathFile);
+end;
+
 function TMySQLIniManipulator.getPort: integer;
 begin
   result := ReadInteger('mysqld', 'port', 0);
@@ -144,8 +160,11 @@ begin
 end;
 
 procedure TMySQLIniManipulator.set_loose_keyring_file_data(value: string);
+var
+  _pathInLinuxStyle: string;
 begin
-  WriteString('mysqld', 'loose_keyring_file_data', value);
+  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  WriteString('mysqld', 'loose_keyring_file_data', _pathInLinuxStyle);
 end;
 
 function TMySQLIniManipulator.getSecurefilepriv: string;
@@ -154,8 +173,11 @@ begin
 end;
 
 procedure TMySQLIniManipulator.setSecurefilepriv(value: string);
+var
+  _pathInLinuxStyle: string;
 begin
-  WriteString('mysqld', 'secure-file-priv', value);
+  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  WriteString('mysqld', 'secure-file-priv', _pathInLinuxStyle);
 end;
 
 function TMySQLIniManipulator.getDatadir: string;
@@ -164,8 +186,11 @@ begin
 end;
 
 procedure TMySQLIniManipulator.setDatadir(value: string);
+var
+  _pathInLinuxStyle: string;
 begin
-  WriteString('mysqld', 'datadir', value);
+  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  WriteString('mysqld', 'datadir', _pathInLinuxStyle);
 end;
 
 function TMySQLIniManipulator.get_innodb_buffer_pool_size: string;
