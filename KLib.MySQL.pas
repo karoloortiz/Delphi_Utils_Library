@@ -9,6 +9,15 @@ uses
   KLib.Types, KLib.Windows;
 
 type
+
+  TMySQLCredentials = record
+    username: string;
+    password: string;
+    server: string;
+    port: integer;
+    daatabase: string;
+  end;
+
   TMySQLIniManipulator = class(TIniFile)
   private
     function getPort: integer;
@@ -646,7 +655,7 @@ end;
 
 procedure TMySQLProcess.setPort;
 const
-  portMySQL = 3306;
+  portMySQL = 3307;
 begin
   port := getFirstPortAvaliable(portMySQL);
   connectionDB.Port := port;
