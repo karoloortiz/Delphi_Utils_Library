@@ -655,7 +655,7 @@ end;
 
 procedure TMySQLProcess.setPort;
 const
-  portMySQL = 3307;
+  portMySQL = 3308;
 begin
   port := getFirstPortAvaliable(portMySQL);
   connectionDB.Port := port;
@@ -786,7 +786,6 @@ const
     'The installer will run.';
   MSG_ERROR = 'Visual C++ Redistributable Visual Studio 2013 not correctly installed.';
 var
-  nameResource: string;
   pathFileName: string;
   pathCurrentDir: string;
 begin
@@ -821,7 +820,6 @@ end;
 
 function checkLibVisualStudio2013: boolean;
 var
-  reg: TRegistry;
   versionSO: string;
 begin
   result := false;

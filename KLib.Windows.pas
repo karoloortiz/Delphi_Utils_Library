@@ -45,7 +45,7 @@ function getVersionSO: string;
 procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
   showWindow: cardinal = SW_HIDE);
 procedure executeAndWaitExe(const pathExe: string);
-function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
+procedure closeApplication(className, windowsName: string; handleSender: HWND = 0);
 
 function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 
@@ -138,6 +138,7 @@ var
 
   _exit: boolean;
 begin
+  result := false;
   handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
   if (handleServiceControlManager > 0) then
   begin
@@ -211,7 +212,6 @@ var
   handleService: SC_HANDLE;
   serviceStatus: TServiceStatus;
   dwCheckpoint: DWord;
-  dwWaitTime: DWord;
 begin
   handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
   if (handleServiceControlManager > 0) then
@@ -448,7 +448,7 @@ begin
   end;
 end;
 
-function closeApplication(className, windowsName: string; handleSender: HWND = 0): boolean;
+procedure closeApplication(className, windowsName: string; handleSender: HWND = 0);
 var
   receiverHandle: THandle;
 begin
@@ -716,8 +716,6 @@ function setProcessWindowToForeground(processName: string): boolean;
 var
   PIDProcess: DWORD;
   windowHandle: THandle;
-  currentThreadHandle: THandle;
-  foregroundThreadHandle: THandle;
 begin
   PIDProcess := getPIDOfCurrentUserByProcessName(processName);
   windowHandle := getMainWindowHandleByPID(PIDProcess);
@@ -837,7 +835,7 @@ end;
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
 var
   processEntry: TProcessEntry32;
-  handleSnap, handleProcess: THandle;
+  handleSnap: THandle;
   processID: DWORD;
 begin
   processID := 0;
