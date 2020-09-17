@@ -11,11 +11,10 @@ uses
 type
 
   TMySQLCredentials = record
-    username: string;
-    password: string;
+    credentials: TCredentials;
     server: string;
     port: integer;
-    daatabase: string;
+    database: string;
   end;
 
   TMySQLIniManipulator = class(TIniFile)
@@ -172,7 +171,7 @@ procedure TMySQLIniManipulator.set_loose_keyring_file_data(value: string);
 var
   _pathInLinuxStyle: string;
 begin
-  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  _pathInLinuxStyle := getPathInLinuxStyle(value);
   WriteString('mysqld', 'loose_keyring_file_data', _pathInLinuxStyle);
 end;
 
@@ -185,7 +184,7 @@ procedure TMySQLIniManipulator.setSecurefilepriv(value: string);
 var
   _pathInLinuxStyle: string;
 begin
-  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  _pathInLinuxStyle := getPathInLinuxStyle(value);
   WriteString('mysqld', 'secure-file-priv', _pathInLinuxStyle);
 end;
 
@@ -198,7 +197,7 @@ procedure TMySQLIniManipulator.setDatadir(value: string);
 var
   _pathInLinuxStyle: string;
 begin
-  _pathInLinuxStyle := StringReplace(value, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  _pathInLinuxStyle := getPathInLinuxStyle(value);
   WriteString('mysqld', 'datadir', _pathInLinuxStyle);
 end;
 

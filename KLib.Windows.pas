@@ -56,6 +56,8 @@ procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
 function GetDesktopFolder: string;
+function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boolean;
+function getPathInWindowsStyle(path: string): string;
 
 //-----------------------------------------------------------------
 function setProcessWindowToForeground(processName: string): boolean;
@@ -707,6 +709,26 @@ begin
   if Assigned(PIDList) then
     if SHGetPathFromIDList(PIDList, Buffer) then
       Result := Buffer;
+end;
+
+function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boolean;
+var
+  _mainFolder: string;
+  _subFolder: string;
+  _isSubFolder: Boolean;
+begin
+  _mainFolder := getPathInWindowsStyle(mainFolder);
+  _subFolder := getPathInWindowsStyle(subFolder);
+  _isSubFolder := checkIfIsSubFolder(_mainFolder, _subFolder);
+  result := _isSubFolder
+end;
+
+function getPathInWindowsStyle(path: string): string;
+var
+  _path: string;
+begin
+  _path := StringReplace(_path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
+  result := _path;
 end;
 
 //----------------------------------------------------------------------

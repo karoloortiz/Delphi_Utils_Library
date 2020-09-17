@@ -13,13 +13,20 @@ type
     function GetPreamble: TBytes; override;
   end;
 
+procedure createEmptyFileIfNotExists(filename: string);
+procedure createEmptyFile(filename: string);
 function fileExistsAndEmpty(filePath: string): Boolean;
 procedure deleteFileIfExists(fileName: string);
-function getDirExe: string;
 
+function getDirExe: string;
 procedure createDirIfNotExists(const dirName: string);
 procedure createHideDir(const path: string; forceDelete: boolean = false);
 procedure deleteDirectory(const dirName: string);
+
+function checkIfIsLinuxSubfolder(mainFolder: string; subFolder: string): boolean;
+function getPathInLinuxStyle(path: string): string;
+
+function checkIfIsSubFolder(subFolder: string; mainFolder: string): boolean;
 function getValidFullPath(fileName: string): string;
 
 function MD5FileChecker(fileName: string; MD5: string): boolean;
@@ -45,7 +52,7 @@ procedure executeProcedure(myProcedure: TCallBack); overload;
 implementation
 
 uses
-  System.Zip, System.IOUtils,
+  System.Zip, System.IOUtils, System.StrUtils,
   Vcl.ExtCtrls,
   Winapi.Windows, Winapi.Messages, Winapi.Winsock, Winapi.ShellAPI,
   IdGlobal, IdHash, IdHashMessageDigest,
@@ -57,6 +64,29 @@ const
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
   SetLength(Result, 0);
+end;
+
+procedure createEmptyFileIfNotExists(filename: string);
+begin
+  if not FileExists(filename) then
+  begin
+    createEmptyFile(filename);
+  end;
+end;
+
+procedure createEmptyFile(filename: string);
+var
+  _handle: THandle;
+begin
+  _handle := FileCreate(fileName);
+  if _handle = INVALID_HANDLE_VALUE then
+  begin
+    raise Exception.Create('Error creating File: ' + fileName);
+  end
+  else
+  begin
+    FileClose(_handle);
+  end;
 end;
 
 function fileExistsAndEmpty(filePath: string): Boolean;
@@ -131,6 +161,36 @@ begin
   FileOp.pFrom := PChar(DirName + #0); //double zero-terminated
   FileOp.fFlags := FOF_SILENT or FOF_NOERRORUI or FOF_NOCONFIRMATION;
   SHFileOperation(FileOp);
+end;
+
+function checkIfIsLinuxSubfolder(mainFolder: string; subFolder: string): boolean;
+var
+  _mainFolder: string;
+  _subFolder: string;
+  _isSubFolder: Boolean;
+begin
+  _mainFolder := getPathInLinuxStyle(mainFolder);
+  _subFolder := getPathInLinuxStyle(subFolder);
+  _isSubFolder := checkIfIsSubFolder(_mainFolder, _subFolder);
+  result := _isSubFolder
+end;
+
+function getPathInLinuxStyle(path: string): string;
+var
+  _path: string;
+begin
+  _path := StringReplace(_path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  result := _path;
+end;
+
+function checkIfIsSubFolder(subFolder: string; mainFolder: string): boolean;
+var
+  _isSubFolder: Boolean;
+begin
+  mainFolder := LowerCase(mainFolder);
+  subFolder := LowerCase(subFolder);
+  _isSubFolder := AnsiStartsStr(mainFolder, subFolder);
+  result := _isSubFolder;
 end;
 
 function getValidFullPath(fileName: string): string;

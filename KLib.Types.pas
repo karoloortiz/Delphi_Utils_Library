@@ -3,13 +3,20 @@ unit KLib.Types;
 interface
 
 uses
-  Vcl.Graphics;
+  Vcl.Graphics, IdFTPCommon;
 
 type
 
   TCredentials = record
     username: string;
     password: string;
+  end;
+
+  TFTPCredentials = record
+    credentials: TCredentials;
+    server: string;
+    pathFTPDir: string;
+    transferType: TIdFTPTransferType;
   end;
 
   TDownloadInfo = record
@@ -37,7 +44,7 @@ type
   TProcedure = reference to procedure;
   TArrayOfProcedures = array of TProcedure;
 
-  TCallBack = reference to procedure(msg: String);
+  TCallBack = reference to procedure(msg: String = '');
 
   TCallBacks = record
     resolve: TCallBack;
