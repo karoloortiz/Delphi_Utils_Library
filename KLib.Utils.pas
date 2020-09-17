@@ -373,6 +373,8 @@ begin
 end;
 
 procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
+const
+  ERR_MSG = 'Error downloading file';
 begin
   with downloadInfo do
   begin
@@ -380,10 +382,16 @@ begin
     begin
       deleteFileIfExists(fileName);
     end;
-    if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK)
-      or not(MD5FileChecker(fileName, md5)) then
+    if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK) then
     begin
-      raise Exception.Create('Error downloading file.');
+      raise Exception.Create(ERR_MSG);
+    end;
+    if md5 <> '' then
+    begin
+      if not MD5FileChecker(fileName, md5) then
+      begin
+        raise Exception.Create(ERR_MSG);
+      end;
     end;
   end;
 end;
