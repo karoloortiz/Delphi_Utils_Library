@@ -179,7 +179,7 @@ function getPathInLinuxStyle(path: string): string;
 var
   _path: string;
 begin
-  _path := StringReplace(_path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  _path := StringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
   result := _path;
 end;
 

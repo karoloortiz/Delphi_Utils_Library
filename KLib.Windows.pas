@@ -26,8 +26,8 @@ type
 
   TWindowsService = class
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
-    class function start(nameService: string; nameMachine: string = ''): boolean;
-    class function stop(nameService: string; nameMachine: string = ''; force: boolean = false): boolean;
+    class procedure start(nameService: string; nameMachine: string = '');
+    class procedure stop(nameService: string; nameMachine: string = ''; force: boolean = false);
     class function isRunning(nameService: string; nameMachine: string = ''): boolean;
     class function existsService(nameService: string; nameMachine: string = ''): boolean;
     class procedure deleteService(nameService: string);
@@ -118,18 +118,21 @@ begin
   TThread.CreateAnonymousThread(
     procedure
     begin
-      if TWindowsService.Start(nameService, nameMachine) then
-      begin
+      try
+        TWindowsService.Start(nameService, nameMachine);
         PostMessage(handleSender, WM_SERVICE_START, 0, 0);
-      end
-      else
-      begin
-        PostMessage(handleSender, WM_SERVICE_ERROR, 0, 0);
+      except
+        on E: Exception do
+        begin
+          PostMessage(handleSender, WM_SERVICE_ERROR, 0, 0);
+        end;
       end;
     end).Start;
 end;
 
-class function TWindowsService.Start(nameService: string; nameMachine: string = ''): Boolean;
+class procedure TWindowsService.Start(nameService: string; nameMachine: string = '');
+const
+  ERR_MSG = 'Service not started';
 var
   cont: integer;
   handleServiceControlManager: SC_HANDLE;
@@ -140,7 +143,6 @@ var
 
   _exit: boolean;
 begin
-  result := false;
   handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
   if (handleServiceControlManager > 0) then
   begin
@@ -151,7 +153,6 @@ begin
       begin
         if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
         begin
-          Result := True;
           CloseServiceHandle(handleService);
           CloseServiceHandle(handleServiceControlManager);
           Exit;
@@ -159,7 +160,7 @@ begin
 
         if not startService(handleService, 0, PPChar(nil)^) then
         begin
-          Result := false;
+          raise Exception.Create(ERR_MSG);
           CloseServiceHandle(handleService);
           CloseServiceHandle(handleServiceControlManager);
           Exit;
@@ -195,20 +196,18 @@ begin
       end;
     end;
     QueryServiceStatus(handleService, serviceStatus);
-    if serviceStatus.dwCurrentState = SERVICE_RUNNING then
+    if not(serviceStatus.dwCurrentState = SERVICE_RUNNING) then
     begin
-      Result := true;
-    end
-    else
-    begin
-      Result := false;
+      raise Exception.Create(ERR_MSG);
     end;
     CloseServiceHandle(handleService);
   end;
   CloseServiceHandle(handleServiceControlManager);
 end;
 
-class function TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false): Boolean;
+class procedure TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false);
+const
+  ERR_MSG = 'Service not stopped';
 var
   handleServiceControlManager: SC_HANDLE;
   handleService: SC_HANDLE;
@@ -249,7 +248,10 @@ begin
     end;
     CloseServiceHandle(handleService);
   end;
-  Result := SERVICE_STOPPED = serviceStatus.dwCurrentState;
+  if not(serviceStatus.dwCurrentState = SERVICE_STOPPED) then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
 end;
 
 class function TWindowsService.isRunning(nameService: string; nameMachine: string = ''): boolean;
@@ -727,7 +729,7 @@ function getPathInWindowsStyle(path: string): string;
 var
   _path: string;
 begin
-  _path := StringReplace(_path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
+  _path := StringReplace(path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
   result := _path;
 end;
 
