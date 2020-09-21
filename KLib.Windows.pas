@@ -57,6 +57,7 @@ procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
 function GetDesktopFolder: string;
 function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boolean;
+function getValidFullPathInWindowsStyle(path: string): string;
 function getPathInWindowsStyle(path: string): string;
 
 //-----------------------------------------------------------------
@@ -723,6 +724,15 @@ begin
   _subFolder := getPathInWindowsStyle(subFolder);
   _isSubFolder := checkIfIsSubFolder(_mainFolder, _subFolder);
   result := _isSubFolder
+end;
+
+function getValidFullPathInWindowsStyle(path: string): string;
+var
+  _path: string;
+begin
+  _path := getValidFullPath(path);
+  _path := getPathInWindowsStyle(_path);
+  result := _path;
 end;
 
 function getPathInWindowsStyle(path: string): string;

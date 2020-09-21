@@ -127,9 +127,15 @@ type
     destructor destroy; override;
   end;
 
-function checkLibVisualStudio2013: boolean;
 procedure installLibVisualStudio2013(fileName: string; showMsgInstall: boolean = true;
   deleteFileAfterInstall: boolean = true; isFileAResource: boolean = false);
+function checkLibVisualStudio2013: boolean;
+
+function getMySQLDataDir(credentials: TMySQLCredentials): string;
+function getFirstFieldFromSQLStatement(sqlStatement: string; mysqlCredentials: TMySQLCredentials): Variant;
+function getValidMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
+procedure validateMySQLCredentials(mySQLCredentials: TMySQLCredentials);
+function getMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
 
 implementation
 
@@ -789,12 +795,10 @@ var
   pathCurrentDir: string;
 begin
   pathFileName := fileName;
-
   if showMsgInstall then
   begin
     ShowMessage(MSG_INSTALL);
   end;
-
   if isFileAResource then
   begin
     pathCurrentDir := GetCurrentDir;
@@ -803,14 +807,12 @@ begin
   end;
 
   executeAndWaitExe(pathFileName);
-
   Sleep(2000);
 
   if deleteFileAfterInstall then
   begin
     deleteFileIfExists(pathFileName);
   end;
-
   if not checkLibVisualStudio2013 then
   begin
     raise Exception.Create(MSG_ERROR);
@@ -844,6 +846,106 @@ begin
     finally
       Free;
     end;
+end;
+
+function getMySQLDataDir(credentials: TMySQLCredentials): string;
+const
+  SQL = 'select @@datadir';
+var
+  dataDir: string;
+begin
+  dataDir := getFirstFieldFromSQLStatement(sql, credentials);
+  result := dataDir;
+end;
+
+function getFirstFieldFromSQLStatement(sqlStatement: string; mysqlCredentials: TMySQLCredentials): Variant;
+var
+  _connection: TMyConnection;
+  _query: TMyQuery;
+  fieldResult: variant;
+begin
+  _connection := getValidMySQLConnection(mysqlCredentials);
+  _connection.Connected := true;
+  _query := TMyQuery.create(nil);
+  _query.connection := _connection;
+
+  _query.SQL.Clear;
+  _query.SQL.Text := sqlStatement;
+  _query.open;
+  fieldResult := _query.FieldList.Fields[0].value;
+
+  _query.Close;
+  _connection.Connected := false;
+  FreeAndNil(_connection);
+  FreeAndNil(_query);
+
+  result := fieldResult;
+end;
+
+function getValidMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
+var
+  connection: TMyConnection;
+begin
+  validateMySQLCredentials(mySQLCredentials);
+  connection := getMySQLConnection(mySQLCredentials);
+  Result := connection;
+end;
+
+procedure validateMySQLCredentials(mySQLCredentials: TMySQLCredentials);
+const
+  ERR_MSG = 'Invalid MySQL credentials';
+var
+  _connection: TMyConnection;
+begin
+  _connection := getMySQLConnection(mySQLCredentials);
+  try
+    _connection.Connected := true;
+  except
+    on E: Exception do
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
+  end;
+  _connection.Connected := false;
+  _connection.Free;
+end;
+
+procedure validateRequiredMySQLProperties(mySQLCredentials: TMySQLCredentials); forward;
+
+function getMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
+var
+  connection: TMyConnection;
+begin
+  validateRequiredMySQLProperties(mySQLCredentials);
+  connection := TMyConnection.Create(nil);
+  with mySQLCredentials do
+  begin
+    connection.Server := server;
+    with credentials do
+    begin
+      connection.Username := username;
+      connection.Password := password;
+    end;
+    connection.Port := port;
+    if database <> '' then
+    begin
+      connection.Database := database;
+    end;
+  end;
+  Result := connection;
+end;
+
+procedure validateRequiredMySQLProperties(mySQLCredentials: TMySQLCredentials);
+const
+  ERR_MSG = 'Incomplete MySQL credentials';
+begin
+  with mySQLCredentials do
+  begin
+    if (server = '') or (credentials.username = '') or (credentials.password = '') then
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
+  end;
 end;
 
 end.

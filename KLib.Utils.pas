@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes,
   PngImage,
+  IdFTP,
   KLib.Types;
 
 type
@@ -41,10 +42,17 @@ procedure getResourceAsFile(nameResource: String; typeResource: string; destinat
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
 
+function getCurrentDayOfWeek: string;
+function getDayOfWeek(date: TDateTime): string;
+
 procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
   forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
 procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
 procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
+
+function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+procedure validateFTPCredentials(FTPCredentials: TFTPCredentials);
+function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 
 procedure executeProcedure(myProcedure: TProcedure); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
@@ -362,6 +370,33 @@ begin
   WSACleanup;
 end;
 
+function getCurrentDayOfWeek: string;
+var
+  _nameDay: string;
+begin
+  _nameDay := getDayOfWeek(Now);
+  result := _nameDay;
+end;
+
+function getDayOfWeek(date: TDateTime): string;
+const
+  DAYS_OF_WEEK: TArray<String> = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'];
+var
+  _indexDayOfWeek: integer;
+  _nameDay: string;
+begin
+  _indexDayOfWeek := DayOfWeek(date) - 1;
+  _nameDay := DAYS_OF_WEEK[_indexDayOfWeek];
+  result := _nameDay;
+end;
+
 procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
   forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
 var
@@ -409,6 +444,75 @@ begin
   else
   begin
     raise Exception.Create('Zip File not valid.');
+  end;
+end;
+
+//TODO CREATE CUSTOM FTP CLASS
+function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+var
+  connection: TIdFTP;
+begin
+  validateFTPCredentials(FTPCredentials);
+  connection := getFTPConnection(FTPCredentials);
+  Result := connection;
+end;
+
+procedure validateFTPCredentials(FTPCredentials: TFTPCredentials);
+const
+  ERR_MSG = 'Invalid FTP credentials';
+var
+  _connection: TIdFTP;
+begin
+  _connection := getFTPConnection(FTPCredentials);
+  try
+    _connection.Connect;
+    if FTPCredentials.pathFTPDir <> '' then
+    begin
+      _connection.ChangeDir(FTPCredentials.pathFTPDir);
+    end;
+  except
+    on E: Exception do
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
+  end;
+  _connection.Disconnect;
+  _connection.Free;
+end;
+
+procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials); forward;
+
+function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+var
+  connection: TIdFTP;
+begin
+  validateRequiredFTPProperties(FTPCredentials);
+  connection := TIdFTP.Create(nil);
+  with FTPCredentials do
+  begin
+    connection.host := server;
+    with credentials do
+    begin
+      connection.username := username;
+      connection.password := password;
+    end;
+    connection.TransferType := transferType;
+    connection.Passive := true;
+  end;
+
+  Result := connection;
+end;
+
+procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials);
+const
+  ERR_MSG = 'Incomplete FTP credentials';
+begin
+  with FTPCredentials do
+  begin
+    if (server = '') or (credentials.username = '') or (credentials.password = '') then
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
   end;
 end;
 
