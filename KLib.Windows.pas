@@ -3,7 +3,7 @@ unit KLib.Windows;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages,
+  Winapi.Windows, Winapi.Messages, Winapi.ShellApi,
   System.Classes,
   KLib.Types;
 
@@ -41,6 +41,7 @@ function getFirstPortAvaliable(defaultPort: integer): integer;
 
 function runUnderWine: boolean;
 function getVersionSO: string;
+function IsUserAnAdmin: boolean; external shell32;
 
 procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
   showWindow: cardinal = SW_HIDE);
@@ -75,7 +76,7 @@ implementation
 uses
   System.IOUtils, System.SysUtils,
   System.Win.ComObj, System.Win.Registry,
-  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.ShellAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj,
+  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj,
   Vcl.Forms,
   IdTCPClient,
   KLib.Utils;
