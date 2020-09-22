@@ -792,7 +792,7 @@ const
   MSG_ERROR = 'Visual C++ Redistributable Visual Studio 2013 not correctly installed.';
 var
   pathFileName: string;
-  pathCurrentDir: string;
+  _applicationDir: string;
 begin
   pathFileName := fileName;
   if showMsgInstall then
@@ -801,8 +801,8 @@ begin
   end;
   if isFileAResource then
   begin
-    pathCurrentDir := GetCurrentDir;
-    pathFileName := TPath.Combine(pathCurrentDir, fileName);
+    _applicationDir := getDirExe;
+    pathFileName := TPath.Combine(_applicationDir, fileName);
     getResourceAsEXEFile(fileName, pathFileName);
   end;
 
