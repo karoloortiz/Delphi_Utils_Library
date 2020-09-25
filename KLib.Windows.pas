@@ -27,13 +27,16 @@ type
   TWindowsService = class
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
     class procedure start(nameService: string; nameMachine: string = '');
-    class procedure stop(nameService: string; nameMachine: string = ''; force: boolean = false);
+    class procedure stopIfExists(nameService: string; nameMachine: string = '';
+      force: boolean = false);
+    class procedure stop(nameService: string; nameMachine: string = '';
+      force: boolean = false);
     class function isRunning(nameService: string; nameMachine: string = ''): boolean;
     class function existsService(nameService: string; nameMachine: string = ''): boolean;
     class procedure deleteService(nameService: string);
     class function isPortAvaliable(host: string; port: Word): boolean;
   protected
-    function createService: boolean; overload; virtual; abstract; //TODO
+    function createService: boolean; overload; virtual; abstract; //TODO IMPLEMENTE CODE
   end;
 
   //----------------------------------
@@ -115,7 +118,8 @@ end;
 
 //----------------------------------------------------------------------------------------
 
-class procedure TWindowsService.aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
+class procedure TWindowsService.aStart(handleSender: HWND; nameService: string;
+  nameMachine: string = '');
 begin
   TThread.CreateAnonymousThread(
     procedure
@@ -207,7 +211,17 @@ begin
   CloseServiceHandle(handleServiceControlManager);
 end;
 
-class procedure TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false);
+class procedure TWindowsService.stopIfExists(nameService: string; nameMachine: string = '';
+force: boolean = false);
+begin
+  if existsService(nameService) then
+  begin
+    stop(nameService, nameMachine, force);
+  end;
+end;
+
+class procedure TWindowsService.Stop(nameService: string; nameMachine: string = '';
+force: boolean = false);
 const
   ERR_MSG = 'Service not stopped';
 var
