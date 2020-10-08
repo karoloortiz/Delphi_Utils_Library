@@ -14,7 +14,7 @@ type
     timer: TTimer;
     count: integer;
     lblSource: TLabel;
-    procedure on_timer(Sender: TObject);
+    procedure onTimer(Sender: TObject);
     procedure setLabelSource(const Value: TLabel);
     function getLabelSource: TLabel;
   public
@@ -105,7 +105,7 @@ begin
   Self.originalText := labelSource.Caption;
   timer := TTimer.Create(nil);
   Timer.Interval := 600;
-  Timer.OnTimer := on_timer;
+  Timer.OnTimer := onTimer;
   Timer.Enabled := false;
 end;
 
@@ -128,7 +128,7 @@ begin
   Result := lblSource;
 end;
 
-procedure TLabelLoading.on_timer(Sender: TObject);
+procedure TLabelLoading.onTimer(Sender: TObject);
 begin
   if (count = repeatMax) then
   begin

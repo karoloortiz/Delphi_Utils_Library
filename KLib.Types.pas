@@ -61,14 +61,6 @@ type
   TProcedure = procedure;
   TArrayOfProcedures = array of TProcedure;
 
-  //TODO DELETE COMMENTS AFTER ALIGN ALL PROJECTS
-  //Before
-  //  TProcedureOfObject = procedure of object;
-  //  TArrayOfObjectProcedures = array of TProcedureOfObject;
-  //
-  //  TProcedure = reference to procedure;
-  //  TArrayOfProcedures = array of TProcedure;
-
   TCallBack = reference to procedure(msg: String = '');
 
   TCallBacks = record

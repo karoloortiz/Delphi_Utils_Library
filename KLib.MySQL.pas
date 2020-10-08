@@ -120,7 +120,7 @@ type
     constructor create(credentialsMysql: TCredentials; path_Mysql: string; path_Mysql_datadir: string = '';
       numberConnections: integer = 1; allConnectionsAreClosed: boolean = true);
     procedure AConnectToDatabase(reply: TAsyncifyProcedureReply);
-    procedure promiseConnectToDatabase(resolve: TProcedureOfObject; reject: TProcedureOfObject);
+    procedure promiseConnectToDatabase(resolve: TMethod; reject: TMethod);
     procedure connectToDatabaseInWaitForm(msg: string = '');
     procedure connectToDatabase;
     procedure shutdownMySQL;
@@ -584,10 +584,10 @@ end;
 
 procedure TMySQLProcess.AConnectToDatabase(reply: TAsyncifyProcedureReply);
 begin
-  asyncifyProcedure(connectToDatabase, reply);
+  asyncifyMethod(connectToDatabase, reply);
 end;
 
-procedure TMySQLProcess.promiseConnectToDatabase(resolve: TProcedureOfObject; reject: TProcedureOfObject);
+procedure TMySQLProcess.promiseConnectToDatabase(resolve: TMethod; reject: TMethod);
 begin
   TThread.CreateAnonymousThread(
     procedure
@@ -619,7 +619,7 @@ begin
   begin
     _msg := WAITFORM_MSG_MYSQL_START;
   end;
-  executeProcedureInWaitForm(connectToDatabase, _msg);
+  executeMethodInWaitForm(connectToDatabase, _msg);
 end;
 
 procedure TMySQLProcess.connectToDatabase;

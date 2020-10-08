@@ -62,7 +62,7 @@ function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 procedure validateFTPCredentials(FTPCredentials: TFTPCredentials);
 function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 
-procedure executeProcedure(myProcedure: TProcedure); overload;
+procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
 implementation
@@ -601,7 +601,7 @@ begin
   end;
 end;
 
-procedure executeProcedure(myProcedure: TProcedure);
+procedure executeProcedure(myProcedure: TAnonymousMethod);
 begin
   myProcedure;
 end;
