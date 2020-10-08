@@ -49,6 +49,10 @@ function dateTimeAsString(date: TDateTime): string;
 function currentDateAsString: string;
 function dateAsString(date: TDateTime): string;
 
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
+function strToStringList(source: String; fixedLen: Integer): TStringList;
+
 procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
   forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
 procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
@@ -435,6 +439,47 @@ begin
   _date := DateToStr(date);
   _date := StringReplace(_date, '/', '_', [rfReplaceAll, rfIgnoreCase]);
   result := _date;
+end;
+
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+var
+  _stringList: TStringList;
+begin
+  _stringList := TStringList.Create;
+  _stringList.Text := source;
+  result := _stringList.Count;
+  FreeAndNil(_stringList);
+end;
+
+function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
+var
+  _stringList: TStringList;
+begin
+  _stringList := strToStringList(source, fixedLen);
+  result := _stringList.Text;
+  FreeAndNil(_stringList);
+end;
+
+function strToStringList(source: String; fixedLen: Integer): TStringList;
+var
+  idx: Integer;
+  srcLen: Integer;
+  alist: TStringList;
+begin
+  alist := TStringList.Create;
+  alist.LineBreak := #13;
+  aList.Capacity := (Length(source) div fixedLen) + 1;
+
+  idx := 1;
+  srcLen := Length(source);
+
+  while idx <= srcLen do
+  begin
+    aList.Add(Copy(source, idx, fixedLen));
+    Inc(idx, fixedLen);
+  end;
+
+  result := alist;
 end;
 
 procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;

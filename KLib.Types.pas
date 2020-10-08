@@ -26,6 +26,8 @@ type
     md5: string;
   end;
 
+  TArrayOfDownloadInfo = array of TDownloadInfo;
+
   TPIDCredentials = record
     ownerUserName: string;
     domain: string;
@@ -36,13 +38,36 @@ type
     disabled: TColor;
   end;
 
-  TArrayOfDownloadInfo = array of TDownloadInfo;
+  TPosition = record
+    top: integer;
+    bottom: integer;
+    left: integer;
+    right: integer;
+  end;
 
-  TProcedureOfObject = procedure of object;
-  TArrayOfObjectProcedures = array of TProcedureOfObject;
+  TSize = record
+    width: integer;
+    height: integer;
+  end;
 
-  TProcedure = reference to procedure;
+  TTypeOfProcedure = (_procedure, _method, _anonymousMethod);
+
+  TAnonymousMethod = reference to procedure;
+  TArrayOfAnonymousMethods = array of TAnonymousMethod;
+
+  TMethod = procedure of object;
+  TArrayOfMethods = array of TMethod;
+
+  TProcedure = procedure;
   TArrayOfProcedures = array of TProcedure;
+
+  //TODO DELETE COMMENTS AFTER ALIGN ALL PROJECTS
+  //Before
+  //  TProcedureOfObject = procedure of object;
+  //  TArrayOfObjectProcedures = array of TProcedureOfObject;
+  //
+  //  TProcedure = reference to procedure;
+  //  TArrayOfProcedures = array of TProcedure;
 
   TCallBack = reference to procedure(msg: String = '');
 

@@ -3,7 +3,9 @@ unit KLib.Graphics;
 interface
 
 uses
-  Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs;
+  Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
+  System.Classes,
+  KLib.Types;
 
 type
   TLabelLoading = class
@@ -45,6 +47,14 @@ type
     function getTColor: TColor;
   end;
 
+  TComponentInfo = record
+    position: TPosition;
+    size: TSize;
+    procedure setFromComponent(component: TControl);
+    procedure setSizeFromComponent(component: TControl);
+    procedure setPositionFromComponent(component: TControl);
+  end;
+
 function TColorToString(color: TColor): string;
 function RGBStringToTColor(colorRGB: string): TColor;
 
@@ -58,16 +68,25 @@ procedure setComponentInMiddlePosition(control: TControl);
 
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
 
-function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
-  Caption: ARRAY OF string; dlgcaption: string): Integer;
+function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
+  captionButtons: array of string; dlgCaption: string): Integer;
+
+function getComponentInFormByName(componentName: string; myForm: TForm): TComponent;
+
+function getStrFixedWordWrapInWidth(source: string; width: integer; font: TFont): string;
+function getNumberOfCharactersInWidth(widthOfCaption: integer; font: TFont): integer;
+function getWidthOfSingleCharacter(font: TFont): integer;
+function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
+
+function getHeightOfSingleCharacter(myFont: TFont): integer;
 
 implementation
 
 uses
-  Vcl.Forms,
-  System.SysUtils, System.Classes,
+  System.SysUtils,
   Winapi.Windows,
-  dxGDIPlusClasses;
+  dxGDIPlusClasses,
+  KLib.Utils;
 
 //-------------------------------------------------------------------------------------------------
 //  TLabelLoading
@@ -202,6 +221,29 @@ begin
     _validColor := color;
   end;
   Result := _validColor;
+end;
+
+procedure TComponentInfo.setFromComponent(component: TControl);
+begin
+  setSizeFromComponent(component);
+  setPositionFromComponent(component);
+end;
+
+procedure TComponentInfo.setSizeFromComponent(component: TControl);
+begin
+  self.size.height := component.ClientHeight;
+  self.size.width := component.ClientWidth;
+end;
+
+procedure TComponentInfo.setPositionFromComponent(component: TControl);
+var
+  _componentPositionInScreenCoordinates: TPoint;
+begin
+  _componentPositionInScreenCoordinates := component.ClientToScreen(Point(0, 0));
+  self.position.top := _componentPositionInScreenCoordinates.Y;
+  self.position.left := _componentPositionInScreenCoordinates.X;
+  self.position.bottom := _componentPositionInScreenCoordinates.Y + self.size.height;
+  self.position.right := _componentPositionInScreenCoordinates.X + self.size.width;
 end;
 
 function TColorToString(color: TColor): string;
@@ -356,30 +398,125 @@ begin
   img.Picture.Graphic := _img;
 end;
 
-function customMessageDlg(CONST Msg: string; DlgTypt: TmsgDlgType; button: TMsgDlgButtons;
-  Caption: ARRAY OF string; dlgcaption: string): Integer;
+function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
+  captionButtons: array of string; dlgCaption: string): Integer;
 var
-  aMsgdlg: TForm;
+  msgDlgForm: TForm;
   i: Integer;
-  Dlgbutton: Tbutton;
-  Captionindex: Integer;
+  dlgbutton: Tbutton;
+  captionIndex: Integer;
 begin
-  aMsgdlg := createMessageDialog(Msg, DlgTypt, button);
-  aMsgdlg.Caption := dlgcaption;
-  aMsgdlg.BiDiMode := bdLeftToRight;
-  Captionindex := 0;
-  for i := 0 to aMsgdlg.componentcount - 1 Do
+  msgDlgForm := createMessageDialog(msg, dlgType, buttons);
+  msgDlgForm.Caption := dlgCaption;
+  msgDlgForm.BiDiMode := bdLeftToRight;
+  captionIndex := 0;
+  for i := 0 to msgDlgForm.componentcount - 1 Do
   begin
-    if (aMsgdlg.components[i] is Tbutton) then
+    if (msgDlgForm.components[i] is TButton) then
     Begin
-      Dlgbutton := Tbutton(aMsgdlg.components[i]);
-      if Captionindex <= High(Caption) then
-        Dlgbutton.Caption := Caption[Captionindex];
-      inc(Captionindex);
+      dlgbutton := Tbutton(msgDlgForm.components[i]);
+      if captionIndex <= High(captionButtons) then
+      begin
+        dlgbutton.Caption := captionButtons[captionIndex];
+      end;
+      inc(captionIndex);
     end;
   end;
-  Result := aMsgdlg.Showmodal;
-  FreeAndNil(aMsgdlg);
+  Result := msgDlgForm.Showmodal;
+  FreeAndNil(msgDlgForm);
+end;
+
+function getComponentInFormByName(componentName: string; myForm: TForm): TComponent;
+var
+  i: Integer;
+  _component: TComponent;
+begin
+  result := nil;
+  for i := 0 to myForm.ComponentCount - 1 do
+  begin
+    _component := myForm.Components[i];
+    if (_component.name = componentName) then
+    begin
+      result := _component;
+    end;
+  end;
+  if (result = nil) then
+  begin
+    raise Exception.Create('Component doesn''t exists in form');
+  end;
+end;
+
+function getStrFixedWordWrapInWidth(source: string; width: integer; font: TFont): string;
+var
+  _numberMaxCharactersInWidth: integer;
+  strFixedWordWrap: string;
+begin
+  _numberMaxCharactersInWidth := getNumberOfCharactersInWidth(width, font);
+  strFixedWordWrap := strToStrFixedWordWrap(source, _numberMaxCharactersInWidth);
+  result := strFixedWordWrap;
+end;
+
+function getNumberOfCharactersInWidth(widthOfCaption: integer; font: TFont): integer;
+var
+  numberCharacters: integer;
+  _widthSingleCharacter: integer;
+begin
+  _widthSingleCharacter := getWidthOfSingleCharacter(font);
+  if widthOfCaption > _widthSingleCharacter then
+  begin
+    numberCharacters := trunc(widthOfCaption / _widthSingleCharacter);
+  end
+  else
+  begin
+    numberCharacters := 0;
+  end;
+  Result := numberCharacters;
+end;
+
+function getWidthOfSingleCharacter(font: TFont): integer;
+var
+  _width: integer;
+begin
+  _width := getWidthOfCaption(1, font);
+  Result := _width;
+end;
+
+function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
+var
+  _label: TLabel;
+  _text: string;
+  _width: integer;
+begin
+  _text := _text.PadLeft(numberOfCharacters, 'A');
+  _label := TLabel.Create(nil);
+  with _label do
+  begin
+    AutoSize := true;
+    Font := myFont;
+    Caption := _text;
+  end;
+  _width := _label.Width;
+  FreeAndNil(_label);
+  Result := _width;
+end;
+
+function getHeightOfSingleCharacter(myFont: TFont): integer;
+var
+  _label: TLabel;
+  _text: string;
+  _height: integer;
+begin
+  _text := 'A';
+  _label := TLabel.Create(nil);
+  with _label do
+  begin
+    AutoSize := true;
+    Font := myFont;
+    Caption := _text;
+  end;
+  _height := _label.Height;
+  FreeAndNil(_label);
+  Result := _height;
 end;
 
 end.
