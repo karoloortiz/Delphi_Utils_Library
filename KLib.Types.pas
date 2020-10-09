@@ -26,6 +26,11 @@ type
     md5: string;
   end;
 
+  TDownloadOptions = record
+    forceOverwrite: boolean;
+    useIndy: boolean;
+  end;
+
   TArrayOfDownloadInfo = array of TDownloadInfo;
 
   TPIDCredentials = record
@@ -48,6 +53,11 @@ type
   TSize = record
     width: integer;
     height: integer;
+  end;
+
+  TResource = record
+    name: string;
+    _type: string;
   end;
 
   TTypeOfProcedure = (_procedure, _method, _anonymousMethod);

@@ -21,9 +21,9 @@ type
     repeatMax: integer;
     textToRepeat: string;
     property labelSource: TLabel read getLabelSource write setLabelSource;
-    constructor Create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3); overload;
-    constructor Create(textToRepeat: string; countRepeatMax: integer = 3); overload;
-    destructor Destroy; override;
+    constructor create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3); overload;
+    constructor create(textToRepeat: string; countRepeatMax: integer = 3); overload;
+    destructor destroy; override;
     procedure start;
     procedure stop;
   end;
@@ -91,25 +91,25 @@ uses
 //-------------------------------------------------------------------------------------------------
 //  TLabelLoading
 //-------------------------------------------------------------------------------------------------
-constructor TLabelLoading.Create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3);
+constructor TLabelLoading.create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3);
 begin
   Self.labelSource := labelSource;
-  Create(textToRepeat, countRepeatMax);
+  create(textToRepeat, countRepeatMax);
 end;
 
-constructor TLabelLoading.Create(textToRepeat: string; countRepeatMax: integer = 3);
+constructor TLabelLoading.create(textToRepeat: string; countRepeatMax: integer = 3);
 begin
   Self.textToRepeat := textToRepeat;
   Self.repeatMax := countRepeatMax;
   Self.count := 0;
   Self.originalText := labelSource.Caption;
-  timer := TTimer.Create(nil);
+  timer := TTimer.create(nil);
   Timer.Interval := 600;
   Timer.OnTimer := onTimer;
   Timer.Enabled := false;
 end;
 
-destructor TLabelLoading.Destroy;
+destructor TLabelLoading.destroy;
 begin
   FreeAndNil(timer);
   inherited Destroy;

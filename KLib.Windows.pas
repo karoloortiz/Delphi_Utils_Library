@@ -65,15 +65,18 @@ function getValidFullPathInWindowsStyle(path: string): string;
 function getPathInWindowsStyle(path: string): string;
 
 //-----------------------------------------------------------------
+//TODO REFACTOR
 function setProcessWindowToForeground(processName: string): boolean;
 function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
+function getWindowsUsername: string;
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
 function getPIDCredentials(PID: DWORD): TPIDCredentials;
 function getPIDByProcessName(nameProcess: string): DWORD;
-function getWindowsUsername: string;
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
-
 //------------------------------------------------------------------
+
+function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+
 implementation
 
 uses
@@ -390,7 +393,7 @@ begin
     end;
 end;
 
-function getVersionSO: string;
+function getVersionSO: string; //TODO USE TMYSQLVERSION?
 begin
   case TOSVersion.Architecture of
     arIntelX86:
@@ -780,51 +783,6 @@ begin
   end;
 end;
 
-procedure mySetForegroundWindow(windowHandle: THandle);
-begin
-  SetForegroundWindow(windowHandle);
-  postMessage(windowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
-end;
-
-type
-  TEnumInfo = record
-    ProcessID: DWORD;
-    HWND: THandle;
-  end;
-
-  PEnumInfo = ^TEnumInfo;
-
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall; forward;
-
-function getMainWindowHandleByPID(PID: DWORD): DWORD;
-var
-  enumInfo: TEnumInfo;
-begin
-  enumInfo.ProcessID := PID;
-  enumInfo.HWND := 0;
-  EnumWindows(@enumWindowsProc, LPARAM(@enumInfo));
-  Result := enumInfo.HWND;
-end;
-
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
-var
-  PID: DWORD;
-  PEI: PEnumInfo;
-begin
-  // Param matches the address of the param that is passed
-
-  PEI := PEnumInfo(Param);
-  GetWindowThreadProcessID(Wnd, @PID);
-
-  Result := (PID <> PEI^.ProcessID) or
-    (not IsWindowVisible(WND)) or
-    (not IsWindowEnabled(WND));
-
-  if not Result then
-    PEI^.HWND := WND; //break on return FALSE
-end;
-
-//TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
 type
   TProcessCompare = record
     username: string;
@@ -834,18 +792,32 @@ type
   TFunctionProcessCompare = function(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean;
 
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD; forward;
+function checkProcessUserName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; forward;
 
-function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
+function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
+var
+  processCompare: TProcessCompare;
 begin
-  if processEntry.szExeFile = processCompare.nameProcess then
-  begin
-    result := true;
-  end
-  else
-  begin
-    result := false;
-  end;
+  processCompare.nameProcess := nameProcess;
+  processCompare.username := getWindowsUsername();
+  result := getPID(nameProcess, checkProcessUserName, processCompare);
 end;
+
+function getWindowsUsername: string;
+var
+  userName: string;
+  userNameLen: DWORD;
+begin
+  userNameLen := 256;
+  SetLength(userName, userNameLen);
+  if GetUserName(PChar(userName), userNameLen)
+  then
+    Result := Copy(userName, 1, userNameLen - 1)
+  else
+    Result := '';
+end;
+
+function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; forward;
 
 function checkProcessUserName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
 var
@@ -864,54 +836,18 @@ begin
   end;
 end;
 
-function getPIDOfCurrentUserByProcessName(nameProcess: string): DWORD;
-var
-  processCompare: TProcessCompare;
+procedure mySetForegroundWindow(windowHandle: THandle);
 begin
-  processCompare.nameProcess := nameProcess;
-  processCompare.username := getWindowsUsername();
-  result := getPID(nameProcess, checkProcessUserName, processCompare);
+  SetForegroundWindow(windowHandle);
+  postMessage(windowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
 end;
-
-function getPIDByProcessName(nameProcess: string): DWORD;
-var
-  processCompare: TProcessCompare;
-begin
-  processCompare.nameProcess := nameProcess;
-  result := getPID(nameProcess, checkProcessName, processCompare);
-end;
-
-function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
-var
-  processEntry: TProcessEntry32;
-  handleSnap: THandle;
-  processID: DWORD;
-begin
-  processID := 0;
-  handleSnap := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  processEntry.dwSize := sizeof(TProcessEntry32);
-  Process32First(handleSnap, processEntry);
-  repeat //loop su tutti i processi nello snapshot acquisito
-    with processEntry do
-    begin
-      //esegui confronto
-      if (fn(processEntry, processCompare)) then
-      begin
-        processID := th32ProcessID;
-        break;
-      end;
-    end;
-  until (not(Process32Next(handleSnap, processEntry)));
-  CloseHandle(handleSnap);
-
-  result := processID;
-end;
+//TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
 
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
 var
   PIDCredentials: TPIDCredentials;
 begin
-  PIDCredentials := GetPIDCredentials(PID);
+  PIDCredentials := getPIDCredentials(PID);
   if PIDCredentials.ownerUserName = userName then
   begin
     Result := true;
@@ -922,20 +858,6 @@ begin
   end;
 end;
 
-function getWindowsUsername: string;
-var
-  userName: string;
-  userNameLen: DWORD;
-begin
-  userNameLen := 256;
-  SetLength(userName, userNameLen);
-  if GetUserName(PChar(userName), userNameLen)
-  then
-    Result := Copy(userName, 1, userNameLen - 1)
-  else
-    Result := '';
-end;
-
 type
   _TOKEN_USER = record
     User: TSidAndAttributes;
@@ -943,7 +865,7 @@ type
 
   PTOKEN_USER = ^_TOKEN_USER;
 
-function GetPIDCredentials(PID: DWORD): TPIDCredentials;
+function getPIDCredentials(PID: DWORD): TPIDCredentials;
 var
   hToken: THandle;
   cbBuf: Cardinal;
@@ -1000,6 +922,108 @@ begin
 
   Result := PIDCredentials;
 end;
+
+function getPIDByProcessName(nameProcess: string): DWORD;
+var
+  processCompare: TProcessCompare;
+begin
+  processCompare.nameProcess := nameProcess;
+  result := getPID(nameProcess, checkProcessName, processCompare);
+end;
+
+function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
+begin
+  if processEntry.szExeFile = processCompare.nameProcess then
+  begin
+    result := true;
+  end
+  else
+  begin
+    result := false;
+  end;
+end;
+
+function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
+var
+  processEntry: TProcessEntry32;
+  handleSnap: THandle;
+  processID: DWORD;
+begin
+  processID := 0;
+  handleSnap := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  processEntry.dwSize := sizeof(TProcessEntry32);
+  Process32First(handleSnap, processEntry);
+  repeat //loop su tutti i processi nello snapshot acquisito
+    with processEntry do
+    begin
+      //esegui confronto
+      if (fn(processEntry, processCompare)) then
+      begin
+        processID := th32ProcessID;
+        break;
+      end;
+    end;
+  until (not(Process32Next(handleSnap, processEntry)));
+  CloseHandle(handleSnap);
+
+  result := processID;
+end;
+
+type
+  TEnumInfo = record
+    ProcessID: DWORD;
+    HWND: THandle;
+  end;
+
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall; forward;
+
+function getMainWindowHandleByPID(PID: DWORD): DWORD;
+var
+  enumInfo: TEnumInfo;
+begin
+  enumInfo.ProcessID := PID;
+  enumInfo.HWND := 0;
+  EnumWindows(@enumWindowsProc, LPARAM(@enumInfo));
+  Result := enumInfo.HWND;
+end;
+
+type
+  PEnumInfo = ^TEnumInfo;
+
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
+var
+  PID: DWORD;
+  PEI: PEnumInfo;
+begin
+  // Param matches the address of the param that is passed
+
+  PEI := PEnumInfo(Param);
+  GetWindowThreadProcessID(Wnd, @PID);
+
+  Result := (PID <> PEI^.ProcessID) or
+    (not IsWindowVisible(WND)) or
+    (not IsWindowEnabled(WND));
+
+  if not Result then
+    PEI^.HWND := WND; //break on return FALSE
+end;
 //----------------------------------------------------------------------------------------
+
+function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+const
+  ERR_MSG = 'Cannot Open Key in HKEY_LOCAL_MACHINE';
+var
+  registry: TRegistry;
+  isOpenKey: boolean;
+begin
+  registry := TRegistry.Create;
+  try
+    registry.RootKey := HKEY_LOCAL_MACHINE;
+    isOpenKey := registry.OpenKeyReadOnly(key);
+  finally
+    registry.Free;
+  end;
+  Result := isOpenKey;
+end;
 
 end.

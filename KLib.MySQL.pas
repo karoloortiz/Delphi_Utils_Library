@@ -9,7 +9,6 @@ uses
   KLib.Types, KLib.Windows;
 
 type
-
   TMySQLCredentials = record
     credentials: TCredentials;
     server: string;
@@ -127,9 +126,21 @@ type
     destructor destroy; override;
   end;
 
-procedure installLibVisualStudio2013(fileName: string; showMsgInstall: boolean = true;
-  deleteFileAfterInstall: boolean = true; isFileAResource: boolean = false);
+type
+  TVersionMySQL = (auto, arIntelX86, arIntelX64); //TODO MOVE IN KLIB.WINDOWS?
+
+  TVcredistInstallOptions = record
+    fileNameInstaller: string;
+    versionMySQL: TVersionMySQL;
+    showMsgInstall: boolean;
+    deleteFileAfterInstall: boolean;
+    isFileAResource: boolean;
+  end;
+
+procedure installLibVisualStudio2013(installOptions: TVcredistInstallOptions);
 function checkLibVisualStudio2013: boolean;
+function checkLibVisualStudio2013x86: boolean;
+function checkLibVisualStudio2013x64: boolean;
 
 function getMySQLDataDir(credentials: TMySQLCredentials): string;
 function getFirstFieldFromSQLStatement(sqlStatement: string; mysqlCredentials: TMySQLCredentials): Variant;
@@ -321,7 +332,8 @@ end;
 
 procedure TMySQL.initialCheckAndSetup;
 var
-  nameResource: string;
+  _nameResource: string;
+  _installVcredistOptions: TVcredistInstallOptions;
 begin
   active := true;
   try
@@ -329,8 +341,16 @@ begin
     begin
       //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" e "VCREDIST_64_bit EXE assets\vcredist_x64.exe"
       //al file risorse DEL PROGETTO
-      nameResource := 'VCREDIST_' + getVersionSO;
-      installLibVisualStudio2013(nameResource, true);
+      _nameResource := 'VCREDIST_' + getVersionSO;
+      with _installVcredistOptions do
+      begin
+        fileNameInstaller := _nameResource;
+        versionMySQL := TVersionMySQL.auto;
+        showMsgInstall := true;
+        deleteFileAfterInstall := true;
+        isFileAResource := true;
+      end;
+      installLibVisualStudio2013(_installVcredistOptions);
     end;
   except
     on E: Exception do
@@ -783,69 +803,92 @@ begin
   end;
 end;
 
-procedure installLibVisualStudio2013(fileName: string; showMsgInstall: boolean = true;
-deleteFileAfterInstall: boolean = true; isFileAResource: boolean = false);
+procedure installLibVisualStudio2013(installOptions: TVcredistInstallOptions);
 const
   MSG_INSTALL = 'MySQL needs:' + #13#10 +
     'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
     'The installer will run.';
   MSG_ERROR = 'Visual C++ Redistributable Visual Studio 2013 not correctly installed.';
 var
-  pathFileName: string;
+  _pathFileName: string;
   _applicationDir: string;
+  isSuccessfulinstalled: boolean;
 begin
-  pathFileName := fileName;
-  if showMsgInstall then
+  with installOptions do
   begin
-    ShowMessage(MSG_INSTALL);
-  end;
-  if isFileAResource then
-  begin
-    _applicationDir := getDirExe;
-    pathFileName := TPath.Combine(_applicationDir, fileName);
-    getResourceAsEXEFile(fileName, pathFileName);
-  end;
+    _pathFileName := fileNameInstaller;
+    if showMsgInstall then
+    begin
+      ShowMessage(MSG_INSTALL);
+    end;
+    if isFileAResource then
+    begin
+      _applicationDir := getDirExe;
+      _pathFileName := TPath.Combine(_applicationDir, fileNameInstaller);
+      getResourceAsEXEFile(fileNameInstaller, _pathFileName);
+    end;
 
-  executeAndWaitExe(pathFileName);
-  Sleep(2000);
+    executeAndWaitExe(_pathFileName);
+    Sleep(2000);
 
-  if deleteFileAfterInstall then
-  begin
-    deleteFileIfExists(pathFileName);
-  end;
-  if not checkLibVisualStudio2013 then
-  begin
-    raise Exception.Create(MSG_ERROR);
+    if deleteFileAfterInstall then
+    begin
+      deleteFileIfExists(_pathFileName);
+    end;
+
+    case versionMySQL of
+      TVersionMySQL.auto:
+        isSuccessfulinstalled := checkLibVisualStudio2013;
+      TVersionMySQL.arIntelX86:
+        isSuccessfulinstalled := checkLibVisualStudio2013x86;
+      TVersionMySQL.arIntelX64:
+        isSuccessfulinstalled := checkLibVisualStudio2013x64;
+    end;
+    if not isSuccessfulinstalled then
+    begin
+      raise Exception.Create(MSG_ERROR);
+    end;
   end;
 end;
 
 function checkLibVisualStudio2013: boolean;
 var
-  versionSO: string;
+  _versionSO: string;
+  _result: boolean;
 begin
-  result := false;
-  with TRegistry.Create do
-    try
-      RootKey := HKEY_LOCAL_MACHINE;
-      versionSO := getVersionSO;
-      if versionSO = '32_bit' then
-      begin
-        if (OpenKeyReadOnly('\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) or
-          (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86')) then
-        begin
-          result := true;
-        end;
-      end
-      else if versionSO = '64_bit' then
-      begin
-        if (OpenKeyReadOnly('\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64')) then
-        begin
-          result := true;
-        end;
-      end;
-    finally
-      Free;
-    end;
+  _result := false;
+  if _versionSO = '32_bit' then
+  begin
+    _result := checkLibVisualStudio2013x86;
+  end
+  else if _versionSO = '64_bit' then
+  begin
+    _result := checkLibVisualStudio2013x64;
+  end;
+  Result := _result;
+end;
+
+function checkLibVisualStudio2013x86: boolean;
+const
+  HKEY_VCREDIST_X86 = '\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
+  HKEY_VCREDIST_X86_V2 = '\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
+var
+  existsHKEY_VCREDIST_X86: boolean;
+  existsHKEY_VCREDIST_X86_V2: boolean;
+begin
+  existsHKEY_VCREDIST_X86 := ExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86);
+  existsHKEY_VCREDIST_X86 := ExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86_V2);
+  Result := existsHKEY_VCREDIST_X86 or existsHKEY_VCREDIST_X86_V2;
+end;
+
+function checkLibVisualStudio2013x64: boolean;
+const
+  HKEY_VCREDIST_X64 = '\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64';
+var
+  existsHKEY_VCREDIST_X64: boolean;
+begin
+  existsHKEY_VCREDIST_X64 := ExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X64);
+  Result := existsHKEY_VCREDIST_X64;
 end;
 
 function getMySQLDataDir(credentials: TMySQLCredentials): string;

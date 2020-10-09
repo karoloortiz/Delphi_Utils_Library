@@ -8,6 +8,9 @@ uses
   IdFTP,
   KLib.Types;
 
+const
+  DEFAULT_DOWNLOAD_OPTIONS: TDownloadOptions = (forceOverwrite: true; useIndy: true);
+
 type
   TUTF8NoBOMEncoding = class(TUTF8Encoding)
   public
@@ -34,10 +37,10 @@ function MD5FileChecker(fileName: string; MD5: string): boolean;
 function getMD5FileChecksum(const fileName: string): string;
 
 function getPNGResource(nameResource: String): TPngImage;
-function getResourceAsString(nameResource: String; typeResource: string): String;
-function getResourceAsStream(nameResource: String; typeResource: string): TResourceStream;
 procedure getResourceAsEXEFile(nameResource: String; destinationPath: string);
-procedure getResourceAsFile(nameResource: String; typeResource: string; destinationPath: string);
+procedure getResourceAsFile(resource: TResource; destinationPath: string);
+function getResourceAsString(resource: TResource): string;
+function getResourceAsStream(resource: TResource): TResourceStream;
 
 function readStringWithEnvVariables(source: string): string;
 function getIPAddress: string;
@@ -53,9 +56,11 @@ function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 function strToStringList(source: String; fixedLen: Integer): TStringList;
 
-procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
-  forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
-procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
+procedure downloadZipFileAndExtract(info: TDownloadInfo; options: TDownloadOptions;
+  destinationPath: string; forceDeleteZipFile: boolean = false);
+procedure downloadFile(info: TDownloadInfo; options: TDownloadOptions);
+procedure getOpenSSLDLLsFromResource;
+procedure deleteOpenSSLDLLsIfExists;
 procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
 
 function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
@@ -71,11 +76,8 @@ uses
   System.Zip, System.IOUtils, System.StrUtils,
   Vcl.ExtCtrls,
   Winapi.Windows, Winapi.Messages, Winapi.Winsock, Winapi.ShellAPI,
-  IdGlobal, IdHash, IdHashMessageDigest,
+  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP,IdSSLOpenSSL,
   UrlMon;
-
-const
-  PNG_RESOURCE = 'PNG';
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
@@ -245,88 +247,87 @@ var
 begin
   MD5 := TIdHashMessageDigest5.Create;
   fileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-  try
-    Result := MD5.HashStreamAsHex(fileStream)
-  finally
-    fileStream.Free;
-    MD5.Free;
-  end;
+  Result := MD5.HashStreamAsHex(fileStream);
+  fileStream.Free;
+  MD5.Free;
 end;
 
 function getPNGResource(nameResource: String): TPngImage;
+const
+  TYPE_PNG_RESOURCE = 'PNG';
 var
+  _resource: TResource;
   resourceStream: TResourceStream;
   resourceAsPNG: TPngImage;
 begin
-  resourceStream := getResourceAsStream(nameResource, PNG_RESOURCE);
-  try
-    resourceAsPNG := TPngImage.Create;
-    resourceAsPNG.LoadFromStream(resourceStream);
-  finally
-    resourceStream.Free;
+  with _resource do
+  begin
+    name := nameResource;
+    _type := TYPE_PNG_RESOURCE;
   end;
+  resourceStream := getResourceAsStream(_resource);
+  resourceAsPNG := TPngImage.Create;
+  resourceAsPNG.LoadFromStream(resourceStream);
+  resourceStream.Free;
   Result := resourceAsPNG;
 end;
 
-function getResourceAsString(nameResource: String; typeResource: string): string;
+procedure getResourceAsEXEFile(nameResource: String; destinationPath: string);
+const
+  TYPE_EXE_RESOURCE = 'EXE';
+var
+  _resource: TResource;
+begin
+  with _resource do
+  begin
+    name := nameResource;
+    _type := TYPE_EXE_RESOURCE;
+  end;
+  getResourceAsFile(_resource, destinationPath);
+end;
+
+procedure getResourceAsFile(resource: TResource; destinationPath: string);
+var
+  resourceStream: TResourceStream;
+begin
+  resourceStream := getResourceAsStream(resource);
+  resourceStream.SaveToFile(destinationPath);
+  resourceStream.Free;
+end;
+
+function getResourceAsString(resource: TResource): string;
 var
   resourceStream: TResourceStream;
   _stringList: TStringList;
   resourceAsString: String;
 begin
   resourceAsString := '';
-  resourceStream := getResourceAsStream(nameResource, typeResource);
-  try
-    _stringList := TStringList.Create;
-    _stringList.LoadFromStream(resourceStream);
-    resourceAsString := _stringList.Text;
-  finally
-    resourceStream.Free;
-  end;
+  resourceStream := getResourceAsStream(resource);
+  _stringList := TStringList.Create;
+  _stringList.LoadFromStream(resourceStream);
+  resourceAsString := _stringList.Text;
+  resourceStream.Free;
   Result := resourceAsString;
 end;
 
-function getResourceAsStream(nameResource: String; typeResource: string): TResourceStream;
+function getResourceAsStream(resource: TResource): TResourceStream;
 var
   resourceStream: TResourceStream;
 begin
-  if (FindResource(hInstance, PChar(nameResource), PChar(typeResource)) <> 0) then
+  with resource do
   begin
-    resourceStream := TResourceStream.Create(HInstance, PChar(nameResource), PChar(typeResource));
-    resourceStream.Position := 0;
-  end
-  else
-  begin
-    raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
+    if (FindResource(hInstance, PChar(name), PChar(_type)) <> 0) then
+    begin
+      resourceStream := TResourceStream.Create(HInstance, PChar(name), PChar(_type));
+      resourceStream.Position := 0;
+    end
+    else
+    begin
+      raise Exception.Create('Not found a resource with name : ' + name + ' and type : '
+        + _type);
+    end;
   end;
   Result := resourceStream;
-end;
-
-procedure getResourceAsEXEFile(nameResource: String; destinationPath: string);
-const
-  TYPE_RESOURCE = 'EXE';
-begin
-  getResourceAsFile(nameResource, TYPE_RESOURCE, destinationPath);
-end;
-
-procedure getResourceAsFile(nameResource: String; typeResource: string; destinationPath: string);
-var
-  resourceStream: TResourceStream;
-begin
-  if (FindResource(hInstance, PChar(nameResource), PChar(typeResource)) <> 0) then
-  begin
-    resourceStream := TResourceStream.Create(HInstance, PChar(nameResource), PChar(typeResource));
-    try
-      resourceStream.Position := 0;
-      resourceStream.SaveToFile(destinationPath);
-    finally
-      resourceStream.Free;
-    end;
-  end
-  else
-  begin
-    raise Exception.Create('Not found a resource with name : ' + nameResource + ' and type : ' + typeResource);
-  end;
 end;
 
 function readStringWithEnvVariables(source: string): string;
@@ -482,29 +483,41 @@ begin
   result := alist;
 end;
 
-procedure downloadZipFileAndExtract(downloadInfo: TDownloadInfo; destinationPath: string;
-  forceOverWrite: boolean = true; forceDeleteZipFile: boolean = true);
+procedure downloadZipFileAndExtract(info: TDownloadInfo; options: TDownloadOptions;
+  destinationPath: string; forceDeleteZipFile: boolean = false);
 var
   pathZipFile: string;
 begin
-  downloadFile(downloadInfo, forceOverWrite);
-  pathZipFile := TPath.Combine(destinationPath, downloadInfo.fileName);
+  downloadFile(info, options);
+  pathZipFile := TPath.Combine(destinationPath, info.fileName);
   extractZip(pathZipFile, destinationPath, forceDeleteZipFile);
 end;
 
-procedure downloadFile(downloadInfo: TDownloadInfo; forceDelete: boolean);
+procedure downloadFileWithIndy(link: string; fileName: string); forward;
+
+procedure downloadFile(info: TDownloadInfo; options: TDownloadOptions);
 const
   ERR_MSG = 'Error downloading file';
 begin
-  with downloadInfo do
+  with info do
   begin
-    if forceDelete then
+    with options do
     begin
-      deleteFileIfExists(fileName);
-    end;
-    if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK) then
-    begin
-      raise Exception.Create(ERR_MSG);
+      if forceOverwrite then
+      begin
+        deleteFileIfExists(fileName);
+      end;
+      if useIndy then
+      begin
+        downloadFileWithIndy(link, fileName);
+      end
+      else
+      begin
+        if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK) then
+        begin
+          raise Exception.Create(ERR_MSG);
+        end;
+      end;
     end;
     if md5 <> '' then
     begin
@@ -514,6 +527,91 @@ begin
       end;
     end;
   end;
+end;
+
+//USING INDY YOU NEED libeay32.dll AND libssl32.dll
+procedure downloadFileWithIndy(link: string; fileName: string);
+var
+  indyHTTP: TIdHTTP;
+  ioHandler: TIdSSLIOHandlerSocketOpenSSL;
+  memoryStream: TMemoryStream;
+begin
+  indyHTTP := TIdHTTP.Create(nil);
+  ioHandler := TIdSSLIOHandlerSocketOpenSSL.Create(indyHTTP);
+  ioHandler.SSLOptions.SSLVersions := [
+    TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
+    TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
+    TIdSSLVersion.sslvSSLv3];
+  indyHTTP.IOHandler := ioHandler;
+  indyHTTP.HandleRedirects := true;
+
+  memoryStream := TMemoryStream.Create;
+  indyHTTP.Get(link, memoryStream);
+  memoryStream.SaveToFile(fileName);
+
+  FreeAndNil(memoryStream);
+  ioHandler.Close;
+  FreeAndNil(ioHandler);
+  FreeAndNil(indyHTTP);
+end;
+
+function getPath_libeay32: string; forward;
+function getPath_libssl32: string; forward;
+
+procedure getOpenSSLDLLsFromResource;
+const
+  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: 'DLL');
+  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: 'DLL');
+var
+  _path_libeay32: string;
+  _path_libssl32: string;
+begin
+  _path_libeay32 := getPath_libeay32;
+  if not FileExists(_path_libeay32) then
+  begin
+    getResourceAsFile(RESOURCE_LIBEAY32, _path_libeay32);
+  end;
+  _path_libssl32 := getPath_libssl32;
+  if not FileExists(_path_libssl32) then
+  begin
+    getResourceAsFile(RESOURCE_LIBSSL32, _path_libssl32);
+  end;
+end;
+
+procedure deleteOpenSSLDLLsIfExists;
+var
+  _path_libeay32: string;
+  _path_libssl32: string;
+begin
+  UnLoadOpenSSLLibrary;
+  _path_libeay32 := getPath_libeay32;
+  deleteFileIfExists(_path_libeay32);
+  _path_libssl32 := getPath_libssl32;
+  deleteFileIfExists(_path_libssl32);
+end;
+
+function getPath_libeay32: string;
+const
+  FILENAME_LIBEAY32 = 'libeay32.dll';
+var
+  _path_libeay32: string;
+  _currentDir: string;
+begin
+  _currentDir := getDirExe;
+  _path_libeay32 := TPath.Combine(_currentDir, FILENAME_LIBEAY32);
+  Result := _path_libeay32;
+end;
+
+function getPath_libssl32: string;
+const
+  FILENAME_LIBSSL32 = 'libssl32.dll';
+var
+  _path_libssl32: string;
+  _currentDir: string;
+begin
+  _currentDir := getDirExe;
+  _path_libssl32 := TPath.Combine(_currentDir, FILENAME_LIBSSL32);
+  Result := _path_libssl32;
 end;
 
 procedure extractZip(zipFile: string; extractPath: string; forceDelete: boolean = false);
