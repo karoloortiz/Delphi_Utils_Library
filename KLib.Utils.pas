@@ -76,7 +76,7 @@ uses
   System.Zip, System.IOUtils, System.StrUtils,
   Vcl.ExtCtrls,
   Winapi.Windows, Winapi.Messages, Winapi.Winsock, Winapi.ShellAPI,
-  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP,IdSSLOpenSSL,
+  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL,
   UrlMon;
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
@@ -455,9 +455,12 @@ end;
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 var
   _stringList: TStringList;
+  _result: string;
 begin
   _stringList := strToStringList(source, fixedLen);
-  result := _stringList.Text;
+  _result := _stringList.Text;
+  Delete(_result, length(_result), 1);
+  result := _result;
   FreeAndNil(_stringList);
 end;
 
@@ -469,6 +472,10 @@ var
 begin
   alist := TStringList.Create;
   alist.LineBreak := #13;
+  if fixedLen = 0 then
+  begin
+    fixedLen := Length(source) - 1;
+  end;
   aList.Capacity := (Length(source) div fixedLen) + 1;
 
   idx := 1;

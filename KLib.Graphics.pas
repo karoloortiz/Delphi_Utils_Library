@@ -78,6 +78,7 @@ function getNumberOfCharactersInWidth(widthOfCaption: integer; font: TFont): int
 function getWidthOfSingleCharacter(font: TFont): integer;
 function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
 
+function getHeightOfCaption(text: string; font: TFont; width: integer): integer;
 function getHeightOfSingleCharacter(myFont: TFont): integer;
 
 implementation
@@ -498,6 +499,22 @@ begin
   _width := _label.Width;
   FreeAndNil(_label);
   Result := _width;
+end;
+
+function getHeightOfCaption(text: string; font: TFont; width: integer): integer;
+const
+  DEFAULT_FREE_SPACE = 0.3;
+var
+  _heightOfSingleCharacter: integer;
+  _strFixedWordWrap: string;
+  _countLines: integer;
+  _defaultFreeSpace: double;
+begin
+  _heightOfSingleCharacter := getHeightOfSingleCharacter(font);
+  _strFixedWordWrap := getStrFixedWordWrapInWidth(text, width, font);
+  _countLines := getNumberOfLinesInStrFixedWordWrap(_strFixedWordWrap);
+  _defaultFreeSpace := _heightOfSingleCharacter * DEFAULT_FREE_SPACE;
+  result := trunc((_heightOfSingleCharacter * _countLines) + _defaultFreeSpace);
 end;
 
 function getHeightOfSingleCharacter(myFont: TFont): integer;
