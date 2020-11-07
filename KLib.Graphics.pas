@@ -3,9 +3,9 @@ unit KLib.Graphics;
 interface
 
 uses
+  KLib.Types,
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
-  System.Classes,
-  KLib.Types;
+  System.Classes;
 
 type
   TLabelLoading = class
@@ -23,7 +23,7 @@ type
     property labelSource: TLabel read getLabelSource write setLabelSource;
     constructor create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3); overload;
     constructor create(textToRepeat: string; countRepeatMax: integer = 3); overload;
-    destructor destroy; override;
+    destructor Destroy; override;
     procedure start;
     procedure stop;
   end;
@@ -48,7 +48,7 @@ type
   end;
 
   TComponentInfo = record
-    position: TPosition;
+    position: KLib.Types.TPosition;
     size: TSize;
     procedure setFromComponent(component: TControl);
     procedure setSizeFromComponent(component: TControl);
@@ -84,7 +84,7 @@ function getHeightOfSingleCharacter(myFont: TFont): integer;
 implementation
 
 uses
-  System.SysUtils,
+  System.SysUtils, System.Types,
   Winapi.Windows,
   dxGDIPlusClasses,
   KLib.Utils;

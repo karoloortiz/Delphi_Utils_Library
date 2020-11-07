@@ -3,9 +3,9 @@ unit KLib.Windows;
 interface
 
 uses
+  KLib.Types,
   Winapi.Windows, Winapi.Messages, Winapi.ShellApi,
-  System.Classes,
-  KLib.Types;
+  System.Classes;
 
 const
   WM_SERVICE_START = WM_USER + 0;
@@ -24,7 +24,7 @@ type
     class function getPercentageFreeMemory: string;
   end;
 
-  TWindowsService = class
+  TWindowsService = class //nameService is not case-sensitive
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
     class procedure start(nameService: string; nameMachine: string = '');
     class procedure stopIfExists(nameService: string; nameMachine: string = '';
@@ -41,21 +41,29 @@ type
 
   //----------------------------------
 function getFirstPortAvaliable(defaultPort: integer): integer;
+procedure validateThatTheAddressIsLocalhost(address: string);
+function getIPFromHostName(hostName: string): string; //if hostname is alreay the ip address, returns hostname
+function getIP: string;
 
 function runUnderWine: boolean;
-function getVersionSO: string;
+function isRunningUnderWindowsX64: boolean;
+
+type
+  TWindowsArchitecture = (WindowsX86, WindowsX64);
+function getWindowsArchitecture: TWindowsArchitecture;
+//function getVersionSO: string; // legacy
 function IsUserAnAdmin: boolean; external shell32;
 
 procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
   showWindow: cardinal = SW_HIDE);
 procedure executeAndWaitExe(const pathExe: string);
-procedure closeApplication(className, windowsName: string; handleSender: HWND = 0);
+procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
 
-function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
+function sendDataStruct(className: string; windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 
 function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
 procedure addTCP_IN_FirewallException(name: string; port: Word; description: string = ''; grouping: string = '';
-  executable: String = '');
+  executable: string = '');
 procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
@@ -64,6 +72,7 @@ function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boole
 function getValidFullPathInWindowsStyle(path: string): string;
 function getPathInWindowsStyle(path: string): string;
 
+function copyDir(sourceDir: string; destinationDir: string; silent: boolean = true): boolean;
 //-----------------------------------------------------------------
 //TODO REFACTOR
 function setProcessWindowToForeground(processName: string): boolean;
@@ -80,12 +89,12 @@ function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 implementation
 
 uses
+  KLib.Utils, Klib.Constants,
   System.IOUtils, System.SysUtils,
   System.Win.ComObj, System.Win.Registry,
-  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj,
+  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock,
   Vcl.Forms,
-  IdTCPClient,
-  KLib.Utils;
+  IdTCPClient;
 
 class procedure TMemoryRam.initialize;
 begin
@@ -147,8 +156,8 @@ var
   handleServiceControlManager: SC_HANDLE;
   handleService: SC_HANDLE;
   serviceStatus: TServiceStatus;
-  dwCheckpoint: DWord;
-  dwWaitTime: DWord;
+  //  dwCheckpoint: DWord;
+  //  dwWaitTime: DWord;
 
   _exit: boolean;
 begin
@@ -299,13 +308,10 @@ begin
   CloseServiceHandle(handleServiceControlManager);
 end;
 
-class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): Boolean;
+class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): boolean; //nameService is not case-sensitive
 var
   handleServiceControlManager: SC_HANDLE;
   handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-  dwCheckpoint: DWord;
-  dwWaitTime: DWord;
 begin
   try
     handleServiceControlManager := OpenSCManager(nil, nil, SC_MANAGER_CONNECT);
@@ -327,6 +333,8 @@ begin
 end;
 
 class procedure TWindowsService.deleteService(nameService: string);
+const
+  ERR_MSG = 'Unable to delete the Windows service.';
 begin
   if (existsService(nameService)) then
   begin
@@ -337,7 +345,7 @@ begin
     shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' & EXIT'));
     if (existsService(nameService)) then
     begin
-      raise Exception.Create('Unable to delete the Windows service.');
+      raise Exception.Create(ERR_MSG);
     end;
   end;
 end;
@@ -374,36 +382,130 @@ begin
   result := _port;
 end;
 
-function runUnderWine: boolean;
+procedure validateThatTheAddressIsLocalhost(address: string);
+const
+  ERR_MSG = 'The address does not match with the localhost ip.';
+var
+  _address: string;
+  _localhostIP_address: string;
 begin
-  //check if application runs under Wine
-  with TRegistry.Create do
-    try
-      RootKey := HKEY_LOCAL_MACHINE;
-      if OpenKeyReadOnly('Software\Wine') then
-      begin
-        Result := true;
-      end
-      else
-      begin
-        Result := false;
-      end;
-    finally
-      Free;
+  if address <> LOCALHOST_IP_ADDRESS then
+  begin
+    _address := getIPFromHostName(address);
+    _localhostIP_address := getIP;
+    if _address <> _localhostIP_address then
+    begin
+      raise Exception.Create(ERR_MSG);
     end;
-end;
-
-function getVersionSO: string; //TODO USE TMYSQLVERSION?
-begin
-  case TOSVersion.Architecture of
-    arIntelX86:
-      Result := '32_bit';
-    arIntelX64:
-      Result := '64_bit';
-  else
-    Result := 'Unknown OS architecture';
   end;
 end;
+
+function getIPFromHostName(hostName: string): string;
+const
+  ERR_WINSOCK_MSG = 'Winsock initialization error.';
+  ERR_NO_IP_FOUND_WITH_HOSTBAME_MSG = 'No IP found with hostname: ';
+var
+  varTWSAData: TWSAData;
+  varPHostEnt: PHostEnt;
+  varTInAddr: TInAddr;
+  ip: string;
+begin
+  if WSAStartup($101, varTWSAData) <> 0 then
+  begin
+    raise Exception.Create(ERR_WINSOCK_MSG);
+  end
+  else
+  begin
+    try
+      varPHostEnt := gethostbyname(PAnsiChar(AnsiString(hostName)));
+      varTInAddr := PInAddr(varPHostEnt^.h_Addr_List^)^;
+      ip := inet_ntoa(varTInAddr);
+    except
+      on E: Exception do
+      begin
+        WSACleanup;
+        raise Exception.Create(ERR_NO_IP_FOUND_WITH_HOSTBAME_MSG + hostName);
+      end;
+    end;
+  end;
+  WSACleanup;
+  Result := ip;
+end;
+
+function getIP: string;
+type
+  pu_long = ^u_long;
+const
+  ERR_MSG = 'Winsock initialization error.';
+var
+  varTWSAData: TWSAData;
+  varPHostEnt: PHostEnt;
+  varTInAddr: TInAddr;
+  namebuf: Array [0 .. 255] of ansichar;
+  ip: string;
+begin
+  if WSAStartup($101, varTWSAData) <> 0 then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end
+  else
+  begin
+    getHostName(nameBuf, sizeOf(nameBuf));
+    varPHostEnt := gethostbyname(nameBuf);
+    varTInAddr.S_addr := u_long(pu_long(varPHostEnt^.h_addr_list^)^);
+    ip := inet_ntoa(varTInAddr);
+  end;
+  WSACleanup;
+  Result := ip;
+end;
+
+function runUnderWine: boolean;
+const
+  KEY_WINE = 'Software\Wine';
+begin
+  Result := ExistsKeyIn_HKEY_LOCAL_MACHINE(KEY_WINE);
+end;
+
+function isRunningUnderWindowsX64: boolean;
+var
+  _WindowsArchitecture: TWindowsArchitecture;
+begin
+  _WindowsArchitecture := getWindowsArchitecture;
+  Result := _WindowsArchitecture = TWindowsArchitecture.WindowsX64;
+end;
+
+function getWindowsArchitecture: TWindowsArchitecture;
+const
+  ERR_MSG_PLATFORM = 'The OS. is not Windows.';
+  ERR_MSG_ARCHITECTURE = 'Unknown OS architecture.';
+begin
+  if TOSVersion.Platform <> pfWindows then
+  begin
+    raise Exception.Create(ERR_MSG_PLATFORM);
+  end;
+  case TOSVersion.Architecture of
+    arIntelX86:
+      Result := TWindowsArchitecture.WindowsX86;
+    arIntelX64:
+      Result := TWindowsArchitecture.WindowsX64;
+  else
+    begin
+      raise Exception.Create(ERR_MSG_ARCHITECTURE);
+    end;
+  end;
+end;
+
+//function getVersionSO: string; //TODO:delete legacy code
+//begin
+//  case TOSVersion.Architecture of
+//    arIntelX86:
+//      Result := '32_bit';
+//    arIntelX64:
+//      Result := '64_bit';
+//  else
+//    Result := 'Unknown OS architecture';
+//  end;
+//end;
 
 procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
 showWindow: cardinal = SW_HIDE);
@@ -471,7 +573,7 @@ begin
   end;
 end;
 
-procedure closeApplication(className, windowsName: string; handleSender: HWND = 0);
+procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
 var
   receiverHandle: THandle;
 begin
@@ -487,7 +589,7 @@ begin
   end;
 end;
 
-function sendDataStruct(className, windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
+function sendDataStruct(className: string; windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 var
   receiverHandle: THandle;
   copyDataStruct: TCopyDataStruct;
@@ -761,6 +863,30 @@ begin
   result := _path;
 end;
 
+function copyDir(sourceDir: string; destinationDir: string; silent: boolean = true): boolean;
+const
+  SILENT_FLAGS: FILEOP_FLAGS = FOF_SILENT or FOF_NOCONFIRMATION;
+var
+  sHFileOpStruct: TSHFileOpStruct;
+begin
+  ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
+  with sHFileOpStruct do
+  begin
+    wFunc := FO_COPY;
+    if silent then
+    begin
+      fFlags := FOF_FILESONLY or SILENT_FLAGS;
+    end
+    else
+    begin
+      fFlags := FOF_FILESONLY;
+    end;
+    pFrom := PChar(sourceDir + #0);
+    pTo := PChar(destinationDir)
+  end;
+  Result := (0 = ShFileOperation(sHFileOpStruct));
+end;
+
 //----------------------------------------------------------------------
 procedure mySetForegroundWindow(windowHandle: THandle); forward;
 
@@ -810,11 +936,14 @@ var
 begin
   userNameLen := 256;
   SetLength(userName, userNameLen);
-  if GetUserName(PChar(userName), userNameLen)
-  then
-    Result := Copy(userName, 1, userNameLen - 1)
+  if GetUserName(PChar(userName), userNameLen) then
+  begin
+    Result := Copy(userName, 1, userNameLen - 1);
+  end
   else
+  begin
     Result := '';
+  end;
 end;
 
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; forward;
@@ -826,14 +955,7 @@ var
 begin
   sameProcessName := checkProcessName(processEntry, processCompare);
   sameUserOfProcess := checkUserOfProcess(processCompare.username, processEntry.th32ProcessID);
-  if sameProcessName and sameUserOfProcess then
-  begin
-    result := true;
-  end
-  else
-  begin
-    result := false;
-  end;
+  Result := sameProcessName and sameUserOfProcess;
 end;
 
 procedure mySetForegroundWindow(windowHandle: THandle);
@@ -933,14 +1055,7 @@ end;
 
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
 begin
-  if processEntry.szExeFile = processCompare.nameProcess then
-  begin
-    result := true;
-  end
-  else
-  begin
-    result := false;
-  end;
+  result := processEntry.szExeFile = processCompare.nameProcess;
 end;
 
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
@@ -1010,8 +1125,6 @@ end;
 //----------------------------------------------------------------------------------------
 
 function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
-const
-  ERR_MSG = 'Cannot Open Key in HKEY_LOCAL_MACHINE';
 var
   registry: TRegistry;
   isOpenKey: boolean;

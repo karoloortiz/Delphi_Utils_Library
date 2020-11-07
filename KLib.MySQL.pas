@@ -3,10 +3,10 @@ unit KLib.MySQL;
 interface
 
 uses
+  KLib.Types, KLib.Windows,
   System.IniFiles, System.SysUtils,
   Winapi.Windows,
-  MyAccess,
-  KLib.Types, KLib.Windows;
+  MyAccess;
 
 type
   TMySQLCredentials = record
@@ -22,8 +22,8 @@ type
     procedure setPort(value: integer);
     function get_loose_keyring_file_data: string;
     procedure set_loose_keyring_file_data(value: string);
-    function getSecurefilepriv: string;
-    procedure setSecurefilepriv(value: string);
+    function get_secure_file_priv: string;
+    procedure set_secure_file_priv(value: string);
     function getDatadir: string;
     procedure setDatadir(value: string);
     function get_innodb_buffer_pool_size: string;
@@ -31,14 +31,14 @@ type
     function get_innodb_log_file_size: string;
     procedure set_innodb_log_file_size(value: string);
   public
-    constructor Create(const FileName: string); overload;
+    constructor Create(fileName: string); overload;
     property port: integer read getPort write setPort;
     property loose_keyring_file_data: string read get_loose_keyring_file_data write set_loose_keyring_file_data;
-    property securefilepriv: string read getSecurefilepriv write setSecurefilepriv;
+    property secure_file_priv: string read get_secure_file_priv write set_secure_file_priv;
     property datadir: string read getDatadir write setDatadir;
     property innodb_buffer_pool_size: string read get_innodb_buffer_pool_size write set_innodb_buffer_pool_size;
     property innodb_log_file_size: string read get_innodb_log_file_size write set_innodb_log_file_size;
-    procedure setOptimizedInnodbSettings;
+    procedure setOptimizedInnodbSettings(raiseExceptionIfMemoryIsInsufficient: boolean = FALSE);
     procedure setDefaultPathsSettingsInIni(pathMySQLInstallationFolder: string; pathDatadir: string = '');
   end;
 
@@ -51,6 +51,16 @@ type
     property path_bin: string read _pathBin write setPathBin;
     function getPathMysqlAdmin: string;
     function getPathMysqld: string;
+  end;
+
+  TMySQLVersion = (v5_7, v_8);
+  TMySQLArchitecture = (auto, arIntelX86, arIntelX64);
+
+  TVC_RedistInstallOpts = record
+    fileNameInstaller: string;
+    mySQLArchitecture: TMySQLArchitecture;
+    deleteFileAfterInstall: boolean;
+    isFileAResource: boolean;
   end;
 
   TMySQL = class
@@ -68,6 +78,7 @@ type
     database: string;
     MySQLInfo: TMySQLInfo;
     iniManipulator: TMySQLIniManipulator;
+    VC_RedistInstallOpts: TVC_RedistInstallOpts;
     property credentials: TCredentials read _credentials write setCredentials;
     property port: integer read getPortFromIni write setPortToIni;
     constructor create(credentials: TCredentials; MySQLInfo: TMySQLInfo);
@@ -123,25 +134,20 @@ type
     procedure connectToDatabaseInWaitForm(msg: string = '');
     procedure connectToDatabase;
     procedure shutdownMySQL;
-    destructor destroy; override;
+    destructor Destroy; override;
   end;
 
-type
-  TVersionMySQL = (auto, arIntelX86, arIntelX64); //TODO MOVE IN KLIB.WINDOWS?
+procedure installVC_Redist2013(installOptions: TVC_RedistInstallOpts);
+function isVC_Redist2013Installed: boolean;
+function isVC_Redist2013x86Installed: boolean;
+function isVC_Redist2013x64Installed: boolean;
 
-  TVcredistInstallOptions = record
-    fileNameInstaller: string;
-    versionMySQL: TVersionMySQL;
-    showMsgInstall: boolean;
-    deleteFileAfterInstall: boolean;
-    isFileAResource: boolean;
-  end;
+procedure installVC_Redist2019x64(installOptions: TVC_RedistInstallOpts);
+function isVC_Redist2019x64Installed: boolean;
 
-procedure installLibVisualStudio2013(installOptions: TVcredistInstallOptions);
-function checkLibVisualStudio2013: boolean;
-function checkLibVisualStudio2013x86: boolean;
-function checkLibVisualStudio2013x64: boolean;
-
+procedure mysqlVersionIsv8(credentials: TMySQLCredentials);
+function getMySQLVersion(credentials: TMySQLCredentials): TMySQLVersion;
+function getMySQLVersionAsString(credentials: TMySQLCredentials): string;
 function getMySQLDataDir(credentials: TMySQLCredentials): string;
 function getFirstFieldFromSQLStatement(sqlStatement: string; mysqlCredentials: TMySQLCredentials): Variant;
 function getValidMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
@@ -151,37 +157,37 @@ function getMySQLConnection(mySQLCredentials: TMySQLCredentials): TMyConnection;
 implementation
 
 uses
+  KLib.Utils, KLib.Async, KLib.WaitForm,
   Winapi.ShellAPI,
   Vcl.Dialogs, Vcl.Controls,
-  System.Win.Registry, System.Classes, System.IOUtils,
-  KLib.Utils, KLib.Async, KLib.WaitForm;
+  System.Win.Registry, System.Classes, System.IOUtils, System.StrUtils;
 
-constructor TMySQLIniManipulator.Create(const FileName: string);
+const
+  MYSQLD_SECTION_NAME = 'mysqld';
+
+constructor TMySQLIniManipulator.Create(fileName: string);
 var
   _pathFile: string;
 begin
-  _pathFile := getValidFullPath(FileName);
-  if not FileExists(_pathFile) then
-  begin
-    raise Exception.Create('File: ' + FileName + ' doesn''t exists.');
-  end;
+  _pathFile := getValidFullPath(fileName);
+  exceptionIfFileNotExists(_pathFile);
 
   inherited Create(_pathFile);
 end;
 
 function TMySQLIniManipulator.getPort: integer;
 begin
-  result := ReadInteger('mysqld', 'port', 0);
+  result := ReadInteger(MYSQLD_SECTION_NAME, 'port', 0);
 end;
 
 procedure TMySQLIniManipulator.setPort(value: integer);
 begin
-  WriteInteger('mysqld', 'port', value);
+  WriteInteger(MYSQLD_SECTION_NAME, 'port', value);
 end;
 
 function TMySQLIniManipulator.get_loose_keyring_file_data: string;
 begin
-  result := ReadString('mysqld', 'loose_keyring_file_data', '');
+  result := ReadString(MYSQLD_SECTION_NAME, 'loose_keyring_file_data', '');
 end;
 
 procedure TMySQLIniManipulator.set_loose_keyring_file_data(value: string);
@@ -189,25 +195,25 @@ var
   _pathInLinuxStyle: string;
 begin
   _pathInLinuxStyle := getPathInLinuxStyle(value);
-  WriteString('mysqld', 'loose_keyring_file_data', _pathInLinuxStyle);
+  WriteString(MYSQLD_SECTION_NAME, 'loose_keyring_file_data', _pathInLinuxStyle);
 end;
 
-function TMySQLIniManipulator.getSecurefilepriv: string;
+function TMySQLIniManipulator.get_secure_file_priv: string;
 begin
-  result := ReadString('mysqld', 'secure-file-priv', '');
+  result := ReadString(MYSQLD_SECTION_NAME, 'secure_file_priv', '');
 end;
 
-procedure TMySQLIniManipulator.setSecurefilepriv(value: string);
+procedure TMySQLIniManipulator.set_secure_file_priv(value: string);
 var
   _pathInLinuxStyle: string;
 begin
   _pathInLinuxStyle := getPathInLinuxStyle(value);
-  WriteString('mysqld', 'secure-file-priv', _pathInLinuxStyle);
+  WriteString(MYSQLD_SECTION_NAME, 'secure_file_priv', _pathInLinuxStyle);
 end;
 
 function TMySQLIniManipulator.getDatadir: string;
 begin
-  result := ReadString('mysqld', 'datadir', '');
+  result := ReadString(MYSQLD_SECTION_NAME, 'datadir', '');
 end;
 
 procedure TMySQLIniManipulator.setDatadir(value: string);
@@ -215,30 +221,32 @@ var
   _pathInLinuxStyle: string;
 begin
   _pathInLinuxStyle := getPathInLinuxStyle(value);
-  WriteString('mysqld', 'datadir', _pathInLinuxStyle);
+  WriteString(MYSQLD_SECTION_NAME, 'datadir', _pathInLinuxStyle);
 end;
 
 function TMySQLIniManipulator.get_innodb_buffer_pool_size: string;
 begin
-  result := ReadString('mysqld', 'innodb_buffer_pool_size', '');
+  result := ReadString(MYSQLD_SECTION_NAME, 'innodb_buffer_pool_size', '');
 end;
 
 procedure TMySQLIniManipulator.set_innodb_buffer_pool_size(value: string);
 begin
-  WriteString('mysqld', 'innodb_buffer_pool_size', value);
+  WriteString(MYSQLD_SECTION_NAME, 'innodb_buffer_pool_size', value);
 end;
 
 function TMySQLIniManipulator.get_innodb_log_file_size: string;
 begin
-  result := ReadString('mysqld', 'innodb_log_file_size', '');
+  result := ReadString(MYSQLD_SECTION_NAME, 'innodb_log_file_size', '');
 end;
 
 procedure TMySQLIniManipulator.set_innodb_log_file_size(value: string);
 begin
-  WriteString('mysqld', 'innodb_log_file_size', value);
+  WriteString(MYSQLD_SECTION_NAME, 'innodb_log_file_size', value);
 end;
 
-procedure TMySQLIniManipulator.setOptimizedInnodbSettings;
+procedure TMySQLIniManipulator.setOptimizedInnodbSettings(raiseExceptionIfMemoryIsInsufficient: boolean = FALSE);
+const
+  MSG_INSUFFICENT_MEMORY = 'Insufficient memory.';
 begin
   TMemoryRam.initialize;
   if (TMemoryRam.getTotalFreeMemoryDouble > 300) then
@@ -258,15 +266,13 @@ begin
   end
   else
   begin
-    //VALORI DEFAULT
+    //DEFAULT VALUES
     innodb_buffer_pool_size := '8M';
     innodb_log_file_size := '48M';
   end;
-  if TMemoryRam.getTotalFreeMemoryDouble < 40 then
+  if (TMemoryRam.getTotalFreeMemoryDouble < 40) and (raiseExceptionIfMemoryIsInsufficient) then
   begin
-    //TODO: CANCELLARE ? PUO' CREARE ERRORI CON I THREAD
-    ShowMessage('Memoria RAM libera del computer insufficiente, controllare i processi del computer.' + #13#10
-      + 'Il servizio MySQL potrebbe non avviarsi per le risorse limitate. ');
+    raise Exception.Create(MSG_INSUFFICENT_MEMORY);
   end;
 end;
 
@@ -274,20 +280,15 @@ procedure TMySQLIniManipulator.setDefaultPathsSettingsInIni(pathMySQLInstallatio
   pathDatadir: string = '');
 var
   _pathMySQL: string;
-  _path_securefilepriv: string;
-  _path_keyring: string;
+  _path_secure_file_priv: string;
   _path_datadir: string;
 begin
   _pathMySQL := ExpandFileName(pathMySQLInstallationFolder);
 
-  _path_securefilepriv := TPath.Combine(_pathMySQL, 'Uploads');
-  _path_securefilepriv := ansiQuotedStr(_path_securefilepriv, '"');
+  _path_secure_file_priv := TPath.Combine(_pathMySQL, 'Uploads');
+  _path_secure_file_priv := ansiQuotedStr(_path_secure_file_priv, '"');
 
-  securefilepriv := _path_securefilepriv;
-
-  _path_keyring := TPath.Combine(_pathMySQL, 'keyring');
-  _path_keyring := ansiQuotedStr(_path_keyring, '"');
-  loose_keyring_file_data := _path_keyring;
+  secure_file_priv := _path_secure_file_priv;
 
   if pathDatadir <> '' then
   begin
@@ -331,32 +332,18 @@ begin
 end;
 
 procedure TMySQL.initialCheckAndSetup;
-var
-  _nameResource: string;
-  _installVcredistOptions: TVcredistInstallOptions;
 begin
   active := true;
   try
-    if not checkLibVisualStudio2013 then
+    if not isVC_Redist2013Installed then
     begin
-      //QUANDO SI UTILIZZA AGGIUNGERE "VCREDIST_32_bit EXE vcredist_x86.exe" e "VCREDIST_64_bit EXE assets\vcredist_x64.exe"
-      //al file risorse DEL PROGETTO
-      _nameResource := 'VCREDIST_' + getVersionSO;
-      with _installVcredistOptions do
-      begin
-        fileNameInstaller := _nameResource;
-        versionMySQL := TVersionMySQL.auto;
-        showMsgInstall := true;
-        deleteFileAfterInstall := true;
-        isFileAResource := true;
-      end;
-      installLibVisualStudio2013(_installVcredistOptions);
+      installVC_Redist2013(VC_RedistInstallOpts);
     end;
   except
     on E: Exception do
     begin
       active := false;
-      ShowMessage(e.Message);
+      raise Exception.Create(e.Message);
     end;
   end;
 end;
@@ -368,11 +355,10 @@ var
   path_mysqld: string;
 begin
   path_myIni := ExcludeTrailingPathDelimiter(MySQLInfo.path_ini);
+  exceptionIfFileNotExists(path_myIni);
   path_mysqld := MySQLInfo.getPathMysqld;
-  if not fileexists(path_mysqld) and not fileexists(path_myIni) then
-  begin
-    raise Exception.Create('path_myIni or path_bin not exists.');
-  end;
+  exceptionIfFileNotExists(path_mysqld);
+
   mysqld_command := ' --defaults-file="' + path_myIni + '"';
   shellExecute(0, 'open', pchar(path_mysqld), PCHAR(mysqld_command), nil, SW_HIDE);
 
@@ -380,6 +366,8 @@ begin
 end;
 
 procedure TMySQL.waitUntilProcessStart;
+const
+  MSG_WAIT = 'Apparentely MySQL takes long time to start, would you wait?';
 var
   i: integer;
   _exit: boolean;
@@ -398,8 +386,7 @@ begin
   begin
     if (i > 10) then
     begin
-      if messagedlg('Apparentely MySQL takes long time to start, would you wait?',
-        mtCustom, [mbYes, mbCancel], 0) = mrYes then
+      if messagedlg(MSG_WAIT, mtCustom, [mbYes, mbCancel], 0) = mrYes then
       begin
         i := 0;
       end
@@ -728,7 +715,9 @@ end;
 function TMySQLProcess.canYouShutdown_personalConnectionsClosed: boolean;
 var
   _realNumberConnections: integer;
+  _result: boolean;
 begin
+  _result := false;
   query.SQL.Clear;
   query.SQL.Add('SELECT  USER');
   query.SQL.Add('FROM information_schema.PROCESSLIST');
@@ -736,7 +725,7 @@ begin
   _realNumberConnections := query.RecordCount - 1;
   if _realNumberConnections = 0 then
   begin
-    result := true;
+    _result := true;
   end
   else
   begin
@@ -745,14 +734,15 @@ begin
       if messagedlg('Altri programmi sono collegati al database, forzare la chiusura di quest''ultimo?',
         mtCustom, [mbYes, mbCancel], 0) = mrYes then
       begin
-        result := true;
+        _result := true;
       end;
     end
     else
     begin
-      result := false;
+      _result := false;
     end;
   end;
+  Result := _result;
 end;
 
 function TMySQLProcess.canYouShutdown_personalConnectionsActived: boolean;
@@ -803,12 +793,9 @@ begin
   end;
 end;
 
-procedure installLibVisualStudio2013(installOptions: TVcredistInstallOptions);
+procedure installVC_Redist2013(installOptions: TVC_RedistInstallOpts);
 const
-  MSG_INSTALL = 'MySQL needs:' + #13#10 +
-    'Visual C++ Redistributable Package Visual Studio 2013.' + #13#10 + #13#10 +
-    'The installer will run.';
-  MSG_ERROR = 'Visual C++ Redistributable Visual Studio 2013 not correctly installed.';
+  MSG_ERROR = 'Microsoft Visual C++ Redistributable 2013 not correctly installed.';
 var
   _pathFileName: string;
   _applicationDir: string;
@@ -817,10 +804,6 @@ begin
   with installOptions do
   begin
     _pathFileName := fileNameInstaller;
-    if showMsgInstall then
-    begin
-      ShowMessage(MSG_INSTALL);
-    end;
     if isFileAResource then
     begin
       _applicationDir := getDirExe;
@@ -836,13 +819,15 @@ begin
       deleteFileIfExists(_pathFileName);
     end;
 
-    case versionMySQL of
-      TVersionMySQL.auto:
-        isSuccessfulinstalled := checkLibVisualStudio2013;
-      TVersionMySQL.arIntelX86:
-        isSuccessfulinstalled := checkLibVisualStudio2013x86;
-      TVersionMySQL.arIntelX64:
-        isSuccessfulinstalled := checkLibVisualStudio2013x64;
+    case mySQLArchitecture of
+      TMySQLArchitecture.auto:
+        isSuccessfulinstalled := isVC_Redist2013Installed;
+      TMySQLArchitecture.arIntelX86:
+        isSuccessfulinstalled := isVC_Redist2013x86Installed;
+      TMySQLArchitecture.arIntelX64:
+        isSuccessfulinstalled := isVC_Redist2013x64Installed;
+    else
+      isSuccessfulinstalled := false;
     end;
     if not isSuccessfulinstalled then
     begin
@@ -851,7 +836,7 @@ begin
   end;
 end;
 
-function checkLibVisualStudio2013: boolean;
+function isVC_Redist2013Installed: boolean;
 var
   _versionSO: string;
   _result: boolean;
@@ -859,16 +844,16 @@ begin
   _result := false;
   if _versionSO = '32_bit' then
   begin
-    _result := checkLibVisualStudio2013x86;
+    _result := isVC_Redist2013x86Installed;
   end
   else if _versionSO = '64_bit' then
   begin
-    _result := checkLibVisualStudio2013x64;
+    _result := isVC_Redist2013x64Installed;
   end;
   Result := _result;
 end;
 
-function checkLibVisualStudio2013x86: boolean;
+function isVC_Redist2013x86Installed: boolean;
 const
   HKEY_VCREDIST_X86 = '\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
   HKEY_VCREDIST_X86_V2 = '\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
@@ -881,7 +866,7 @@ begin
   Result := existsHKEY_VCREDIST_X86 or existsHKEY_VCREDIST_X86_V2;
 end;
 
-function checkLibVisualStudio2013x64: boolean;
+function isVC_Redist2013x64Installed: boolean;
 const
   HKEY_VCREDIST_X64 = '\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64';
 var
@@ -891,13 +876,105 @@ begin
   Result := existsHKEY_VCREDIST_X64;
 end;
 
+procedure installVC_Redist2019x64(installOptions: TVC_RedistInstallOpts);
+const
+  MSG_ERROR = 'Microsoft Visual C++ Redistributable 2019 not correctly installed.';
+var
+  _pathFileName: string;
+  _applicationDir: string;
+  isSuccessfulinstalled: boolean;
+begin
+  with installOptions do
+  begin
+    _pathFileName := fileNameInstaller;
+    if isFileAResource then
+    begin
+      _applicationDir := getDirExe;
+      _pathFileName := TPath.Combine(_applicationDir, fileNameInstaller);
+      getResourceAsEXEFile(fileNameInstaller, _pathFileName);
+    end;
+
+    executeAndWaitExe(_pathFileName);
+    Sleep(2000);
+
+    if deleteFileAfterInstall then
+    begin
+      deleteFileIfExists(_pathFileName);
+    end;
+    isSuccessfulinstalled := isVC_Redist2019x64Installed;
+    if not isSuccessfulinstalled then
+    begin
+      raise Exception.Create(MSG_ERROR);
+    end;
+  end;
+end;
+
+function isVC_Redist2019x64Installed: boolean;
+const
+  HKEY_VC_REDIST2019_X64 = '\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64';
+var
+  existsHKEY_VC_REDIST2019_X64: boolean;
+begin
+  existsHKEY_VC_REDIST2019_X64 := ExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VC_REDIST2019_X64);
+  Result := existsHKEY_VC_REDIST2019_X64;
+end;
+
+procedure mysqlVersionIsv8(credentials: TMySQLCredentials);
+const
+  ERR_MSG = 'The MySQL version is not 8';
+var
+  version: TMySQLVersion;
+begin
+  version := getMySQLVersion(credentials);
+  if version <> TMySQLVersion.v_8 then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+end;
+
+function getMySQLVersion(credentials: TMySQLCredentials): TMySQLVersion;
+const
+  MYSQL_V5_7 = '5.7';
+  MYSQL_V8 = '8';
+
+  ERR_MSG = 'Unknown version of MySQL.';
+var
+  _versionAsString: string;
+  version: TMySQLVersion;
+begin
+  _versionAsString := getMySQLVersionAsString(credentials);
+  if AnsiStartsStr(_versionAsString, MYSQL_V5_7) then
+  begin
+    version := TMySQLVersion.v5_7;
+  end
+  else if AnsiStartsStr(_versionAsString, MYSQL_V8) then
+  begin
+    version := TMySQLVersion.v_8;
+  end
+  else
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+  result := version;
+end;
+
+function getMySQLVersionAsString(credentials: TMySQLCredentials): string;
+const
+  SQL_STATEMENT = 'select @@version';
+var
+  version: string;
+begin
+  version := getFirstFieldFromSQLStatement(SQL_STATEMENT, credentials);
+  result := version;
+end;
+
 function getMySQLDataDir(credentials: TMySQLCredentials): string;
 const
-  SQL = 'select @@datadir';
+  SQL_STATEMENT = 'select @@datadir';
 var
   dataDir: string;
 begin
-  dataDir := getFirstFieldFromSQLStatement(sql, credentials);
+  dataDir := getFirstFieldFromSQLStatement(SQL_STATEMENT, credentials);
   result := dataDir;
 end;
 
