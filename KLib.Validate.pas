@@ -8,7 +8,7 @@ uses
 //------REGEX----------
 function isValidEmail(email: string): boolean;
 //-------------------
-procedure tryToValidate(validatingProcedure: TProcedureOfObject; errorLabel: TLabel);
+procedure tryToValidate(validatingProcedure: TMethod; errorLabel: TLabel);
 procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TRzEdit; fieldName: string); overload;
 procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxTextEdit; fieldName: string); overload;
 procedure exceptionIfEditIsBlank(myForm: TForm; myEdit: TcxMaskEdit; fieldName: string); overload;
@@ -44,7 +44,7 @@ begin
   end;
 end;
 
-procedure tryToValidate(validatingProcedure: TProcedureOfObject; errorLabel: TLabel);
+procedure tryToValidate(validatingProcedure: TMethod; errorLabel: TLabel);
 begin
   try
     validatingProcedure;
