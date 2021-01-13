@@ -1,3 +1,39 @@
+{
+  KLib Version = 1.0
+  The Clear BSD License
+
+  Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
+  zitrokarol@gmail.com
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted (subject to the limitations in the disclaimer
+  below) provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+
+  NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY
+  THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+}
+
 unit KLib.Graphics;
 
 interface
@@ -10,22 +46,22 @@ uses
 type
   TLabelLoading = class
   private
-    originalText: string;
     timer: TTimer;
     count: integer;
-    lblSource: TLabel;
+    _labelSource: TLabel;
     procedure onTimer(Sender: TObject);
-    procedure setLabelSource(const Value: TLabel);
+    procedure setLabelSource(value: TLabel);
     function getLabelSource: TLabel;
   public
-    repeatMax: integer;
+    countRepeatMax: integer;
     textToRepeat: string;
+    caption: string;
     property labelSource: TLabel read getLabelSource write setLabelSource;
-    constructor create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3); overload;
-    constructor create(textToRepeat: string; countRepeatMax: integer = 3); overload;
-    destructor Destroy; override;
+    constructor create(labelSource: TLabel; textToRepeat: string = '.'; countRepeatMax: integer = 3); overload;
+    constructor create(textToRepeat: string = '.'; countRepeatMax: integer = 3); overload;
     procedure start;
     procedure stop;
+    Destructor Destroy; override;
   end;
 
   TRGB = record
@@ -66,7 +102,8 @@ procedure setTColorToTPanel(component: TPanel; color: TColor);
 procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
 procedure setComponentInMiddlePosition(control: TControl);
 
-procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
+procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
+//!not include in realease!
 
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
   captionButtons: array of string; dlgCaption: string): Integer;
@@ -84,63 +121,31 @@ function getHeightOfSingleCharacter(myFont: TFont): integer;
 implementation
 
 uses
-  System.SysUtils, System.Types,
+  KLib.Utils,
   Winapi.Windows,
-  dxGDIPlusClasses,
-  KLib.Utils;
+  System.SysUtils, System.Types;
 
+//    dxGDIPlusClasses,   todo keep version with devexpress and see the differences
+//!not include in realease!
 //-------------------------------------------------------------------------------------------------
 //  TLabelLoading
 //-------------------------------------------------------------------------------------------------
-constructor TLabelLoading.create(labelSource: TLabel; textToRepeat: string; countRepeatMax: integer = 3);
+constructor TLabelLoading.create(labelSource: TLabel; textToRepeat: string = '.'; countRepeatMax: integer = 3);
 begin
-  Self.labelSource := labelSource;
+  Self._labelSource := labelSource;
   create(textToRepeat, countRepeatMax);
 end;
 
-constructor TLabelLoading.create(textToRepeat: string; countRepeatMax: integer = 3);
+constructor TLabelLoading.create(textToRepeat: string = '.'; countRepeatMax: integer = 3);
 begin
   Self.textToRepeat := textToRepeat;
-  Self.repeatMax := countRepeatMax;
+  Self.countRepeatMax := countRepeatMax;
   Self.count := 0;
-  Self.originalText := labelSource.Caption;
+  Self.caption := labelSource.Caption;
   timer := TTimer.create(nil);
   Timer.Interval := 600;
   Timer.OnTimer := onTimer;
   Timer.Enabled := false;
-end;
-
-destructor TLabelLoading.destroy;
-begin
-  FreeAndNil(timer);
-  inherited Destroy;
-end;
-
-procedure TLabelLoading.setLabelSource(const Value: TLabel);
-begin
-  Self.stop;
-  lblSource := Value;
-  Self.originalText := Value.Caption;
-  Self.start;
-end;
-
-function TLabelLoading.getLabelSource: TLabel;
-begin
-  Result := lblSource;
-end;
-
-procedure TLabelLoading.onTimer(Sender: TObject);
-begin
-  if (count = repeatMax) then
-  begin
-    labelSource.Caption := originalText;
-    count := 0;
-  end
-  else
-  begin
-    labelSource.Caption := labelSource.Caption + textToRepeat;
-    inc(count);
-  end;
 end;
 
 procedure TLabelLoading.start;
@@ -151,7 +156,40 @@ end;
 procedure TLabelLoading.stop;
 begin
   timer.Enabled := false;
-  lblSource.Caption := originalText;
+  _labelSource.Caption := caption;
+end;
+
+procedure TLabelLoading.onTimer(Sender: TObject);
+begin
+  if (count = countRepeatMax) then
+  begin
+    labelSource.Caption := caption;
+    count := 0;
+  end
+  else
+  begin
+    labelSource.Caption := labelSource.Caption + textToRepeat;
+    inc(count);
+  end;
+end;
+
+procedure TLabelLoading.setLabelSource(value: TLabel);
+begin
+  Self.stop;
+  _labelSource := value;
+  Self.caption := value.Caption;
+  Self.start;
+end;
+
+function TLabelLoading.getLabelSource: TLabel;
+begin
+  Result := _labelSource;
+end;
+
+destructor TLabelLoading.destroy;
+begin
+  FreeAndNil(timer);
+  inherited Destroy;
 end;
 
 //-------------------------------------------------------------------------------------------------
@@ -392,12 +430,21 @@ end;
 
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
 var
-  _img: TdxSmartImage;
+  _img: TPicture;
 begin
-  _img := TdxSmartImage.Create;
+  _img := TPicture.Create;
   _img.LoadFromFile(pathImgFile);
-  img.Picture.Graphic := _img;
+  img.Picture := _img;
 end;
+
+//procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
+//var
+//  _img: TdxSmartImage;
+//begin
+//  _img := TdxSmartImage.Create;
+//  _img.LoadFromFile(pathImgFile);
+//  img.Picture.Graphic := _img;
+//end;
 
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
   captionButtons: array of string; dlgCaption: string): Integer;
@@ -428,6 +475,8 @@ begin
 end;
 
 function getComponentInFormByName(componentName: string; myForm: TForm): TComponent;
+const
+  ERR_MSG = 'Component doesn''t exists in form.';
 var
   i: Integer;
   _component: TComponent;
@@ -443,7 +492,7 @@ begin
   end;
   if (result = nil) then
   begin
-    raise Exception.Create('Component doesn''t exists in form');
+    raise Exception.Create(ERR_MSG);
   end;
 end;
 

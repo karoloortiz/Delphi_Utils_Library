@@ -1,15 +1,51 @@
+{
+  KLib Version = 1.0
+  The Clear BSD License
+
+  Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
+  zitrokarol@gmail.com
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted (subject to the limitations in the disclaimer
+  below) provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+
+  NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY
+  THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+}
+
 unit KLib.Utils;
 
 interface
 
 uses
   KLib.Types,
-  System.SysUtils, System.Classes,
   Vcl.Imaging.pngimage,
-  IdFTP;
+  Xml.XMLIntf,
+  IdFTP,
+  System.SysUtils, System.Classes;
 
 const
-  DEFAULT_DOWNLOAD_OPTIONS: TDownloadOptions = (forceOverwrite: true; useIndy: true);
   _DEFAULT_ERROR_STRING_VALUE_INI_FILES = '*_/&@';
 
 type
@@ -18,97 +54,102 @@ type
     function GetPreamble: TBytes; override;
   end;
 
-function getIntValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string): integer; overload;
-function getIntValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string;
+function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer; overload;
+function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: integer): integer; overload;
-function getStringValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string;
+function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
+
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
-function fileExistsAndEmpty(filePath: string): Boolean;
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
-procedure exceptionIfFileNotExists(fileName: string);
 
-procedure validateThatThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64);
+function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 function getFreeSpaceOnDrive(drive: char): int64;
 function getIndexOfDrive(drive: char): integer;
 function getDriveExe: char;
 function getDirSize(path: string): int64;
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
 function getDirExe: string;
-procedure createDirIfNotExists(const dirName: string);
-procedure createHideDir(const path: string; forceDelete: boolean = false);
-procedure deleteDirectory(dirName: string);
+procedure createDirIfNotExists(dirName: string);
 
-function checkIfIsLinuxSubfolder(mainFolder: string; subFolder: string): boolean;
+function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 function getPathInLinuxStyle(path: string): string;
 
-function checkIfIsSubFolder(subFolder: string; mainFolder: string): boolean;
+function checkIfIsSubDir(subDir: string; mainDir: string): boolean;
 function getValidFullPath(fileName: string): string;
 
-function MD5FileChecker(fileName: string; MD5: string): boolean;
-function getMD5FileChecksum(const fileName: string): string;
+function checkMD5File(fileName: string; MD5: string): boolean;
+function getMD5ChecksumFile(fileName: string): string;
 
-procedure unzipResource(nameResource: string; destinationFolder: string);
+procedure unzipResource(nameResource: string; destinationDir: string);
 function getPNGResource(nameResource: String): TPngImage;
 procedure getResourceAsEXEFile(nameResource: String; destinationFileName: string);
 procedure getResourceAsZIPFile(nameResource: String; destinationFileName: string);
 procedure getResourceAsFile(resource: TResource; destinationFileName: string);
+function getResourceAsXSL(nameResource: string): IXMLDocument;
 function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
 
-procedure downloadZipFileAndExtract(info: TDownloadInfo; options: TDownloadOptions;
+//USING INDY YOU NEED libeay32.dll AND libssl32.dll
+procedure downloadZipFileAndExtractWithIndy(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
-procedure downloadFile(info: TDownloadInfo; options: TDownloadOptions);
+procedure downloadFileWithIndy(info: TDownloadInfo; forceOverwrite: boolean);
 procedure getOpenSSLDLLsFromResource;
 procedure deleteOpenSSLDLLsIfExists;
-procedure unzip(zipFileName: string; destinationFolder: string; deleteZipAfterUnzip: boolean = false);
 
-function readStringWithEnvVariables(source: string): string; // TODO MOVE IN KLIB.WINDOWS?
+procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 
 function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 function strToStringList(source: String; fixedLen: Integer): TStringList;
 
 function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
-procedure validateFTPCredentials(FTPCredentials: TFTPCredentials);
+function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
+function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
 function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
-function currentDayOfWeekAsString: string;
-function dayOfWeekAsString(date: TDateTime): string;
-function currentDateTimeAsString: string;
-function dateTimeAsString(date: TDateTime): string;
-function currentDateAsString: string;
-function dateAsString(date: TDateTime): string;
+function getCurrentDayOfWeekAsString: string;
+function getDayOfWeekAsString(date: TDateTime): string;
+function getCurrentDateTimeAsString: string;
+function getDateTimeAsString(date: TDateTime): string;
+function getCurrentDateAsString: string;
+function getDateAsString(date: TDateTime): string;
 function getRandString(size: integer = 5): string;
+
+function getDoubleQuotedString(value: string): string;
+function getSingleQuotedString(value: string): string;
+function getSubStringInsertedIntoString(mainString: string; insertedString: string; index: integer): string;
 
 implementation
 
 uses
-  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles,
+  KLib.Validate, KLib.Constants,
   Vcl.ExtCtrls,
-  Winapi.Windows, Winapi.ShellAPI,
+  Xml.XMLDoc,
   IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL,
-  UrlMon;
+  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles;
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
   SetLength(Result, 0);
 end;
 
-function getIntValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string): integer;
+function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer;
 var
   _stringValue: string;
   _intValue: integer;
 begin
-  _stringValue := getStringValueFromIniFile(nameSection, nameProperty, fileNameIni);
+  _stringValue := getStringValueFromIniFile(fileNameIni, nameSection, nameProperty);
   _intValue := StrToInt(_stringValue);
   Result := _intValue;
 end;
 
-function getIntValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string;
+function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: integer): integer;
 var
   _pathIniFile: string;
@@ -116,7 +157,7 @@ var
   value: integer;
 begin
   _pathIniFile := getValidFullPath(fileNameIni);
-  exceptionIfFileNotExists(_pathIniFile);
+  validateThatFileExists(_pathIniFile);
   _iniManipulator := TIniFile.Create(_pathIniFile);
   value := _iniManipulator.ReadInteger(nameSection, nameProperty, defaultPropertyValue);
   FreeAndNil(_iniManipulator);
@@ -124,7 +165,7 @@ begin
   Result := value;
 end;
 
-function getStringValueFromIniFile(nameSection: string; nameProperty: string; fileNameIni: string;
+function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
 const
   ERR_MSG = 'No property assigned.';
@@ -134,7 +175,7 @@ var
   value: string;
 begin
   _pathIniFile := getValidFullPath(fileNameIni);
-  exceptionIfFileNotExists(_pathIniFile);
+  validateThatFileExists(_pathIniFile);
   _iniManipulator := TIniFile.Create(_pathIniFile);
   value := _iniManipulator.ReadString(nameSection, nameProperty, defaultPropertyValue);
   FreeAndNil(_iniManipulator);
@@ -168,55 +209,46 @@ begin
   end;
 end;
 
-function fileExistsAndEmpty(filePath: string): Boolean;
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
 var
   _file: file of Byte;
-  size: integer;
+  _size: integer;
+  _result: boolean;
 begin
-  result := false;
-  if fileexists(filePath) then
+  _result := false;
+  if fileexists(fileName) then
   begin
-    AssignFile(_file, filePath);
+    AssignFile(_file, fileName);
     Reset(_file);
-    size := FileSize(_file);
-    if size = 0 then
-    begin
-      result := true;
-    end;
+    _size := FileSize(_file);
+    _result := _size = 0;
     CloseFile(_file);
   end;
+
+  Result := _result;
 end;
 
 procedure deleteFileIfExists(fileName: string);
+const
+  ERR_MSG = 'Error deleting file.';
 begin
   if FileExists(fileName) then
   begin
     if not DeleteFile(pchar(fileName)) then
     begin
-      raise Exception.Create('Error deleting file.');
+      raise Exception.Create(ERR_MSG);
     end;
   end;
 end;
 
-procedure exceptionIfFileNotExists(fileName: string);
-begin
-  if not FileExists(fileName) then
-  begin
-    raise Exception.Create('File: ' + fileName + ' doesn''t exists.');
-  end;
-end;
-
-procedure validateThatThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64);
-const
-  ERR_NOT_ENOUGH_SPACE_ON_DRIVE_MSG = 'There is not enough space available on the Drive: ';
+function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 var
   _freeSpaceDrive: int64;
+  _result: boolean;
 begin
   _freeSpaceDrive := getFreeSpaceOnDrive(drive);
-  if _freeSpaceDrive < requiredSpaceInBytes then
-  begin
-    raise Exception.Create(ERR_NOT_ENOUGH_SPACE_ON_DRIVE_MSG + drive);
-  end;
+  _result := _freeSpaceDrive > requiredSpaceInBytes;
+  Result := _result;
 end;
 
 function getFreeSpaceOnDrive(drive: char): int64;
@@ -270,7 +302,7 @@ function getDirSize(path: string): int64;
 var
   _searchRec: TSearchRec;
   totalSize: int64;
-  _subFolderSize: int64;
+  _subDirSize: int64;
 begin
   totalSize := 0;
   path := getValidFullPath(path);
@@ -282,8 +314,8 @@ begin
       begin
         if (_searchRec.name <> '.') and (_searchRec.name <> '..') then
         begin
-          _subFolderSize := getDirSize(path + _searchRec.name);
-          inc(totalSize, _subFolderSize);
+          _subDirSize := getDirSize(path + _searchRec.name);
+          inc(totalSize, _subDirSize);
         end;
       end
       else
@@ -296,64 +328,44 @@ begin
   Result := totalSize;
 end;
 
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+var
+  _result: string;
+  _currentDir: string;
+begin
+  _currentDir := getDirExe;
+  _result := TPath.Combine(_currentDir, pathToCombine);
+  Result := _result;
+end;
+
 function getDirExe: string;
 begin
   result := ExtractFileDir(ParamStr(0));
 end;
 
-procedure createDirIfNotExists(const dirName: string);
+procedure createDirIfNotExists(dirName: string);
+const
+  ERR_MSG = 'Error creating dir.';
 begin
   if not DirectoryExists(dirName) then
   begin
     if not CreateDir(dirName) then
     begin
-      raise Exception.Create('Error creating dir.');
+      raise Exception.Create(ERR_MSG);
     end;
   end;
 end;
 
-procedure createHideDir(const path: string; forceDelete: boolean = false);
-begin
-  if forceDelete then
-  begin
-    deleteDirectory(path);
-  end;
-
-  if CreateDir(path) then
-  begin
-    SetFileAttributes(pchar(path), FILE_ATTRIBUTE_HIDDEN);
-  end
-  else
-  begin
-    raise Exception.Create('Error creating hide dir');
-  end;
-end;
-
-procedure deleteDirectory(dirName: string);
+function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 var
-  FileOp: TSHFileOpStruct;
+  _subDir: string;
+  _mainDir: string;
+  _isSubDir: Boolean;
 begin
-  FillChar(FileOp, SizeOf(FileOp), 0);
-  FileOp.wFunc := FO_DELETE;
-  FileOp.pFrom := PChar(DirName + #0); //double zero-terminated
-  FileOp.fFlags := FOF_SILENT or FOF_NOERRORUI or FOF_NOCONFIRMATION;
-  SHFileOperation(FileOp);
-  if DirectoryExists(dirName) then
-  begin
-    raise Exception.Create('Unable to delete ' + dirName);
-  end;
-end;
-
-function checkIfIsLinuxSubfolder(mainFolder: string; subFolder: string): boolean;
-var
-  _mainFolder: string;
-  _subFolder: string;
-  _isSubFolder: Boolean;
-begin
-  _mainFolder := getPathInLinuxStyle(mainFolder);
-  _subFolder := getPathInLinuxStyle(subFolder);
-  _isSubFolder := checkIfIsSubFolder(_mainFolder, _subFolder);
-  result := _isSubFolder
+  _subDir := getPathInLinuxStyle(subDir);
+  _mainDir := getPathInLinuxStyle(mainDir);
+  _isSubDir := checkIfIsSubDir(_subDir, _mainDir);
+  result := _isSubDir
 end;
 
 function getPathInLinuxStyle(path: string): string;
@@ -364,14 +376,14 @@ begin
   result := _path;
 end;
 
-function checkIfIsSubFolder(subFolder: string; mainFolder: string): boolean;
+function checkIfIsSubDir(subDir: string; mainDir: string): boolean;
 var
-  _isSubFolder: Boolean;
+  _isSubDir: Boolean;
 begin
-  mainFolder := LowerCase(mainFolder);
-  subFolder := LowerCase(subFolder);
-  _isSubFolder := AnsiStartsStr(mainFolder, subFolder);
-  result := _isSubFolder;
+  mainDir := LowerCase(mainDir);
+  subDir := LowerCase(subDir);
+  _isSubDir := AnsiStartsStr(subDir, mainDir);
+  result := _isSubDir;
 end;
 
 function getValidFullPath(fileName: string): string;
@@ -384,12 +396,12 @@ begin
   result := _path;
 end;
 
-function MD5FileChecker(fileName: string; MD5: string): boolean;
+function checkMD5File(fileName: string; MD5: string): boolean;
 var
-  MD5File: string;
+  _MD5ChecksumFile: string;
 begin
-  MD5File := getMD5FileChecksum(fileName);
-  if UpperCase(MD5File) = UpperCase(MD5) then
+  _MD5ChecksumFile := getMD5ChecksumFile(fileName);
+  if UpperCase(_MD5ChecksumFile) = UpperCase(MD5) then
   begin
     result := true;
   end
@@ -399,7 +411,7 @@ begin
   end;
 end;
 
-function getMD5FileChecksum(const fileName: string): string;
+function getMD5ChecksumFile(fileName: string): string;
 var
   MD5: TIdHashMessageDigest5;
   fileStream: TFileStream;
@@ -411,22 +423,19 @@ begin
   MD5.Free;
 end;
 
-procedure unzipResource(nameResource: string; destinationFolder: string);
+procedure unzipResource(nameResource: string; destinationDir: string);
 const
-  ZIP_FILE_EXTENSION = '.zip';
   DELETE_ZIP_AFTER_UNZIP = TRUE;
 var
   _tempZipFileName: string;
 begin
-  _tempZipFileName := getRandString + ZIP_FILE_EXTENSION; //TODO group extensions
-  _tempZipFileName := TPath.Combine(destinationFolder, _tempZipFileName);
+  _tempZipFileName := getRandString + '.' + ZIP_TYPE;
+  _tempZipFileName := TPath.Combine(destinationDir, _tempZipFileName);
   getResourceAsZIPFile(nameResource, _tempZipFileName);
-  unzip(_tempZipFileName, destinationFolder, DELETE_ZIP_AFTER_UNZIP);
+  unzip(_tempZipFileName, destinationDir, DELETE_ZIP_AFTER_UNZIP);
 end;
 
 function getPNGResource(nameResource: String): TPngImage;
-const
-  TYPE_PNG_RESOURCE = 'PNG';
 var
   _resource: TResource;
   resourceStream: TResourceStream;
@@ -435,7 +444,7 @@ begin
   with _resource do
   begin
     name := nameResource;
-    _type := TYPE_PNG_RESOURCE;
+    _type := PNG_TYPE;
   end;
   resourceStream := getResourceAsStream(_resource);
   resourceAsPNG := TPngImage.Create;
@@ -444,23 +453,19 @@ begin
   Result := resourceAsPNG;
 end;
 
-procedure _getResourceAs(nameResource: string; typeResource: string; destinationFileName: string); forward;
+procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string); forward;
 
 procedure getResourceAsEXEFile(nameResource: String; destinationFileName: string);
-const
-  TYPE_RESOURCE = 'EXE';
 begin
-  _getResourceAs(nameResource, TYPE_RESOURCE, destinationFileName);
+  _getResourceAsFile_(nameResource, EXE_TYPE, destinationFileName);
 end;
 
 procedure getResourceAsZIPFile(nameResource: String; destinationFileName: string);
-const
-  TYPE_RESOURCE = 'ZIP';
 begin
-  _getResourceAs(nameResource, TYPE_RESOURCE, destinationFileName);
+  _getResourceAsFile_(nameResource, ZIP_TYPE, destinationFileName);
 end;
 
-procedure _getResourceAs(nameResource: string; typeResource: string; destinationFileName: string);
+procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string);
 var
   _resource: TResource;
 begin
@@ -481,6 +486,22 @@ begin
   resourceStream.Free;
 end;
 
+function getResourceAsXSL(nameResource: string): IXMLDocument;
+var
+  _resource: TResource;
+  _resourceAsString: string;
+  xls: IXMLDocument;
+begin
+  with _resource do
+  begin
+    name := nameResource;
+    _type := XSL_TYPE;
+  end;
+  _resourceAsString := getResourceAsString(_resource);
+  xls := LoadXMLData(_resourceAsString);
+  Result := xls;
+end;
+
 function getResourceAsString(resource: TResource): string;
 var
   resourceStream: TResourceStream;
@@ -499,6 +520,7 @@ end;
 function getResourceAsStream(resource: TResource): TResourceStream;
 var
   resourceStream: TResourceStream;
+  errMsg: string;
 begin
   with resource do
   begin
@@ -509,52 +531,60 @@ begin
     end
     else
     begin
-      raise Exception.Create('Not found a resource with name : ' + name + ' and type : '
-        + _type);
+      errMsg := 'Not found a resource with name : ' + name + ' and type : ' + _type;
+      raise Exception.Create(errMsg);
     end;
   end;
   Result := resourceStream;
 end;
 
-procedure downloadZipFileAndExtract(info: TDownloadInfo; options: TDownloadOptions;
+//USING INDY YOU NEED libeay32.dll AND libssl32.dll
+procedure downloadZipFileAndExtractWithIndy(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
 var
   pathZipFile: string;
 begin
-  downloadFile(info, options);
+  downloadFileWithIndy(info, forceOverwrite);
   pathZipFile := TPath.Combine(destinationPath, info.fileName);
   unzip(pathZipFile, destinationPath, forceDeleteZipFile);
 end;
 
-procedure downloadFileWithIndy(link: string; fileName: string); forward;
-
-procedure downloadFile(info: TDownloadInfo; options: TDownloadOptions);
+procedure downloadFileWithIndy(info: TDownloadInfo; forceOverwrite: boolean);
 const
-  ERR_MSG = 'Error downloading file';
+  ERR_MSG = 'Error downloading file.';
+var
+  indyHTTP: TIdHTTP;
+  ioHandler: TIdSSLIOHandlerSocketOpenSSL;
+  memoryStream: TMemoryStream;
 begin
   with info do
   begin
-    with options do
+    if forceOverwrite then
     begin
-      if forceOverwrite then
-      begin
-        deleteFileIfExists(fileName);
-      end;
-      if useIndy then
-      begin
-        downloadFileWithIndy(link, fileName);
-      end
-      else
-      begin
-        if (URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) <> S_OK) then
-        begin
-          raise Exception.Create(ERR_MSG);
-        end;
-      end;
+      deleteFileIfExists(fileName);
     end;
+
+    indyHTTP := TIdHTTP.Create(nil);
+    ioHandler := TIdSSLIOHandlerSocketOpenSSL.Create(indyHTTP);
+    ioHandler.SSLOptions.SSLVersions := [
+      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
+      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
+      TIdSSLVersion.sslvSSLv3];
+    indyHTTP.IOHandler := ioHandler;
+    indyHTTP.HandleRedirects := true;
+
+    memoryStream := TMemoryStream.Create;
+    indyHTTP.Get(link, memoryStream);
+    memoryStream.SaveToFile(fileName);
+
+    FreeAndNil(memoryStream);
+    ioHandler.Close;
+    FreeAndNil(ioHandler);
+    FreeAndNil(indyHTTP);
+
     if md5 <> '' then
     begin
-      if not MD5FileChecker(fileName, md5) then
+      if not checkMD5File(fileName, md5) then
       begin
         raise Exception.Create(ERR_MSG);
       end;
@@ -562,49 +592,23 @@ begin
   end;
 end;
 
-//USING INDY YOU NEED libeay32.dll AND libssl32.dll
-procedure downloadFileWithIndy(link: string; fileName: string);
-var
-  indyHTTP: TIdHTTP;
-  ioHandler: TIdSSLIOHandlerSocketOpenSSL;
-  memoryStream: TMemoryStream;
-begin
-  indyHTTP := TIdHTTP.Create(nil);
-  ioHandler := TIdSSLIOHandlerSocketOpenSSL.Create(indyHTTP);
-  ioHandler.SSLOptions.SSLVersions := [
-    TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
-    TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
-    TIdSSLVersion.sslvSSLv3];
-  indyHTTP.IOHandler := ioHandler;
-  indyHTTP.HandleRedirects := true;
-
-  memoryStream := TMemoryStream.Create;
-  indyHTTP.Get(link, memoryStream);
-  memoryStream.SaveToFile(fileName);
-
-  FreeAndNil(memoryStream);
-  ioHandler.Close;
-  FreeAndNil(ioHandler);
-  FreeAndNil(indyHTTP);
-end;
-
-function getPath_libeay32: string; forward;
-function getPath_libssl32: string; forward;
+const
+  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
+  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: DLL_TYPE);
+  FILENAME_LIBSSL32 = 'libssl32.dll';
+  FILENAME_LIBEAY32 = 'libeay32.dll';
 
 procedure getOpenSSLDLLsFromResource;
-const
-  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: 'DLL');
-  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: 'DLL');
 var
   _path_libeay32: string;
   _path_libssl32: string;
 begin
-  _path_libeay32 := getPath_libeay32;
+  _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   if not FileExists(_path_libeay32) then
   begin
     getResourceAsFile(RESOURCE_LIBEAY32, _path_libeay32);
   end;
-  _path_libssl32 := getPath_libssl32;
+  _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
   if not FileExists(_path_libssl32) then
   begin
     getResourceAsFile(RESOURCE_LIBSSL32, _path_libssl32);
@@ -617,41 +621,19 @@ var
   _path_libssl32: string;
 begin
   UnLoadOpenSSLLibrary;
-  _path_libeay32 := getPath_libeay32;
+  _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   deleteFileIfExists(_path_libeay32);
-  _path_libssl32 := getPath_libssl32;
+  _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
   deleteFileIfExists(_path_libssl32);
 end;
 
-function getPath_libeay32: string;
+procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 const
-  FILENAME_LIBEAY32 = 'libeay32.dll';
-var
-  _path_libeay32: string;
-  _currentDir: string;
-begin
-  _currentDir := getDirExe;
-  _path_libeay32 := TPath.Combine(_currentDir, FILENAME_LIBEAY32);
-  Result := _path_libeay32;
-end;
-
-function getPath_libssl32: string;
-const
-  FILENAME_LIBSSL32 = 'libssl32.dll';
-var
-  _path_libssl32: string;
-  _currentDir: string;
-begin
-  _currentDir := getDirExe;
-  _path_libssl32 := TPath.Combine(_currentDir, FILENAME_LIBSSL32);
-  Result := _path_libssl32;
-end;
-
-procedure unzip(zipFileName: string; destinationFolder: string; deleteZipAfterUnzip: boolean = false);
+  ERR_MSG = 'Invalid zip file.';
 begin
   if tzipfile.isvalid(zipFileName) then
   begin
-    tzipfile.extractZipfile(zipFileName, destinationFolder);
+    tzipfile.extractZipfile(zipFileName, destinationDir);
     if (deleteZipAfterUnzip) then
     begin
       deleteFileIfExists(zipFileName);
@@ -659,40 +641,8 @@ begin
   end
   else
   begin
-    raise Exception.Create('Invalid zip file.');
+    raise Exception.Create(ERR_MSG);
   end;
-end;
-
-function readStringWithEnvVariables(source: string): string;
-var
-  tempStringDir: string;
-  tempStringPos: string;
-  posStart, posEnd: integer;
-  valueToReplace, newValue: string;
-begin
-  tempStringPos := source;
-  tempStringDir := source;
-  result := source;
-  repeat
-    posStart := pos('%', tempStringPos);
-    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
-    posEnd := posStart + pos('%', tempStringPos);
-    if (posStart > 0) and (posEnd > 1) then
-    begin
-      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
-      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
-      if newValue <> '' then
-      begin
-        result := stringreplace(Result, valueToReplace, newValue, []);
-      end;
-    end
-    else
-    begin
-      exit;
-    end;
-    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
-    tempStringPos := tempStringDir;
-  until posStart < 0;
 end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
@@ -743,7 +693,6 @@ begin
   result := alist;
 end;
 
-//TODO CREATE CUSTOM FTP CLASS
 function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 var
   connection: TIdFTP;
@@ -753,12 +702,12 @@ begin
   Result := connection;
 end;
 
-procedure validateFTPCredentials(FTPCredentials: TFTPCredentials);
-const
-  ERR_MSG = 'Invalid FTP credentials';
+function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 var
   _connection: TIdFTP;
+  _result: boolean;
 begin
+  _result := true;
   _connection := getFTPConnection(FTPCredentials);
   try
     _connection.Connect;
@@ -769,14 +718,26 @@ begin
   except
     on E: Exception do
     begin
-      raise Exception.Create(ERR_MSG);
+      _result := false;
     end;
   end;
   _connection.Disconnect;
   _connection.Free;
+
+  Result := _result;
 end;
 
-procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials); forward;
+function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
+var
+  _result: boolean;
+begin
+  with FTPCredentials do
+  begin
+    _result := (server <> '') and (credentials.username <> '') and (credentials.password <> '');
+  end;
+
+  Result := _result;
+end;
 
 function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 var
@@ -799,19 +760,6 @@ begin
   Result := connection;
 end;
 
-procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials);
-const
-  ERR_MSG = 'Incomplete FTP credentials';
-begin
-  with FTPCredentials do
-  begin
-    if (server = '') or (credentials.username = '') or (credentials.password = '') then
-    begin
-      raise Exception.Create(ERR_MSG);
-    end;
-  end;
-end;
-
 procedure executeProcedure(myProcedure: TAnonymousMethod);
 begin
   myProcedure;
@@ -822,15 +770,15 @@ begin
   myProcedure('');
 end;
 
-function currentDayOfWeekAsString: string;
+function getCurrentDayOfWeekAsString: string;
 var
   _nameDay: string;
 begin
-  _nameDay := dayOfWeekAsString(Now);
+  _nameDay := getDayOfWeekAsString(Now);
   result := _nameDay;
 end;
 
-function dayOfWeekAsString(date: TDateTime): string;
+function getDayOfWeekAsString(date: TDateTime): string;
 const
   DAYS_OF_WEEK: TArray<String> = [
     'Sunday',
@@ -849,30 +797,30 @@ begin
   result := _nameDay;
 end;
 
-function currentDateTimeAsString: string;
+function getCurrentDateTimeAsString: string;
 begin
-  result := dateTimeAsString(Now);
+  result := getDateTimeAsString(Now);
 end;
 
-function dateTimeAsString(date: TDateTime): string;
+function getDateTimeAsString(date: TDateTime): string;
 var
   _date: string;
   _time: string;
   _dateTime: string;
 begin
-  _date := dateAsString(date);
+  _date := getDateAsString(date);
   _time := TimeToStr(date);
   _time := StringReplace(_time, ':', '', [rfReplaceAll, rfIgnoreCase]);
   _dateTime := _date + '_' + _time;
   result := _dateTime;
 end;
 
-function currentDateAsString: string;
+function getCurrentDateAsString: string;
 begin
-  result := dateAsString(Now);
+  result := getDateAsString(Now);
 end;
 
-function dateAsString(date: TDateTime): string;
+function getDateAsString(date: TDateTime): string;
 var
   _date: string;
 begin
@@ -883,7 +831,7 @@ end;
 
 function getRandString(size: integer = 5): string;
 const
-  ALPHABET: array [0 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 var
   _randString: string;
   _randCharacter: char;
@@ -895,11 +843,35 @@ begin
   _lengthAlphabet := length(ALPHABET);
   for i := 1 to size do
   begin
-    _randIndexOfAlphabet := random(_lengthAlphabet);
+    _randIndexOfAlphabet := random(_lengthAlphabet) + 1;
     _randCharacter := ALPHABET[_randIndexOfAlphabet];
     _randString := _randString + _randCharacter;
   end;
   Result := _randString;
+end;
+
+function getDoubleQuotedString(value: string): string;
+begin
+  Result := AnsiQuotedStr(value, '"');
+end;
+
+function getSingleQuotedString(value: string): string;
+begin
+  Result := AnsiQuotedStr(value, '"');
+end;
+
+function getSubStringInsertedIntoString(mainString: string; insertedString: string; index: integer): string;
+const
+  ERR_MSG = 'Index out of range.';
+var
+  _lenght: integer;
+begin
+  if (index > _lenght) or (index < 0) then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+  _lenght := Length(mainString);
+  Result := Copy(mainString, 0, index) + insertedString + Copy(mainString, index + 1, _lenght);
 end;
 
 end.

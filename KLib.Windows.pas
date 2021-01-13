@@ -1,15 +1,53 @@
+{
+  KLib Version = 1.0
+  The Clear BSD License
+
+  Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
+  zitrokarol@gmail.com
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted (subject to the limitations in the disclaimer
+  below) provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+
+  NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY
+  THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+}
+
 unit KLib.Windows;
 
 interface
 
 uses
   KLib.Types,
-  Winapi.Windows, Winapi.Messages, Winapi.ShellApi,
+  Winapi.Windows, Winapi.Messages, Winapi.ShellApi, Winapi.AccCtrl,
   System.Classes;
 
 const
   WM_SERVICE_START = WM_USER + 0;
   WM_SERVICE_ERROR = WM_USER + 2;
+
+  RUN_AS_ADMIN = true;
 
 type
   TMemoryRam = class
@@ -17,15 +55,22 @@ type
     class var RamStats: TMemoryStatusEx;
   public
     class procedure initialize;
-    class function getTotalMemoryString: string; overload;
-    class function getTotalMemoryDouble: double;
-    class function getTotalFreeMemoryString: string;
-    class function getTotalFreeMemoryDouble: double;
-    class function getPercentageFreeMemory: string;
+    class function getTotalMemoryAsString: string;
+    class function getTotalMemoryAsDouble: double;
+    class function getTotalFreeMemoryAsString: string;
+    class function getTotalFreeMemoryAsInteger: integer;
+    class function getTotalFreeMemoryAsDouble: double;
+    class function getPercentageFreeMemoryAsString: string;
   end;
 
   TWindowsService = class //nameService is not case-sensitive
+  private
+    constructor create; virtual; abstract;
+  protected
+    function createService: boolean; virtual; abstract; //TODO IMPLEMENTE CODE
+  public
     class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
+    class procedure startIfExists(nameService: string; nameMachine: string = '');
     class procedure start(nameService: string; nameMachine: string = '');
     class procedure stopIfExists(nameService: string; nameMachine: string = '';
       force: boolean = false);
@@ -34,45 +79,98 @@ type
     class function isRunning(nameService: string; nameMachine: string = ''): boolean;
     class function existsService(nameService: string; nameMachine: string = ''): boolean;
     class procedure deleteService(nameService: string);
-    class function isPortAvaliable(host: string; port: Word): boolean;
-  protected
-    function createService: boolean; overload; virtual; abstract; //TODO IMPLEMENTE CODE
+
+    class function isPortAvaliable(host: string; port: Word): boolean; //todo move?
   end;
 
   //----------------------------------
+
+procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 function getFirstPortAvaliable(defaultPort: integer): integer;
-procedure validateThatTheAddressIsLocalhost(address: string);
-function getIPFromHostName(hostName: string): string; //if hostname is alreay the ip address, returns hostname
+function checkIfAddressIsLocalhost(address: string): boolean;
+function getIPFromHostName(hostName: string): string; //if hostname is alredy an ip address, returns hostname
 function getIP: string;
 
-function runUnderWine: boolean;
-function isRunningUnderWindowsX64: boolean;
+function checkIfRunUnderWine: boolean;
+function checkIfWindowsArchitectureIsX64: boolean;
 
 type
   TWindowsArchitecture = (WindowsX86, WindowsX64);
 function getWindowsArchitecture: TWindowsArchitecture;
-//function getVersionSO: string; // legacy
-function IsUserAnAdmin: boolean; external shell32;
+function checkIfUserIsAdmin: boolean; external shell32;
 
-procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
-  showWindow: cardinal = SW_HIDE);
-procedure executeAndWaitExe(const pathExe: string);
+const
+{$externalsym SW_HIDE}
+  SW_HIDE = 0;
+{$externalsym SW_SHOWNORMAL}
+  SW_SHOWNORMAL = 1;
+{$externalsym SW_NORMAL}
+  SW_NORMAL = 1;
+{$externalsym SW_SHOWMINIMIZED}
+  SW_SHOWMINIMIZED = 2;
+{$externalsym SW_SHOWMAXIMIZED}
+  SW_SHOWMAXIMIZED = 3;
+{$externalsym SW_MAXIMIZE}
+  SW_MAXIMIZE = 3;
+{$externalsym SW_SHOWNOACTIVATE}
+  SW_SHOWNOACTIVATE = 4;
+{$externalsym SW_SHOW}
+  SW_SHOW = 5;
+{$externalsym SW_MINIMIZE}
+  SW_MINIMIZE = 6;
+{$externalsym SW_SHOWMINNOACTIVE}
+  SW_SHOWMINNOACTIVE = 7;
+{$externalsym SW_SHOWNA}
+  SW_SHOWNA = 8;
+{$externalsym SW_RESTORE}
+  SW_RESTORE = 9;
+{$externalsym SW_SHOWDEFAULT}
+  SW_SHOWDEFAULT = 10;
+{$externalsym SW_FORCEMINIMIZE}
+  SW_FORCEMINIMIZE = 11;
+{$externalsym SW_MAX}
+  SW_MAX = 11;
+function shellExecuteExe(fileName: string; params: string = ''; showWindow: integer = SW_HIDE;
+  exceptionIfFunctionFails: boolean = false): integer;
+
+function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
+  showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
+  showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+
 procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
-
 function sendDataStruct(className: string; windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
 
-function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
-procedure addTCP_IN_FirewallException(name: string; port: Word; description: string = ''; grouping: string = '';
+function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
+  grantAllPermissionToEveryoneGroup: boolean = false): string;
+procedure addTCP_IN_FirewallException(ruleName: string; port: Word; description: string = ''; grouping: string = '';
   executable: string = '');
-procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
+procedure deleteFirewallException(ruleName: string);
+
+type
+  TExplicitAccess = EXPLICIT_ACCESS_A;
+procedure grantAllPermissionsNetToTheObjectForTheEveryoneGroup(myObject: string);
+procedure grantAllPermissionNetToTheObject(windowsGroupOrUser: string; myObject: string);
+procedure grantAllPermissionsToTheObjectForTheEveryoneGroup(myObject: string);
+procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);
+
+function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
-function GetDesktopFolder: string;
-function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boolean;
+function getDesktopDir: string;
+
+procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
+procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = true);
+procedure createHideDir(dirName: string; forceDelete: boolean = false);
+procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
+
+function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
+function getParentDirFromDir(sourceDir: string): string;
 function getValidFullPathInWindowsStyle(path: string): string;
 function getPathInWindowsStyle(path: string): string;
 
-function copyDir(sourceDir: string; destinationDir: string; silent: boolean = true): boolean;
+function getStringWithEnvVariablesReaded(source: string): string;
 //-----------------------------------------------------------------
 //TODO REFACTOR
 function setProcessWindowToForeground(processName: string): boolean;
@@ -84,16 +182,21 @@ function getPIDByProcessName(nameProcess: string): DWORD;
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
 //------------------------------------------------------------------
 
-function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+
+procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+
+procedure raiseLastSysErrorMessage;
+function getLastSysErrorMessage: string;
 
 implementation
 
 uses
-  KLib.Utils, Klib.Constants,
-  System.IOUtils, System.SysUtils,
-  System.Win.ComObj, System.Win.Registry,
-  Winapi.AccCtrl, Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock,
+  KLib.Utils, Klib.Constants, KLib.Validate,
   Vcl.Forms,
+  Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon,
+  System.IOUtils, System.SysUtils, System.Win.ComObj, System.Win.Registry,
   IdTCPClient;
 
 class procedure TMemoryRam.initialize;
@@ -103,27 +206,37 @@ begin
   GlobalMemoryStatusEx(RamStats);
 end;
 
-class function TMemoryRam.getTotalMemoryString: string;
+class function TMemoryRam.getTotalMemoryAsString: string;
 begin
-  result := floattostr(RamStats.ullTotalPhys / 1048576) + ' MB';
+  result := floattostr(RamStats.ullTotalPhys / _1_MB_IN_BYTES) + ' MB';
 end;
 
-class function TMemoryRam.getTotalMemoryDouble: Double;
+class function TMemoryRam.getTotalMemoryAsDouble: Double;
 begin
-  result := RamStats.ullTotalPhys / 1048576;
+  result := RamStats.ullTotalPhys / _1_MB_IN_BYTES;
 end;
 
-class function TMemoryRam.getTotalFreeMemoryString: string;
+class function TMemoryRam.getTotalFreeMemoryAsString: string;
 begin
-  result := floattostr(RamStats.ullAvailPhys / 1048576) + ' MB';
+  result := floattostr(RamStats.ullAvailPhys / _1_MB_IN_BYTES) + ' MB';
 end;
 
-class function TMemoryRam.getTotalFreeMemoryDouble: Double;
+class function TMemoryRam.getTotalFreeMemoryAsInteger: integer;
+var
+  _totalFreeMemoryDouble: double;
+  _totalFreeMemoryInteger: integer;
 begin
-  result := RamStats.ullAvailPhys / 1048576;
+  _totalFreeMemoryDouble := getTotalMemoryAsDouble;
+  _totalFreeMemoryInteger := trunc(_totalFreeMemoryDouble);
+  Result := _totalFreeMemoryInteger;
 end;
 
-class function TMemoryRam.getPercentageFreeMemory: string;
+class function TMemoryRam.getTotalFreeMemoryAsDouble: Double;
+begin
+  result := RamStats.ullAvailPhys / _1_MB_IN_BYTES;
+end;
+
+class function TMemoryRam.getPercentageFreeMemoryAsString: string;
 begin
   result := inttostr(RamStats.dwMemoryLoad) + '%';
 end;
@@ -137,7 +250,7 @@ begin
     procedure
     begin
       try
-        TWindowsService.Start(nameService, nameMachine);
+        TWindowsService.start(nameService, nameMachine);
         PostMessage(handleSender, WM_SERVICE_START, 0, 0);
       except
         on E: Exception do
@@ -148,16 +261,22 @@ begin
     end).Start;
 end;
 
-class procedure TWindowsService.Start(nameService: string; nameMachine: string = '');
+class procedure TWindowsService.startIfExists(nameService: string; nameMachine: string = '');
+begin
+  if existsService(nameService) then
+  begin
+    start(nameService, nameMachine);
+  end;
+end;
+
+class procedure TWindowsService.start(nameService: string; nameMachine: string = '');
 const
-  ERR_MSG = 'Service not started';
+  ERR_MSG = 'Service not started.';
 var
   cont: integer;
   handleServiceControlManager: SC_HANDLE;
   handleService: SC_HANDLE;
   serviceStatus: TServiceStatus;
-  //  dwCheckpoint: DWord;
-  //  dwWaitTime: DWord;
 
   _exit: boolean;
 begin
@@ -185,32 +304,30 @@ begin
         end;
         QueryServiceStatus(handleService, serviceStatus);
 
-        //stato servizio a partire...
+        //SERVICE_START_PENDING...
         _exit := false;
         cont := 0;
         while not(_exit) do
         begin
-          QueryServiceStatus(handleService, serviceStatus);
-          if (serviceStatus.dwCurrentState = SERVICE_RUNNING) or (cont >= 30) then
-          begin
+          case serviceStatus.dwCurrentState of
+            SERVICE_RUNNING:
+              _exit := true;
+            SERVICE_START_PENDING:
+              if (cont >= 60) then
+              begin
+                _exit := true;
+              end;
+          else
             _exit := true;
           end;
-          Sleep(3000);
 
-          cont := cont + 1;
+          if not _exit then
+          begin
+            Sleep(3000);
+            cont := cont + 1;
+            QueryServiceStatus(handleService, serviceStatus);
+          end;
         end;
-        //        while not(serviceStatus.dwCurrentState = SERVICE_RUNNING) and (cont < 15) do
-        //        begin
-        //          dwCheckpoint := serviceStatus.dwCheckPoint;
-        //          dwWaitTime := serviceStatus.dwWaitHint div 10;
-        //          Sleep(dwWaitTime);
-        //
-        //          if (not QueryServiceStatus(handleService, serviceStatus)) then
-        //            break;
-        //          if (serviceStatus.dwCheckPoint > dwCheckpoint) then
-        //            break;
-        //          cont := cont + 1;
-        //        end;
       end;
     end;
     QueryServiceStatus(handleService, serviceStatus);
@@ -235,12 +352,13 @@ end;
 class procedure TWindowsService.Stop(nameService: string; nameMachine: string = '';
 force: boolean = false);
 const
-  ERR_MSG = 'Service not stopped';
+  ERR_MSG = 'Service not stopped.';
 var
   handleServiceControlManager: SC_HANDLE;
   handleService: SC_HANDLE;
   serviceStatus: TServiceStatus;
   dwCheckpoint: DWord;
+  _cmdParams: string;
 begin
   handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
   if (handleServiceControlManager > 0) then
@@ -267,8 +385,8 @@ begin
       begin
         if (force) then
         begin
-          //kill processo servizio
-          shellExecuteAndWait('cmd.exe', PCHAR('/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT'));
+          _cmdParams := '/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT';
+          shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
         end;
       end;
       QueryServiceStatus(handleService, serviceStatus);
@@ -310,12 +428,12 @@ end;
 
 class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): boolean; //nameService is not case-sensitive
 var
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
+  _handleServiceControlManager: SC_HANDLE;
+  _handleService: SC_HANDLE;
 begin
   try
-    handleServiceControlManager := OpenSCManager(nil, nil, SC_MANAGER_CONNECT);
-    handleService := OpenService(handleServiceControlManager, PChar(nameService),
+    _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+    _handleService := OpenService(_handleServiceControlManager, PChar(nameService),
       SERVICE_ALL_ACCESS);
   except
     RaiseLastOSError;
@@ -328,13 +446,15 @@ begin
   begin
     Result := true;
   end;
-  CloseServiceHandle(handleService);
-  CloseServiceHandle(handleServiceControlManager);
+  CloseServiceHandle(_handleService);
+  CloseServiceHandle(_handleServiceControlManager);
 end;
 
 class procedure TWindowsService.deleteService(nameService: string);
 const
   ERR_MSG = 'Unable to delete the Windows service.';
+var
+  _cmdParams: string;
 begin
   if (existsService(nameService)) then
   begin
@@ -342,7 +462,8 @@ begin
     begin
       stop(nameService, '', true);
     end;
-    shellExecuteAndWait('cmd.exe', pchar('/K SC DELETE ' + nameService + ' & EXIT'));
+    _cmdParams := '/K SC DELETE ' + nameService + ' & EXIT';
+    shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
     if (existsService(nameService)) then
     begin
       raise Exception.Create(ERR_MSG);
@@ -370,6 +491,30 @@ begin
   end;
 end;
 
+procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
+const
+  ERR_MSG = 'Error downloading file.';
+var
+  _downloadSuccess: boolean;
+begin
+  with info do
+  begin
+    if forceOverwrite then
+    begin
+      deleteFileIfExists(fileName);
+    end;
+    _downloadSuccess := URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) = S_OK;
+    if not _downloadSuccess then
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
+    if md5 <> '' then
+    begin
+      validateMD5File(fileName, md5, ERR_MSG);
+    end;
+  end;
+end;
+
 function getFirstPortAvaliable(defaultPort: integer): integer;
 var
   _port: integer;
@@ -382,22 +527,24 @@ begin
   result := _port;
 end;
 
-procedure validateThatTheAddressIsLocalhost(address: string);
-const
-  ERR_MSG = 'The address does not match with the localhost ip.';
+function checkIfAddressIsLocalhost(address: string): boolean;
 var
   _address: string;
   _localhostIP_address: string;
+
+  _result: boolean;
 begin
-  if address <> LOCALHOST_IP_ADDRESS then
+  _result := true;
+  _address := getIPFromHostName(address);
+  if _address <> LOCALHOST_IP_ADDRESS then
   begin
-    _address := getIPFromHostName(address);
     _localhostIP_address := getIP;
     if _address <> _localhostIP_address then
     begin
-      raise Exception.Create(ERR_MSG);
+      _result := false;
     end;
   end;
+  Result := _result;
 end;
 
 function getIPFromHostName(hostName: string): string;
@@ -459,14 +606,14 @@ begin
   Result := ip;
 end;
 
-function runUnderWine: boolean;
+function checkIfRunUnderWine: boolean;
 const
   KEY_WINE = 'Software\Wine';
 begin
-  Result := ExistsKeyIn_HKEY_LOCAL_MACHINE(KEY_WINE);
+  Result := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(KEY_WINE);
 end;
 
-function isRunningUnderWindowsX64: boolean;
+function checkIfWindowsArchitectureIsX64: boolean;
 var
   _WindowsArchitecture: TWindowsArchitecture;
 begin
@@ -495,92 +642,181 @@ begin
   end;
 end;
 
-//function getVersionSO: string; //TODO:delete legacy code
-//begin
-//  case TOSVersion.Architecture of
-//    arIntelX86:
-//      Result := '32_bit';
-//    arIntelX64:
-//      Result := '64_bit';
-//  else
-//    Result := 'Unknown OS architecture';
-//  end;
-//end;
-
-procedure shellExecuteAndWait(fileName: string; params: string; runAsAdmin: boolean = true;
-showWindow: cardinal = SW_HIDE);
+function shellExecuteExe(fileName: string; params: string = ''; showWindow: integer = SW_HIDE;
+exceptionIfFunctionFails: boolean = false): integer;
 var
-  exInfo: TShellExecuteInfo;
-  Ph: DWORD;
+  _returnCode: integer;
+  errMsg: string;
 begin
-  FillChar(exInfo, SizeOf(exInfo), 0);
-  with exInfo do
+  _returnCode := shellExecute(0, 'open', pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)), nil, showWindow);
+
+  if exceptionIfFunctionFails then
   begin
-    cbSize := SizeOf(exInfo);
+    case _returnCode of
+      0:
+        errMsg := 'The operating system is out of memory or resources.';
+      2:
+        errMsg := 'The specified file was not found';
+      3:
+        errMsg := 'The specified path was not found.';
+      5:
+        errMsg := 'Windows 95 only: The operating system denied access to the specified file';
+      8:
+        errMsg := 'Windows 95 only: There was not enough memory to complete the operation.';
+      10:
+        errMsg := 'Wrong Windows version';
+      11:
+        errMsg := 'The .EXE file is invalid (non-Win32 .EXE or error in .EXE image)';
+      12:
+        errMsg := 'Application was designed for a different operating system';
+      13:
+        errMsg := 'Application was designed for MS-DOS 4.0';
+      15:
+        errMsg := 'Attempt to load a real-mode program';
+      16:
+        errMsg := 'Attempt to load a second instance of an application with non-readonly data segments.';
+      19:
+        errMsg := 'Attempt to load a compressed application file.';
+      20:
+        errMsg := 'Dynamic-link library (DLL) file failure.';
+      26:
+        errMsg := 'A sharing violation occurred.';
+      27:
+        errMsg := 'The filename association is incomplete or invalid.';
+      28:
+        errMsg := 'The DDE transaction could not be completed because the request timed out.';
+      29:
+        errMsg := 'The DDE transaction failed.';
+      30:
+        errMsg := 'The DDE transaction could not be completed because other DDE transactions were being processed.';
+      31:
+        errMsg := 'There is no application associated with the given extension.';
+      32:
+        errMsg := 'Windows 95 only: The specified dynamic-link library was not found.';
+    else
+      errMsg := '';
+    end;
+
+    if errMsg <> '' then
+    begin
+      raise Exception.Create(errMsg);
+    end;
+  end;
+
+  result := _returnCode;
+end;
+
+function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
+showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+begin
+  result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindow, exceptionIfReturnCodeIsNot0);
+end;
+
+function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
+showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+var
+  _shellExecuteInfo: TShellExecuteInfo;
+
+  returnCode: Longint;
+begin
+  returnCode := -1;
+
+  FillChar(_shellExecuteInfo, SizeOf(_shellExecuteInfo), 0);
+  with _shellExecuteInfo do
+  begin
+    cbSize := SizeOf(_shellExecuteInfo);
     fMask := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT;
     Wnd := GetActiveWindow();
     if (runAsAdmin) then
     begin
-      exInfo.lpVerb := 'runas';
+      _shellExecuteInfo.lpVerb := 'runas';
     end
     else
     begin
-      exInfo.lpVerb := '';
+      _shellExecuteInfo.lpVerb := '';
     end;
-    exInfo.lpParameters := PChar(Params);
+    _shellExecuteInfo.lpParameters := PChar(trim(params));
     lpFile := PChar(FileName);
     nShow := showWindow;
   end;
-  if ShellExecuteEx(@exInfo) then
-    Ph := exInfo.hProcess
-  else
+  if not ShellExecuteEx(@_shellExecuteInfo) then
   begin
-    raise Exception.Create(SysErrorMessage(GetLastError));
+    raiseLastSysErrorMessage;
   end;
-  while WaitForSingleObject(exInfo.hProcess, 50) <> WAIT_OBJECT_0 do
-    Application.ProcessMessages;
-  CloseHandle(Ph);
+
+  //TODO CHECK
+  waitForMultiple(_shellExecuteInfo.hProcess);
+  //  waitFor(_shellExecuteInfo.hProcess);
+
+  if not GetExitCodeProcess(_shellExecuteInfo.hProcess, dword(returnCode)) then //assign return code
+  begin
+    raiseLastSysErrorMessage;
+  end;
+
+  CloseHandle(_shellExecuteInfo.hProcess);
+
+  if (exceptionIfReturnCodeIsNot0) and (returnCode <> 0) then
+  begin
+    raise Exception.Create(fileName + ' exit code: ' + IntToStr(returnCode));
+  end;
+
+  Result := returnCode;
 end;
 
-procedure executeAndWaitExe(const pathExe: string); // full path più eventuali parametri
+function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
-  tmpStartupInfo: TStartupInfo;
-  tmpProcessInformation: TProcessInformation;
-  tmpProgram: String;
+  _commad: String;
+  _startupInfo: TStartupInfo;
+  _processInfo: TProcessInformation;
+
+  returnCode: Longint;
 begin
-  tmpProgram := trim(pathExe);
-  fillChar(tmpStartupInfo, sizeOf(tmpStartupInfo), 0);
-  with tmpStartupInfo do
+  returnCode := -1;
+
+  _commad := getDoubleQuotedString(fileName) + ' ' + trim(params);
+
+  FillChar(_startupInfo, sizeOf(_startupInfo), 0);
+  with _startupInfo do
   begin
     cb := SizeOf(TStartupInfo);
     wShowWindow := SW_HIDE;
   end;
-
-  if createProcess(nil, pchar(tmpProgram), nil, nil, true, CREATE_NO_WINDOW,
-    nil, nil, tmpStartupInfo, tmpProcessInformation) then
+  if not CreateProcess(nil, pchar(_commad), nil, nil, false,
+  //   CREATE_NO_WINDOW,
+  CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
+  nil, nil, _startupInfo, _processInfo) then
   begin
-    // loop every 10 ms
-    while WaitForSingleObject(tmpProcessInformation.hProcess, 10) > 0 do
-    begin
-      application.ProcessMessages;
-    end;
-    closeHandle(tmpProcessInformation.hProcess);
-    closeHandle(tmpProcessInformation.hThread);
-  end
-  else
-  begin
-    raiseLastOSError;
+    getLastSysErrorMessage
   end;
+
+  //TODO CHECK
+  waitForMultiple(_processInfo.hProcess);
+  //  waitFor(_processInfo.hProcess);
+
+  if not GetExitCodeProcess(_processInfo.hProcess, dword(returnCode)) then //assign return code
+  begin
+    raiseLastSysErrorMessage;
+  end;
+
+  CloseHandle(_processInfo.hProcess);
+  CloseHandle(_processInfo.hThread);
+
+  if (exceptionIfReturnCodeIsNot0) and (returnCode <> 0) then
+  begin
+    raise Exception.Create(fileName + ' exit code: ' + IntToStr(returnCode));
+  end;
+
+  Result := returnCode;
 end;
 
 procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
 var
   receiverHandle: THandle;
 begin
-  //identificazione finestra tramite tipo oggetto e windows name (caption)
   receiverHandle := 1;
   while (receiverHandle <> 0) do
   begin
+    //classname (tclass) windows name (caption)
     receiverHandle := FindWindow(PChar(className), PChar(windowsName));
     if (receiverHandle <> 0) then
     begin
@@ -594,7 +830,7 @@ var
   receiverHandle: THandle;
   copyDataStruct: TCopyDataStruct;
 begin
-  //identificazione finestra tramite tipo oggetto e windows name (caption)
+  //classname (tclass) windows name (caption)n)
   receiverHandle := FindWindow(PChar(className), PChar(windowsName));
   if receiverHandle <> 0 then
   begin
@@ -631,24 +867,11 @@ type
 
   PSHARE_INFO_2 = ^SHARE_INFO_2;
 
-  TExplicitAccess = EXPLICIT_ACCESS_A;
-
-procedure grantAllPermissionNet(user, source: string);
-var
-  NewDacl, OldDacl: PACl;
-  SD: PSECURITY_DESCRIPTOR;
-  EA: TExplicitAccess;
-begin
-  GetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
-  BuildExplicitAccessWithName(@EA, PChar(user), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
-  SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
-  SetNamedSecurityInfo(PChar(source), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
-end;
-
 function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err: LPDWORD): DWORD; stdcall;
   external 'NetAPI32.dll' name 'NetShareAdd';
 
-function netShare(pathFolder: string; netName: string = ''; netPassw: string = ''): string;
+function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
+grantAllPermissionToEveryoneGroup: boolean = false): string;
 const
   NERR_SUCCESS = 0;
   STYPE_DISKTREE = 0;
@@ -663,21 +886,26 @@ const
   ACCESS_ATRIB = $20;
   ACCESS_PERM = $40;
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
+
+  ERR_MSG = 'Unable to share folder.';
 var
+  _targetDir: string;
   AShareInfo: PSHARE_INFO_2;
   parmError: DWORD;
-  pathShareFolder: string;
+  pathSharedDir: string;
   shareExistsAlready: boolean;
+
+  _errMsg: string;
 begin
   shareExistsAlready := false;
-  pathFolder := ExcludeTrailingPathDelimiter(pathFolder);
+  _targetDir := getValidFullPathInWindowsStyle(targetDir);
   AShareInfo := New(PSHARE_INFO_2);
   try
     with AShareInfo^ do
     begin
       if (netName = '') then
       begin
-        shi2_netname := PWideChar(extractfilename(pathFolder));
+        shi2_netname := PWideChar(extractfilename(_targetDir));
       end
       else
       begin
@@ -688,7 +916,7 @@ begin
       shi2_permissions := ACCESS_ALL;
       shi2_max_uses := DWORD(-1); // Maximum allowed
       shi2_current_uses := 0;
-      shi2_path := PWideChar(pathFolder);
+      shi2_path := PWideChar(_targetDir);
       if (netPassw = '') then
       begin
         shi2_passwd := nil;
@@ -698,97 +926,154 @@ begin
         shi2_passwd := PWideChar(netPassw);
       end;
     end;
+
     if (netShareAdd(nil, 2, PBYTE(AShareInfo), @parmError) <> NERR_SUCCESS) then
     begin
       shareExistsAlready := true;
     end;
-
-    pathShareFolder := '\\' + GetEnvironmentVariable('COMPUTERNAME') + '\' + AShareInfo.shi2_netname;
-
-    if DirectoryExists(pathShareFolder) then
+    if not DirectoryExists(pathSharedDir) then
     begin
-      if not shareExistsAlready then
-      begin
-        grantAllPermissionNet('Everyone', pathShareFolder);
-      end;
-      Result := pathShareFolder;
-    end
-    else
-    begin
-      Result := 'error';
+      _errMsg := getDoubleQuotedString(_targetDir) + ' : ' + ERR_MSG;
+      raise Exception.Create(_errMsg);
     end;
-
+    pathSharedDir := '\\' + GetEnvironmentVariable('COMPUTERNAME') + '\' + AShareInfo.shi2_netname;
+    if not(shareExistsAlready) and (grantAllPermissionToEveryoneGroup) then
+    begin
+      grantAllPermissionsNetToTheObjectForTheEveryoneGroup(pathSharedDir);
+    end;
   finally
     FreeMem(AShareInfo, SizeOf(PSHARE_INFO_2));
   end;
+
+  Result := pathSharedDir;
 end;
 
-procedure addTCP_IN_FirewallException(name: string; port: Word; description: string = ''; grouping: string = '';
+procedure addTCP_IN_FirewallException(ruleName: string; port: Word; description: string = ''; grouping: string = '';
 executable: String = '');
 const
   NET_FW_PROFILE2_DOMAIN = 1;
   NET_FW_PROFILE2_PRIVATE = 2;
   NET_FW_PROFILE2_PUBLIC = 4;
+
+  PROFILES = NET_FW_PROFILE2_PRIVATE OR NET_FW_PROFILE2_PUBLIC OR NET_FW_PROFILE2_DOMAIN;
+
   NET_FW_IP_PROTOCOL_TCP = 6;
   NET_FW_ACTION_ALLOW = 1;
   NET_FW_RULE_DIR_IN = 1;
   NET_FW_RULE_DIR_OUT = 2;
 var
-  fwPolicy2: OleVariant;
-  RulesObject: OleVariant;
-  Profile: Integer;
-  NewRule: OleVariant;
+  FwPolicy2: OleVariant;
+  rules: OleVariant;
+  newFWRule: OleVariant;
 begin
   CoInitialize(nil);
 
-  Profile := NET_FW_PROFILE2_PRIVATE OR NET_FW_PROFILE2_PUBLIC OR NET_FW_PROFILE2_DOMAIN;
-  fwPolicy2 := CreateOleObject('HNetCfg.FwPolicy2');
-  RulesObject := fwPolicy2.Rules;
-
-  NewRule := CreateOleObject('HNetCfg.FWRule');
-  NewRule.Name := name;
-
+  newFWRule := CreateOleObject('HNetCfg.FWRule');
+  newFWRule.Name := ruleName;
   if (description <> '') then
   begin
-    NewRule.Description := description;
+    newFWRule.Description := description;
   end
   else
   begin
-    NewRule.Description := name;
+    newFWRule.Description := ruleName;
   end;
 
   if (executable <> '') then
   begin
-    NewRule.Applicationname := executable;
+    newFWRule.Applicationname := executable;
   end;
-  NewRule.Protocol := NET_FW_IP_PROTOCOL_TCP;
-  NewRule.LocalPorts := port;
-  NewRule.Direction := NET_FW_RULE_DIR_IN;
-  NewRule.Enabled := TRUE;
+  newFWRule.Protocol := NET_FW_IP_PROTOCOL_TCP;
+  newFWRule.LocalPorts := port;
+  newFWRule.Direction := NET_FW_RULE_DIR_IN;
+  newFWRule.Enabled := TRUE;
   if (grouping <> '') then
   begin
-    NewRule.Grouping := grouping;
+    newFWRule.Grouping := grouping;
   end;
-  NewRule.Profiles := Profile;
-  NewRule.Action := NET_FW_ACTION_ALLOW;
-  RulesObject.Add(NewRule);
+  newFWRule.Profiles := PROFILES;
+  newFWRule.Action := NET_FW_ACTION_ALLOW;
+  FwPolicy2 := CreateOleObject('HNetCfg.FwPolicy2');
+  rules := FwPolicy2.Rules;
+  rules.Add(newFWRule);
 
   CoUninitialize;
 end;
 
-procedure grantAllPermissionToObject(windowsUserName: string; myObject: string);
+procedure deleteFirewallException(ruleName: string);
+var
+  FwPolicy2: OleVariant;
+  rules: OleVariant;
+begin
+  CoInitialize(nil);
+
+  FwPolicy2 := CreateOleObject('HNetCfg.FwPolicy2');
+  rules := FwPolicy2.Rules;
+  rules.Remove(ruleName);
+
+  CoUninitialize;
+end;
+
+procedure grantAllPermissionsNetToTheObjectForTheEveryoneGroup(myObject: string);
+begin
+  grantAllPermissionNetToTheObject(EVERYONE_GROUP, myObject);
+end;
+
+procedure grantAllPermissionNetToTheObject(windowsGroupOrUser: string; myObject: string);
 var
   NewDacl, OldDacl: PACl;
   SD: PSECURITY_DESCRIPTOR;
   EA: TExplicitAccess;
 begin
-  GetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
-  BuildExplicitAccessWithName(@EA, PChar(windowsUserName), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
+  validateThatWindowsGroupOrUserExists(windowsGroupOrUser);
+
+  GetNamedSecurityInfo(PChar(myObject), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
+  BuildExplicitAccessWithName(@EA, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
   SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
-  SetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
+  SetNamedSecurityInfo(PChar(myObject), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
+end;
+
+procedure grantAllPermissionsToTheObjectForTheEveryoneGroup(myObject: string);
+begin
+  grantAllPermissionsToTheObject(EVERYONE_GROUP, myObject);
+end;
+
+procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);
+const
+  ERR_MSG = 'Not exists in Windows Groups/Users.';
+var
+  newDACL: PACl;
+  oldDACL: PACl;
+  securityDescriptor: PSECURITY_DESCRIPTOR;
+  explicitAccess: TExplicitAccess;
+begin
+  validateThatWindowsGroupOrUserExists(windowsGroupOrUser);
+
+  GetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @oldDACL,
+    nil, securityDescriptor);
+  BuildExplicitAccessWithName(@explicitAccess, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS,
+    SUB_CONTAINERS_AND_OBJECTS_INHERIT);
+  SetEntriesInAcl(1, @explicitAccess, oldDACL, newDACL);
+  SetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, newDACL, nil);
+end;
+
+function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
+var
+  _newDACL: PACl;
+  _explicitAccess: TExplicitAccess;
+
+  _result: boolean;
+begin
+  BuildExplicitAccessWithName(@_explicitAccess, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS,
+    SUB_CONTAINERS_AND_OBJECTS_INHERIT);
+  SetEntriesInAcl(1, @_explicitAccess, nil, _newDACL);
+  _result := Assigned(_newDACL);
+  Result := _result;
 end;
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
+const
+  ERR_MSG = 'Error creating desktop icon.';
 var
   iobject: iunknown;
   islink: ishelllink;
@@ -798,7 +1083,7 @@ var
   targetName: string;
   linkname: string;
 begin
-  targetname := getValidFullPath(fileName);
+  targetname := getValidFullPathInWindowsStyle(fileName);
   IObject := CreateComObject(CLSID_ShellLink);
   ISLink := IObject as IShellLink;
   IPFile := IObject as IPersistFile;
@@ -813,16 +1098,16 @@ begin
   SHGetSpecialFolderLocation(0, CSIDL_DESKTOPDIRECTORY, PIDL);
   SHGetPathFromIDList(PIDL, InFolder);
 
-  LinkName := IncludeTrailingBackslash(GetDesktopFolder);
+  LinkName := IncludeTrailingBackslash(getDesktopDir);
   LinkName := LinkName + nameDesktopLink + '.lnk';
 
   if not IPFile.Save(PWideChar(LinkName), False) = S_OK then
   begin
-    raise Exception.Create('Error creating desktop icon.');
+    raise Exception.Create(ERR_MSG);
   end;
 end;
 
-function GetDesktopFolder: string;
+function getDesktopDir: string;
 var
   PIDList: PItemIDList;
   Buffer: array [0 .. MAX_PATH - 1] of Char;
@@ -830,20 +1115,142 @@ begin
   Result := '';
   SHGetSpecialFolderLocation(0, CSIDL_DESKTOP, PIDList);
   if Assigned(PIDList) then
+  begin
     if SHGetPathFromIDList(PIDList, Buffer) then
+    begin
       Result := Buffer;
+    end;
+  end;
 end;
 
-function checkIfIsWindowsSubfolder(mainFolder: string; subFolder: string): boolean;
+procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
+const
+  ERR_MSG = 'Cannot rename: ';
 var
-  _mainFolder: string;
-  _subFolder: string;
-  _isSubFolder: Boolean;
+  _parentDirTargetDir: string;
+  _sourceDirName: string;
+  _tempTargetDir: string;
+
+  _err_msg: string;
 begin
-  _mainFolder := getPathInWindowsStyle(mainFolder);
-  _subFolder := getPathInWindowsStyle(subFolder);
-  _isSubFolder := checkIfIsSubFolder(_mainFolder, _subFolder);
-  result := _isSubFolder
+  if forceOverwrite then
+  begin
+    deleteDirectoryIfExists(targetDir);
+  end
+  else
+  begin
+    validateThatDirNotExists(targetDir);
+  end;
+
+  _parentDirTargetDir := getParentDirFromDir(targetDir);
+  _sourceDirName := ExtractFileName(getValidFullPathInWindowsStyle(sourceDir));
+  _tempTargetDir := TPath.Combine(_parentDirTargetDir, _sourceDirName);
+  copyDir(sourceDir, _parentDirTargetDir);
+  if not RenameFile(_tempTargetDir, targetDir) then
+  begin
+    _err_msg := ERR_MSG + getDoubleQuotedString(_tempTargetDir);
+    raise Exception.Create(_err_msg);
+  end;
+end;
+
+const
+  SILENT_FLAGS: FILEOP_FLAGS = FOF_SILENT or FOF_NOCONFIRMATION;
+
+procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = true);
+var
+  sHFileOpStruct: TSHFileOpStruct;
+  shFileOperationResult: integer;
+begin
+  ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
+  with sHFileOpStruct do
+  begin
+    wFunc := FO_COPY;
+    pFrom := PChar(sourceDir + #0);
+    pTo := PChar(destinationDir);
+    if silent then
+    begin
+      fFlags := FOF_FILESONLY or SILENT_FLAGS;
+    end
+    else
+    begin
+      fFlags := FOF_FILESONLY;
+    end;
+  end;
+  shFileOperationResult := ShFileOperation(sHFileOpStruct);
+  if shFileOperationResult <> 0 then
+  begin
+    raise Exception.Create('Unable to copy ' + sourceDir + ' to ' + destinationDir);
+  end;
+end;
+
+procedure createHideDir(dirName: string; forceDelete: boolean = false);
+const
+  ERR_MSG = 'Error creating hide dir.';
+begin
+  if forceDelete then
+  begin
+    deleteDirectoryIfExists(dirName);
+  end;
+
+  if CreateDir(dirName) then
+  begin
+    SetFileAttributes(pchar(dirName), FILE_ATTRIBUTE_HIDDEN);
+  end
+  else
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+end;
+
+procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
+const
+  ERR_MSG = 'Unable to delete.';
+var
+  sHFileOpStruct: TSHFileOpStruct;
+  shFileOperationResult: integer;
+
+  errMsg: string;
+begin
+  if DirectoryExists(dirName) then
+  begin
+    ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
+    with sHFileOpStruct do
+    begin
+      wFunc := FO_DELETE;
+      pFrom := PChar(DirName + #0); //double zero-terminated
+      if silent then
+      begin
+        fFlags := SILENT_FLAGS;
+      end
+    end;
+    shFileOperationResult := SHFileOperation(sHFileOpStruct);
+    if (shFileOperationResult <> 0) or (DirectoryExists(dirName)) then
+    begin
+      errMsg := ERR_MSG + ' : ' + dirName;
+      raise Exception.Create(errMsg);
+    end;
+  end;
+end;
+
+function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
+var
+  _subDir: string;
+  _mainDir: string;
+  _isSubDir: Boolean;
+begin
+  _subDir := getPathInWindowsStyle(subDir);
+  _mainDir := getPathInWindowsStyle(mainDir);
+  _isSubDir := checkIfIsSubDir(_subDir, _mainDir);
+  result := _isSubDir
+end;
+
+function getParentDirFromDir(sourceDir: string): string;
+var
+  parentDir: string;
+begin
+  parentDir := getValidFullPathInWindowsStyle(sourceDir);
+  parentDir := ExtractFilePath(parentDir);
+  result := parentDir;
 end;
 
 function getValidFullPathInWindowsStyle(path: string): string;
@@ -863,28 +1270,41 @@ begin
   result := _path;
 end;
 
-function copyDir(sourceDir: string; destinationDir: string; silent: boolean = true): boolean;
-const
-  SILENT_FLAGS: FILEOP_FLAGS = FOF_SILENT or FOF_NOCONFIRMATION;
+function getStringWithEnvVariablesReaded(source: string): string;
 var
-  sHFileOpStruct: TSHFileOpStruct;
+  tempStringDir: string;
+  tempStringPos: string;
+  posStart: integer;
+  posEnd: integer;
+  valueToReplace: string;
+  newValue: string;
+  _result: string;
 begin
-  ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
-  with sHFileOpStruct do
-  begin
-    wFunc := FO_COPY;
-    if silent then
+  tempStringPos := source;
+  tempStringDir := source;
+  _result := source;
+  repeat
+    posStart := pos('%', tempStringPos);
+    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
+    posEnd := posStart + pos('%', tempStringPos);
+    if (posStart > 0) and (posEnd > 1) then
     begin
-      fFlags := FOF_FILESONLY or SILENT_FLAGS;
+      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
+      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
+      if newValue <> '' then
+      begin
+        _result := stringreplace(_result, valueToReplace, newValue, []);
+      end;
     end
     else
     begin
-      fFlags := FOF_FILESONLY;
+      exit;
     end;
-    pFrom := PChar(sourceDir + #0);
-    pTo := PChar(destinationDir)
-  end;
-  Result := (0 = ShFileOperation(sHFileOpStruct));
+    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
+    tempStringPos := tempStringDir;
+  until posStart < 0;
+
+  Result := _result;
 end;
 
 //----------------------------------------------------------------------
@@ -993,17 +1413,17 @@ var
   cbBuf: Cardinal;
   ptiUser: PTOKEN_USER;
   snu: SID_NAME_USE;
-  ProcessHandle: THandle;
+  processHandle: THandle;
   UserSize, DomainSize: DWORD;
   bSuccess: Boolean;
   user: string;
   domain: string;
   PIDCredentials: TPIDCredentials;
 begin
-  ProcessHandle := OpenProcess(PROCESS_QUERY_INFORMATION, False, PID);
-  if ProcessHandle <> 0 then
+  processHandle := OpenProcess(PROCESS_QUERY_INFORMATION, False, PID);
+  if processHandle <> 0 then
   begin
-    if OpenProcessToken(ProcessHandle, TOKEN_QUERY, hToken) then
+    if OpenProcessToken(processHandle, TOKEN_QUERY, hToken) then
     begin
       bSuccess := GetTokenInformation(hToken, TokenUser, nil, 0, cbBuf);
       ptiUser := nil;
@@ -1039,7 +1459,7 @@ begin
         FreeMem(ptiUser);
       end;
     end;
-    CloseHandle(ProcessHandle);
+    CloseHandle(processHandle);
   end;
 
   Result := PIDCredentials;
@@ -1061,13 +1481,13 @@ end;
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
 var
   processEntry: TProcessEntry32;
-  handleSnap: THandle;
+  snapHandle: THandle;
   processID: DWORD;
 begin
   processID := 0;
-  handleSnap := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  snapHandle := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   processEntry.dwSize := sizeof(TProcessEntry32);
-  Process32First(handleSnap, processEntry);
+  Process32First(snapHandle, processEntry);
   repeat //loop su tutti i processi nello snapshot acquisito
     with processEntry do
     begin
@@ -1078,8 +1498,8 @@ begin
         break;
       end;
     end;
-  until (not(Process32Next(handleSnap, processEntry)));
-  CloseHandle(handleSnap);
+  until (not(Process32Next(snapHandle, processEntry)));
+  CloseHandle(snapHandle);
 
   result := processID;
 end;
@@ -1090,7 +1510,7 @@ type
     HWND: THandle;
   end;
 
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall; forward;
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): boolean; stdcall; forward;
 
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
 var
@@ -1105,26 +1525,29 @@ end;
 type
   PEnumInfo = ^TEnumInfo;
 
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): Bool; stdcall;
+function enumWindowsProc(Wnd: HWND; Param: LPARAM): boolean; stdcall;
 var
   PID: DWORD;
   PEI: PEnumInfo;
+
+  _result: boolean;
 begin
   // Param matches the address of the param that is passed
-
   PEI := PEnumInfo(Param);
   GetWindowThreadProcessID(Wnd, @PID);
 
-  Result := (PID <> PEI^.ProcessID) or
-    (not IsWindowVisible(WND)) or
-    (not IsWindowEnabled(WND));
+  _result := (PID <> PEI^.ProcessID) or (not IsWindowVisible(WND)) or (not IsWindowEnabled(WND));
 
-  if not Result then
+  if not result then
+  begin
     PEI^.HWND := WND; //break on return FALSE
+  end;
+
+  Result := _result;
 end;
 //----------------------------------------------------------------------------------------
 
-function ExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 var
   registry: TRegistry;
   isOpenKey: boolean;
@@ -1137,6 +1560,106 @@ begin
     registry.Free;
   end;
   Result := isOpenKey;
+end;
+
+procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+const
+  ERR_MSG_TIMEOUT = 'The timeout interval was elapsed.';
+var
+  _msg: TMsg;
+  _return: DWORD;
+
+  _exit: boolean;
+begin
+  _exit := false;
+  while not _exit do
+  begin
+    _return := MsgWaitForMultipleObjects(1, { 1 handle to wait on }
+    processHandle,
+      False, { wake on any event }
+    timeout,
+      QS_PAINT or QS_SENDMESSAGE or QS_POSTMESSAGE //todo check
+    //      QS_PAINT or QS_POSTMESSAGE or QS_SENDMESSAGE or QS_ALLPOSTMESSAGE { wake on paint messages or messages from other threads }
+      );
+    case _return of
+      WAIT_OBJECT_0:
+        _exit := true;
+      WAIT_FAILED:
+        raiseLastSysErrorMessage;
+      WAIT_TIMEOUT:
+        raise Exception.Create(ERR_MSG_TIMEOUT);
+    else
+      begin
+        if modalMode then
+        begin
+          while PeekMessage(_msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE) do
+          begin
+            DispatchMessage(_msg);
+          end;
+        end
+        else
+        begin
+          Application.ProcessMessages;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+const
+  ERR_MSG_TIMEOUT = 'The timeout interval was elapsed.';
+var
+  _msg: TMsg;
+  _return: DWORD;
+
+  _exit: boolean;
+begin
+  _exit := false;
+  while not _exit do
+  begin
+    _return := WaitForSingleObject(processHandle, timeout);
+    case _return of
+      WAIT_OBJECT_0:
+        _exit := true;
+      WAIT_FAILED:
+        raiseLastSysErrorMessage;
+      WAIT_TIMEOUT:
+        raise Exception.Create(ERR_MSG_TIMEOUT);
+    else
+      begin
+        if modalMode then
+        begin
+          while PeekMessage(_msg, 0, WM_PAINT, WM_PAINT, PM_REMOVE) do
+          begin
+            DispatchMessage(_msg);
+          end;
+        end
+        else
+        begin
+          Application.ProcessMessages;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure raiseLastSysErrorMessage;
+var
+  sysErrMsg: string;
+begin
+  sysErrMsg := getLastSysErrorMessage;
+  raise Exception.Create(sysErrMsg);
+end;
+
+function getLastSysErrorMessage: string;
+var
+  _errorCode: cardinal;
+  sysErrMsg: string;
+begin
+  _errorCode := GetLastError;
+  sysErrMsg := SysErrorMessage(_errorCode);
+  Result := sysErrMsg;
 end;
 
 end.
