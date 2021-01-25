@@ -97,7 +97,8 @@ function checkIfWindowsArchitectureIsX64: boolean;
 type
   TWindowsArchitecture = (WindowsX86, WindowsX64);
 function getWindowsArchitecture: TWindowsArchitecture;
-function checkIfUserIsAdmin: boolean; external shell32;
+function checkIfUserIsAdmin: boolean;
+function IsUserAnAdmin: boolean; external shell32; //KEPT THE SIGNATURE, NOT RENAME!!!
 
 const
 {$externalsym SW_HIDE}
@@ -645,6 +646,11 @@ begin
       raise Exception.Create(ERR_MSG_ARCHITECTURE);
     end;
   end;
+end;
+
+function checkIfUserIsAdmin: boolean;
+begin
+  Result := IsUserAnAdmin;
 end;
 
 function shellExecuteExe(fileName: string; params: string = ''; showWindow: integer = SW_HIDE;
