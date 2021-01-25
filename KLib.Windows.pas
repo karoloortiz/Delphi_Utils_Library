@@ -150,6 +150,7 @@ type
 procedure grantAllPermissionsNetToTheObjectForTheEveryoneGroup(myObject: string);
 procedure grantAllPermissionNetToTheObject(windowsGroupOrUser: string; myObject: string);
 procedure grantAllPermissionsToTheObjectForTheEveryoneGroup(myObject: string);
+procedure grantAllPermissionsToTheObjectForTheUsersGroup(myObject: string);
 procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);
 
 function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
@@ -997,6 +998,11 @@ end;
 procedure grantAllPermissionsToTheObjectForTheEveryoneGroup(myObject: string);
 begin
   grantAllPermissionsToTheObject(EVERYONE_GROUP, myObject);
+end;
+
+procedure grantAllPermissionsToTheObjectForTheUsersGroup(myObject: string);
+begin
+  grantAllPermissionsToTheObject(USERS_GROUP, myObject);
 end;
 
 procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);

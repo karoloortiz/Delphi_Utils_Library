@@ -54,12 +54,13 @@ const
   DLL_TYPE = 'DLL';
 
   EVERYONE_GROUP = 'Everyone';
-
-  FORCE_OVERWRITE = true;
+  USERS_GROUP = 'Users';
 
   C_DRIVE = 'C';
 
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
+  EMPTY_STRING = '';
+  FORCE_OVERWRITE = true;
 
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
