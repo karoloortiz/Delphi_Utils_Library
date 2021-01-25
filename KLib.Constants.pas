@@ -59,6 +59,30 @@ const
 
   C_DRIVE = 'C';
 
+  RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
+
+  //Keystroke Message Flag
+  //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
+  //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
+  //Keystroke Message Flag impostato ad 1835009 (DECIMAL VALUE) che in binario corrisponde a 0000000000111000000000000000001
+  // l_param
+  //i valori dallo 0 al 15 specificano il numero di volte che e' stato premuto il tasto
+  //(nel nostro caso 0000000000000001)
+  //i valori dal 16-23 specificano lo scan code e questo dipende dal produtttore OEM
+  //(nel nostro caso 00011100) tastiera Logitech K120
+  //il valore 24 se settato a 1 indica se il tasto premuto e' uno steso, come ad esempio un tasto funzione o numerico
+  //(nel nostro caso 0)
+  //i valori dal 25-28 sono riservati
+  //(nel nostro caso 0000)
+  //il valore 24 se settato a 1 indica se il tasto premuto il pulsante ALT
+  //(nel nostro caso 0)
+  //il valore 30 se settato a 1 indica che lo stato precedente del tasto era key_down
+  //(nel nostro caso 0)
+  //il valore 31 se settato a 1 indica che lo stato transitorio del tasto e' stato appena rilasciato
+  //(nel nostro caso 0)
+
+  KF_CODE_ENTER = 1835009;
+
 implementation
 
 end.

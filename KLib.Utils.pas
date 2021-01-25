@@ -101,10 +101,6 @@ procedure deleteOpenSSLDLLsIfExists;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 
-function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
-function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
-function strToStringList(source: String; fixedLen: Integer): TStringList;
-
 function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
@@ -112,6 +108,8 @@ function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
+
+function getValidTelephoneNumber(number: string): string;
 
 function getCurrentDayOfWeekAsString: string;
 function getDayOfWeekAsString(date: TDateTime): string;
@@ -125,6 +123,13 @@ function getDoubleQuotedString(value: string): string;
 function getSingleQuotedString(value: string): string;
 function getSubStringInsertedIntoString(mainString: string; insertedString: string; index: integer): string;
 
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
+function strToStringList(source: String; fixedLen: Integer): TStringList;
+
+procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
+function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
+
 implementation
 
 uses
@@ -132,7 +137,7 @@ uses
   Vcl.ExtCtrls,
   Xml.XMLDoc,
   IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL,
-  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles;
+  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles, System.Character;
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
@@ -201,7 +206,7 @@ begin
   _handle := FileCreate(fileName);
   if _handle = INVALID_HANDLE_VALUE then
   begin
-    raise Exception.Create('Error creating File: ' + fileName);
+    raise Exception.Create('Error creating file: ' + fileName);
   end
   else
   begin
@@ -645,54 +650,6 @@ begin
   end;
 end;
 
-function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
-var
-  _stringList: TStringList;
-begin
-  _stringList := TStringList.Create;
-  _stringList.Text := source;
-  result := _stringList.Count;
-  FreeAndNil(_stringList);
-end;
-
-function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
-var
-  _stringList: TStringList;
-  _result: string;
-begin
-  _stringList := strToStringList(source, fixedLen);
-  _result := _stringList.Text;
-  Delete(_result, length(_result), 1);
-  result := _result;
-  FreeAndNil(_stringList);
-end;
-
-function strToStringList(source: String; fixedLen: integer): TStringList;
-var
-  idx: Integer;
-  srcLen: Integer;
-  alist: TStringList;
-begin
-  alist := TStringList.Create;
-  alist.LineBreak := #13;
-  if fixedLen = 0 then
-  begin
-    fixedLen := Length(source) - 1;
-  end;
-  aList.Capacity := (Length(source) div fixedLen) + 1;
-
-  idx := 1;
-  srcLen := Length(source);
-
-  while idx <= srcLen do
-  begin
-    aList.Add(Copy(source, idx, fixedLen));
-    Inc(idx, fixedLen);
-  end;
-
-  result := alist;
-end;
-
 function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
 var
   connection: TIdFTP;
@@ -768,6 +725,34 @@ end;
 procedure executeProcedure(myProcedure: TCallBack);
 begin
   myProcedure('');
+end;
+
+function getValidTelephoneNumber(number: string): string;
+const
+  ERR_MSG = 'Telephone number is empty.';
+var
+  telephoneNumber: string;
+  _number: string;
+  i: integer;
+begin
+  telephoneNumber := '';
+  _number := trim(number);
+
+  validateThatStringIsNotEmpty(_number, ERR_MSG);
+
+  if _number[1] = '+' then
+  begin
+    telephoneNumber := '+';
+  end;
+  for i := 2 to length(_number) do
+  begin
+    if _number[i].IsNumber then
+    begin
+      telephoneNumber := telephoneNumber + _number[i];
+    end;
+  end;
+
+  Result := telephoneNumber;
 end;
 
 function getCurrentDayOfWeekAsString: string;
@@ -872,6 +857,74 @@ begin
   end;
   _lenght := Length(mainString);
   Result := Copy(mainString, 0, index) + insertedString + Copy(mainString, index + 1, _lenght);
+end;
+
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+var
+  _stringList: TStringList;
+begin
+  _stringList := TStringList.Create;
+  _stringList.Text := source;
+  result := _stringList.Count;
+  FreeAndNil(_stringList);
+end;
+
+function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
+var
+  _stringList: TStringList;
+  _result: string;
+begin
+  _stringList := strToStringList(source, fixedLen);
+  _result := _stringList.Text;
+  Delete(_result, length(_result), 1);
+  result := _result;
+  FreeAndNil(_stringList);
+end;
+
+function strToStringList(source: String; fixedLen: integer): TStringList;
+var
+  idx: Integer;
+  srcLen: Integer;
+  alist: TStringList;
+begin
+  alist := TStringList.Create;
+  alist.LineBreak := #13;
+  if fixedLen = 0 then
+  begin
+    fixedLen := Length(source) - 1;
+  end;
+  aList.Capacity := (Length(source) div fixedLen) + 1;
+
+  idx := 1;
+  srcLen := Length(source);
+
+  while idx <= srcLen do
+  begin
+    aList.Add(Copy(source, idx, fixedLen));
+    Inc(idx, fixedLen);
+  end;
+
+  result := alist;
+end;
+
+procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
+var
+  _startIndexDelimiter: integer;
+  _endIndexDelimiter: integer;
+  _lengthDestFirstString: integer;
+  _lengthDestSecondString: integer;
+begin
+  _startIndexDelimiter := AnsiPos(delimiter, source);
+  _endIndexDelimiter := _startIndexDelimiter + Length(delimiter);
+  _lengthDestFirstString := _startIndexDelimiter - 1;
+  _lengthDestSecondString := Length(source) - _endIndexDelimiter + 1;
+  destFirstString := Copy(source, 0, _lengthDestFirstString);
+  destSecondString := Copy(source, _endIndexDelimiter, _lengthDestSecondString);
+end;
+
+function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
+begin
+  Result := firstString + delimiter + secondString;
 end;
 
 end.

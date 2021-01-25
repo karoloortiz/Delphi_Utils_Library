@@ -69,7 +69,7 @@ type
   protected
     function createService: boolean; virtual; abstract; //TODO IMPLEMENTE CODE
   public
-    class procedure aStart(handleSender: HWND; nameService: string; nameMachine: string = '');
+    class procedure aStart(handleSender: THandle; nameService: string; nameMachine: string = '');
     class procedure startIfExists(nameService: string; nameMachine: string = '');
     class procedure start(nameService: string; nameMachine: string = '');
     class procedure stopIfExists(nameService: string; nameMachine: string = '';
@@ -139,9 +139,6 @@ function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin
   showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 
-procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
-function sendDataStruct(className: string; windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
-
 function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
   grantAllPermissionToEveryoneGroup: boolean = false): string;
 procedure addTCP_IN_FirewallException(ruleName: string; port: Word; description: string = ''; grouping: string = '';
@@ -181,6 +178,13 @@ function getPIDCredentials(PID: DWORD): TPIDCredentials;
 function getPIDByProcessName(nameProcess: string): DWORD;
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
 //------------------------------------------------------------------
+
+procedure closeApplication(handle: THandle);
+function sendMemoryStreamUsing_WM_COPYDATA(handle: THandle; data: TMemoryStream): integer;
+function sendStringUsing_WM_COPYDATA(handle: THandle; data: string; msgIdentifier: integer = 0): integer;
+procedure mySetForegroundWindow(handle: THandle);
+function checkIfWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): boolean;
+function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
 
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 
@@ -243,7 +247,7 @@ end;
 
 //----------------------------------------------------------------------------------------
 
-class procedure TWindowsService.aStart(handleSender: HWND; nameService: string;
+class procedure TWindowsService.aStart(handleSender: THandle; nameService: string;
   nameMachine: string = '');
 begin
   TThread.CreateAnonymousThread(
@@ -809,49 +813,6 @@ begin
   Result := returnCode;
 end;
 
-procedure closeApplication(className: string; windowsName: string; handleSender: HWND = 0);
-var
-  receiverHandle: THandle;
-begin
-  receiverHandle := 1;
-  while (receiverHandle <> 0) do
-  begin
-    //classname (tclass) windows name (caption)
-    receiverHandle := FindWindow(PChar(className), PChar(windowsName));
-    if (receiverHandle <> 0) then
-    begin
-      SendMessage(receiverHandle, WM_CLOSE, Integer(handleSender), 0);
-    end;
-  end;
-end;
-
-function sendDataStruct(className: string; windowsName: string; handleSender: HWND; data_send: TMemoryStream): boolean;
-var
-  receiverHandle: THandle;
-  copyDataStruct: TCopyDataStruct;
-begin
-  //classname (tclass) windows name (caption)n)
-  receiverHandle := FindWindow(PChar(className), PChar(windowsName));
-  if receiverHandle <> 0 then
-  begin
-    copyDataStruct.dwData := integer(data_send.Memory);
-    copyDataStruct.cbData := data_send.size;
-    copyDataStruct.lpData := data_send.Memory;
-    if (SendMessage(receiverHandle, WM_COPYDATA, Integer(handleSender), Integer(@copyDataStruct)) <> 1) then
-    begin
-      result := false;
-    end
-    else
-    begin
-      result := true;
-    end;
-  end
-  else
-  begin
-    result := false;
-  end;
-end;
-
 type
   //----------------------------------
   SHARE_INFO_2 = record
@@ -1308,8 +1269,6 @@ begin
 end;
 
 //----------------------------------------------------------------------
-procedure mySetForegroundWindow(windowHandle: THandle); forward;
-
 function setProcessWindowToForeground(processName: string): boolean;
 var
   PIDProcess: DWORD;
@@ -1378,11 +1337,6 @@ begin
   Result := sameProcessName and sameUserOfProcess;
 end;
 
-procedure mySetForegroundWindow(windowHandle: THandle);
-begin
-  SetForegroundWindow(windowHandle);
-  postMessage(windowHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
-end;
 //TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
 
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
@@ -1506,26 +1460,26 @@ end;
 
 type
   TEnumInfo = record
-    ProcessID: DWORD;
-    HWND: THandle;
+    pid: DWORD;
+    handle: THandle;
   end;
 
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): boolean; stdcall; forward;
+function enumWindowsProc(Wnd: THandle; Param: LPARAM): boolean; stdcall; forward;
 
 function getMainWindowHandleByPID(PID: DWORD): DWORD;
 var
   enumInfo: TEnumInfo;
 begin
-  enumInfo.ProcessID := PID;
-  enumInfo.HWND := 0;
+  enumInfo.pid := PID;
+  enumInfo.handle := 0;
   EnumWindows(@enumWindowsProc, LPARAM(@enumInfo));
-  Result := enumInfo.HWND;
+  Result := enumInfo.handle;
 end;
 
 type
   PEnumInfo = ^TEnumInfo;
 
-function enumWindowsProc(Wnd: HWND; Param: LPARAM): boolean; stdcall;
+function enumWindowsProc(Wnd: THandle; Param: LPARAM): boolean; stdcall;
 var
   PID: DWORD;
   PEI: PEnumInfo;
@@ -1536,16 +1490,80 @@ begin
   PEI := PEnumInfo(Param);
   GetWindowThreadProcessID(Wnd, @PID);
 
-  _result := (PID <> PEI^.ProcessID) or (not IsWindowVisible(WND)) or (not IsWindowEnabled(WND));
+  _result := (PID <> PEI^.pid) or (not IsWindowVisible(WND)) or (not IsWindowEnabled(WND));
 
   if not result then
   begin
-    PEI^.HWND := WND; //break on return FALSE
+    PEI^.handle := WND; //break on return FALSE
   end;
 
   Result := _result;
 end;
 //----------------------------------------------------------------------------------------
+
+procedure closeApplication(handle: THandle);
+begin
+  SendMessage(handle, WM_CLOSE, Application.Handle, 0);
+end;
+
+//TODO CHECK IF THE LOOP IS NECCESARY
+//procedure closeApplication(className: string; windowsName: string; handleSender: THandle = 0);
+//var
+//  receiverHandle: THandle;
+//begin
+//  receiverHandle := 1;
+//  while (receiverHandle <> 0) do
+//  begin
+//    //classname (tclass) windows name (caption)
+//    receiverHandle := FindWindow(PChar(className), PChar(windowsName));
+//    if (receiverHandle <> 0) then
+//    begin
+//      SendMessage(receiverHandle, WM_CLOSE, Integer(handleSender), 0);
+//    end;
+//  end;
+//end;
+
+function sendMemoryStreamUsing_WM_COPYDATA(handle: THandle; data: TMemoryStream): integer;
+var
+  _copyDataStruct: TCopyDataStruct;
+  _result: integer;
+begin
+  _copyDataStruct.dwData := integer(data.Memory);
+  _copyDataStruct.cbData := data.size;
+  _copyDataStruct.lpData := data.Memory;
+  _result := SendMessage(handle, WM_COPYDATA, Integer(Application.Handle), Integer(@_copyDataStruct));
+
+  Result := _result;
+end;
+
+function sendStringUsing_WM_COPYDATA(handle: THandle; data: string; msgIdentifier: integer = 0): integer;
+var
+  _copyDataStruct: TCopyDataStruct;
+  _result: integer;
+begin
+  _copyDataStruct.cbData := 1 + Length(data);
+  _copyDataStruct.lpData := pansichar(ansistring(data));
+  _copyDataStruct.dwData := integer(msgIdentifier);
+
+  _result := SendMessage(handle, WM_COPYDATA, integer(handle), integer(@_copyDataStruct));
+  Result := _result;
+end;
+
+procedure mySetForegroundWindow(handle: THandle);
+begin
+  SetForegroundWindow(handle);
+  postMessage(handle, WM_SYSCOMMAND, SC_RESTORE, 0);
+end;
+
+function checkIfWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): boolean;
+begin
+  Result := myFindWindow(className, captionForm) <> 0;
+end;
+
+function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
+begin
+  result := FindWindow(pchar(className), pchar(captionForm));
+end;
 
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 var

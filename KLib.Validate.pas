@@ -84,6 +84,9 @@ procedure validateThatIsWindowsSubDir(subDir: string; mainDir: string; errMsg: s
 procedure validateThatIsLinuxSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
 procedure validateThatIsSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
 
+procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm';
+  errMsg: string = 'No window was found.');
+
 procedure validateThatStringIsNotEmpty(value: string; errMsg: string = 'Value is empty.');
 
 procedure exceptionIfCannotDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
@@ -369,6 +372,18 @@ begin
   if not checkIfIsSubDir(subDir, mainDir) then
   begin
     raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm';
+  errMsg: string = 'No window was found.');
+var
+  _errMsg: string;
+begin
+  if not checkIfWindowExists(className, captionForm) then
+  begin
+    _errMsg := getDoubleQuotedString(captionForm) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
   end;
 end;
 
