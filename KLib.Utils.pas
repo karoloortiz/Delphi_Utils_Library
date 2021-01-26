@@ -60,8 +60,6 @@ function getIntValueFromIniFile(fileNameIni: string; nameSection: string; namePr
 function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
 
-procedure createEmptyFileIfNotExists(filename: string);
-procedure createEmptyFile(filename: string);
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
 
@@ -191,29 +189,6 @@ begin
   Result := value;
 end;
 
-procedure createEmptyFileIfNotExists(filename: string);
-begin
-  if not FileExists(filename) then
-  begin
-    createEmptyFile(filename);
-  end;
-end;
-
-procedure createEmptyFile(filename: string);
-var
-  _handle: THandle;
-begin
-  _handle := FileCreate(fileName);
-  if _handle = INVALID_HANDLE_VALUE then
-  begin
-    raise Exception.Create('Error creating file: ' + fileName);
-  end
-  else
-  begin
-    FileClose(_handle);
-  end;
-end;
-
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
 var
   _file: file of Byte;
@@ -265,7 +240,7 @@ var
   freeSpaceOnDrive: int64;
 begin
   _indexOfDrive := getIndexOfDrive(drive);
-  freeSpaceOnDrive := 0;
+
   freeSpaceOnDrive := DiskFree(_indexOfDrive);
   case freeSpaceOnDrive of
     - 1:
@@ -311,7 +286,7 @@ var
 begin
   totalSize := 0;
   path := getValidFullPath(path);
-  path := IncludeTrailingBackSlash(path);
+  path := IncludeTrailingPathDelimiter(path);
   if FindFirst(path + '*', faAnyFile, _searchRec) = 0 then
   begin
     repeat
@@ -851,11 +826,11 @@ const
 var
   _lenght: integer;
 begin
+  _lenght := Length(mainString);
   if (index > _lenght) or (index < 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  _lenght := Length(mainString);
   Result := Copy(mainString, 0, index) + insertedString + Copy(mainString, index + 1, _lenght);
 end;
 
