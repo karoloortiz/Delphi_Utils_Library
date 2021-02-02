@@ -59,12 +59,9 @@ function getIntValueFromIniFile(fileNameIni: string; nameSection: string; namePr
   defaultPropertyValue: integer): integer; overload;
 function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
-
 procedure setIntValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: integer);
 procedure setStringValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: string);
 
-procedure createEmptyFileIfNotExists(filename: string);
-procedure createEmptyFile(filename: string);
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
 
@@ -195,6 +192,7 @@ begin
 end;
 
 procedure setIntValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: integer);
+
 var
   _iniManipulator: TIniFile;
   _pathIniFile: string;
@@ -216,29 +214,6 @@ begin
   _iniManipulator := TIniFile.Create(_pathIniFile);
   _iniManipulator.WriteString(nameSection, nameProperty, value);
   FreeAndNil(_iniManipulator);
-end;
-
-procedure createEmptyFileIfNotExists(filename: string);
-begin
-  if not FileExists(filename) then
-  begin
-    createEmptyFile(filename);
-  end;
-end;
-
-procedure createEmptyFile(filename: string);
-var
-  _handle: THandle;
-begin
-  _handle := FileCreate(fileName);
-  if _handle = INVALID_HANDLE_VALUE then
-  begin
-    raise Exception.Create('Error creating file: ' + fileName);
-  end
-  else
-  begin
-    FileClose(_handle);
-  end;
 end;
 
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
@@ -292,7 +267,7 @@ var
   freeSpaceOnDrive: int64;
 begin
   _indexOfDrive := getIndexOfDrive(drive);
-  freeSpaceOnDrive := 0;
+
   freeSpaceOnDrive := DiskFree(_indexOfDrive);
   case freeSpaceOnDrive of
     - 1:
@@ -338,7 +313,7 @@ var
 begin
   totalSize := 0;
   path := getValidFullPath(path);
-  path := IncludeTrailingBackSlash(path);
+  path := IncludeTrailingPathDelimiter(path);
   if FindFirst(path + '*', faAnyFile, _searchRec) = 0 then
   begin
     repeat
@@ -878,11 +853,11 @@ const
 var
   _lenght: integer;
 begin
+  _lenght := Length(mainString);
   if (index > _lenght) or (index < 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  _lenght := Length(mainString);
   Result := Copy(mainString, 0, index) + insertedString + Copy(mainString, index + 1, _lenght);
 end;
 

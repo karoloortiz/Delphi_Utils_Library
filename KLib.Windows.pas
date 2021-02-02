@@ -65,7 +65,7 @@ type
 
   TWindowsService = class //nameService is not case-sensitive
   private
-    constructor create; virtual; abstract;
+    constructor create; virtual; abstract; //TODO CHECK IF IS REQUIRED BY KLIB.MYSQL.SERVICE
   protected
     function createService: boolean; virtual; abstract; //TODO IMPLEMENTE CODE
   public
@@ -157,12 +157,15 @@ procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: s
 function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
-function getDesktopDir: string;
+function getDesktopDirPath: string;
 
 procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
 procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = true);
 procedure createHideDir(dirName: string; forceDelete: boolean = false);
 procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
+
+procedure createEmptyFileIfNotExists(filename: string);
+procedure createEmptyFile(filename: string);
 
 function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
 function getParentDirFromDir(sourceDir: string): string;
@@ -434,6 +437,7 @@ end;
 
 class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): boolean; //nameService is not case-sensitive
 var
+  _result: boolean;
   _handleServiceControlManager: SC_HANDLE;
   _handleService: SC_HANDLE;
 begin
@@ -441,19 +445,15 @@ begin
     _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
     _handleService := OpenService(_handleServiceControlManager, PChar(nameService),
       SERVICE_ALL_ACCESS);
+
+    CloseServiceHandle(_handleService);
+    CloseServiceHandle(_handleServiceControlManager);
   except
     RaiseLastOSError;
   end;
-  if (GetLastError() <> ERROR_SUCCESS) then
-  begin
-    Result := false;
-  end
-  else
-  begin
-    Result := true;
-  end;
-  CloseServiceHandle(_handleService);
-  CloseServiceHandle(_handleServiceControlManager);
+  _result := GetLastError() = ERROR_SUCCESS;
+
+  Result := _result;
 end;
 
 class procedure TWindowsService.deleteService(nameService: string);
@@ -572,7 +572,7 @@ begin
     try
       varPHostEnt := gethostbyname(PAnsiChar(AnsiString(hostName)));
       varTInAddr := PInAddr(varPHostEnt^.h_Addr_List^)^;
-      ip := inet_ntoa(varTInAddr);
+      ip := String(inet_ntoa(varTInAddr));
     except
       on E: Exception do
       begin
@@ -606,7 +606,7 @@ begin
     getHostName(nameBuf, sizeOf(nameBuf));
     varPHostEnt := gethostbyname(nameBuf);
     varTInAddr.S_addr := u_long(pu_long(varPHostEnt^.h_addr_list^)^);
-    ip := inet_ntoa(varTInAddr);
+    ip := string(inet_ntoa(varTInAddr));
   end;
   WSACleanup;
   Result := ip;
@@ -1055,6 +1055,7 @@ var
   infolder: array [0 .. MAX_PATH] of char;
   targetName: string;
   linkname: string;
+  _desktopDirPath: string;
 begin
   targetname := getValidFullPathInWindowsStyle(fileName);
   IObject := CreateComObject(CLSID_ShellLink);
@@ -1071,7 +1072,8 @@ begin
   SHGetSpecialFolderLocation(0, CSIDL_DESKTOPDIRECTORY, PIDL);
   SHGetPathFromIDList(PIDL, InFolder);
 
-  LinkName := IncludeTrailingBackslash(getDesktopDir);
+  _desktopDirPath := getDesktopDirPath;
+  LinkName := IncludeTrailingPathDelimiter(_desktopDirPath);
   LinkName := LinkName + nameDesktopLink + '.lnk';
 
   if not IPFile.Save(PWideChar(LinkName), False) = S_OK then
@@ -1080,7 +1082,7 @@ begin
   end;
 end;
 
-function getDesktopDir: string;
+function getDesktopDirPath: string;
 var
   PIDList: PItemIDList;
   Buffer: array [0 .. MAX_PATH - 1] of Char;
@@ -1202,6 +1204,29 @@ begin
       errMsg := ERR_MSG + ' : ' + dirName;
       raise Exception.Create(errMsg);
     end;
+  end;
+end;
+
+procedure createEmptyFileIfNotExists(filename: string);
+begin
+  if not FileExists(filename) then
+  begin
+    createEmptyFile(filename);
+  end;
+end;
+
+procedure createEmptyFile(filename: string);
+var
+  _handle: THandle;
+begin
+  _handle := FileCreate(fileName);
+  if _handle = INVALID_HANDLE_VALUE then
+  begin
+    raise Exception.Create('Error creating file: ' + fileName);
+  end
+  else
+  begin
+    FileClose(_handle);
   end;
 end;
 
@@ -1504,7 +1529,7 @@ begin
 
   _result := (PID <> PEI^.pid) or (not IsWindowVisible(WND)) or (not IsWindowEnabled(WND));
 
-  if not result then
+  if not _result then
   begin
     PEI^.handle := WND; //break on return FALSE
   end;
