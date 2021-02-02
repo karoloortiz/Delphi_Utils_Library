@@ -60,6 +60,9 @@ function getIntValueFromIniFile(fileNameIni: string; nameSection: string; namePr
 function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
 
+procedure setIntValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: integer);
+procedure setStringValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: string);
+
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
@@ -189,6 +192,30 @@ begin
     raise Exception.Create(ERR_MSG);
   end;
   Result := value;
+end;
+
+procedure setIntValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: integer);
+var
+  _iniManipulator: TIniFile;
+  _pathIniFile: string;
+begin
+  _pathIniFile := getValidFullPath(fileNameIni);
+  validateThatFileExists(_pathIniFile);
+  _iniManipulator := TIniFile.Create(_pathIniFile);
+  _iniManipulator.WriteInteger(nameSection, nameProperty, value);
+  FreeAndNil(_iniManipulator);
+end;
+
+procedure setStringValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: string);
+var
+  _iniManipulator: TIniFile;
+  _pathIniFile: string;
+begin
+  _pathIniFile := getValidFullPath(fileNameIni);
+  validateThatFileExists(_pathIniFile);
+  _iniManipulator := TIniFile.Create(_pathIniFile);
+  _iniManipulator.WriteString(nameSection, nameProperty, value);
+  FreeAndNil(_iniManipulator);
 end;
 
 procedure createEmptyFileIfNotExists(filename: string);
