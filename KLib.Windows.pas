@@ -100,44 +100,32 @@ function getWindowsArchitecture: TWindowsArchitecture;
 function checkIfUserIsAdmin: boolean;
 function IsUserAnAdmin: boolean; external shell32; //KEPT THE SIGNATURE, NOT RENAME!!!
 
-const
-{$externalsym SW_HIDE}
-  SW_HIDE = 0;
-{$externalsym SW_SHOWNORMAL}
-  SW_SHOWNORMAL = 1;
-{$externalsym SW_NORMAL}
-  SW_NORMAL = 1;
-{$externalsym SW_SHOWMINIMIZED}
-  SW_SHOWMINIMIZED = 2;
-{$externalsym SW_SHOWMAXIMIZED}
-  SW_SHOWMAXIMIZED = 3;
-{$externalsym SW_MAXIMIZE}
-  SW_MAXIMIZE = 3;
-{$externalsym SW_SHOWNOACTIVATE}
-  SW_SHOWNOACTIVATE = 4;
-{$externalsym SW_SHOW}
-  SW_SHOW = 5;
-{$externalsym SW_MINIMIZE}
-  SW_MINIMIZE = 6;
-{$externalsym SW_SHOWMINNOACTIVE}
-  SW_SHOWMINNOACTIVE = 7;
-{$externalsym SW_SHOWNA}
-  SW_SHOWNA = 8;
-{$externalsym SW_RESTORE}
-  SW_RESTORE = 9;
-{$externalsym SW_SHOWDEFAULT}
-  SW_SHOWDEFAULT = 10;
-{$externalsym SW_FORCEMINIMIZE}
-  SW_FORCEMINIMIZE = 11;
-{$externalsym SW_MAX}
-  SW_MAX = 11;
-function shellExecuteExe(fileName: string; params: string = ''; showWindow: integer = SW_HIDE;
+type
+  TShowWindowType = (
+    SW_HIDE = Winapi.Windows.SW_HIDE,
+    SW_SHOWNORMAL = Winapi.Windows.SW_SHOWNORMAL,
+    SW_NORMAL = Winapi.Windows.SW_NORMAL,
+    SW_SHOWMINIMIZED = Winapi.Windows.SW_SHOWMINIMIZED,
+    SW_SHOWMAXIMIZED = Winapi.Windows.SW_SHOWMAXIMIZED,
+    SW_MAXIMIZE = Winapi.Windows.SW_MAXIMIZE,
+    SW_SHOWNOACTIVATE = Winapi.Windows.SW_SHOWNOACTIVATE,
+    SW_SHOW = Winapi.Windows.SW_SHOW,
+    SW_MINIMIZE = Winapi.Windows.SW_MINIMIZE,
+    SW_SHOWMINNOACTIVE = Winapi.Windows.SW_SHOWMINNOACTIVE,
+    SW_SHOWNA = Winapi.Windows.SW_SHOWNA,
+    SW_RESTORE = Winapi.Windows.SW_RESTORE,
+    SW_SHOWDEFAULT = Winapi.Windows.SW_SHOWDEFAULT,
+    SW_FORCEMINIMIZE = Winapi.Windows.SW_FORCEMINIMIZE,
+    SW_MAX = Winapi.Windows.SW_MAX
+    );
+
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
-  showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
-  showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 
 function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
@@ -653,13 +641,13 @@ begin
   Result := IsUserAnAdmin;
 end;
 
-function shellExecuteExe(fileName: string; params: string = ''; showWindow: integer = SW_HIDE;
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
 exceptionIfFunctionFails: boolean = false): integer;
 var
   _returnCode: integer;
   errMsg: string;
 begin
-  _returnCode := shellExecute(0, 'open', pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)), nil, showWindow);
+  _returnCode := shellExecute(0, 'open', pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)), nil, integer(showWindowType));
 
   if exceptionIfFunctionFails then
   begin
@@ -718,13 +706,13 @@ begin
 end;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
-showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 begin
-  result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindow, exceptionIfReturnCodeIsNot0);
+  result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindowType, exceptionIfReturnCodeIsNot0);
 end;
 
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
-showWindow: cardinal = SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
   _shellExecuteInfo: TShellExecuteInfo;
 
@@ -748,7 +736,7 @@ begin
     end;
     _shellExecuteInfo.lpParameters := PChar(trim(params));
     lpFile := PChar(FileName);
-    nShow := showWindow;
+    nShow := integer(showWindowType);
   end;
   if not ShellExecuteEx(@_shellExecuteInfo) then
   begin
@@ -790,7 +778,7 @@ begin
   with _startupInfo do
   begin
     cb := SizeOf(TStartupInfo);
-    wShowWindow := SW_HIDE;
+    wShowWindow := Winapi.Windows.SW_HIDE;
   end;
   if not CreateProcess(nil, pchar(_commad), nil, nil, false,
   //   CREATE_NO_WINDOW,
