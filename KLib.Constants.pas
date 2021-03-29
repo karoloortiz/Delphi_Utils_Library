@@ -39,6 +39,9 @@ unit KLib.Constants;
 interface
 
 const
+  DECIMAL_SEPARATOR_IT = ',';
+  MYSQL_DECIMAL_SEPARATOR = '.';
+
   LOCALHOST_IP_ADDRESS = '127.0.0.1';
 
   _1_MB_IN_BYTES = 1048576;

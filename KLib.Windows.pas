@@ -39,7 +39,7 @@ unit KLib.Windows;
 interface
 
 uses
-  KLib.Types,
+  KLib.Types, Klib.Constants,
   Winapi.Windows, Winapi.Messages, Winapi.ShellApi, Winapi.AccCtrl,
   System.Classes;
 
@@ -187,10 +187,13 @@ procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: 
 procedure raiseLastSysErrorMessage;
 function getLastSysErrorMessage: string;
 
+function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
+function getLocaleDecimalSeparator: char;
+
 implementation
 
 uses
-  KLib.Utils, Klib.Constants, KLib.Validate,
+  KLib.Utils, KLib.Validate,
   Vcl.Forms,
   Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon,
   System.IOUtils, System.SysUtils, System.Win.ComObj, System.Win.Registry,
@@ -1703,6 +1706,29 @@ begin
   _errorCode := GetLastError;
   sysErrMsg := SysErrorMessage(_errorCode);
   Result := sysErrMsg;
+end;
+
+function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
+var
+  _doubleAsString: string;
+  _systemDecimalSeparator: char;
+begin
+  _doubleAsString := FloatToStr(value);
+  _systemDecimalSeparator := getLocaleDecimalSeparator();
+  _doubleAsString := StringReplace(_doubleAsString, _systemDecimalSeparator, decimalSeparator, [rfReplaceAll]);
+  Result := _doubleAsString;
+end;
+
+function getLocaleDecimalSeparator: char;
+var
+  _buffer: array [1 .. 10] of Char;
+  decimalSeparator: Char;
+begin
+  FillChar(_buffer, SizeOf(_buffer), 0);
+  GetLocaleInfo(LOCALE_SYSTEM_DEFAULT, LOCALE_SDECIMAL, @_buffer[1], SizeOf(_buffer));
+  decimalSeparator := _buffer[1];
+
+  Result := decimalSeparator;
 end;
 
 end.

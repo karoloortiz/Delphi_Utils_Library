@@ -111,13 +111,15 @@ procedure executeProcedure(myProcedure: TCallBack); overload;
 
 function getValidTelephoneNumber(number: string): string;
 
+function getRandString(size: integer = 5): string;
+
 function getCurrentDayOfWeekAsString: string;
 function getDayOfWeekAsString(date: TDateTime): string;
 function getCurrentDateTimeAsString: string;
 function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
-function getDateAsString(date: TDateTime): string;
-function getRandString(size: integer = 5): string;
+function getDateAsString(date: TDateTime): string; //TODO REVIEW NAME?
+function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = 'yyyy-mm-dd'): string;
 
 function getDoubleQuotedString(value: string): string;
 function getSingleQuotedString(value: string): string;
@@ -757,6 +759,27 @@ begin
   Result := telephoneNumber;
 end;
 
+function getRandString(size: integer = 5): string;
+const
+  ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+var
+  _randString: string;
+  _randCharacter: char;
+  _randIndexOfAlphabet: integer;
+  _lengthAlphabet: integer;
+  i: integer;
+begin
+  _randString := '';
+  _lengthAlphabet := length(ALPHABET);
+  for i := 1 to size do
+  begin
+    _randIndexOfAlphabet := random(_lengthAlphabet) + 1;
+    _randCharacter := ALPHABET[_randIndexOfAlphabet];
+    _randString := _randString + _randCharacter;
+  end;
+  Result := _randString;
+end;
+
 function getCurrentDayOfWeekAsString: string;
 var
   _nameDay: string;
@@ -816,25 +839,12 @@ begin
   result := _date;
 end;
 
-function getRandString(size: integer = 5): string;
-const
-  ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = 'yyyy-mm-dd'): string;
 var
-  _randString: string;
-  _randCharacter: char;
-  _randIndexOfAlphabet: integer;
-  _lengthAlphabet: integer;
-  i: integer;
+  _dateTimeAsStringWithFormatting: string;
 begin
-  _randString := '';
-  _lengthAlphabet := length(ALPHABET);
-  for i := 1 to size do
-  begin
-    _randIndexOfAlphabet := random(_lengthAlphabet) + 1;
-    _randCharacter := ALPHABET[_randIndexOfAlphabet];
-    _randString := _randString + _randCharacter;
-  end;
-  Result := _randString;
+  _dateTimeAsStringWithFormatting := FormatDateTime(formatting, value);
+  result := _dateTimeAsStringWithFormatting;
 end;
 
 function getDoubleQuotedString(value: string): string;
