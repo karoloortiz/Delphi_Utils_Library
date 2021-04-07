@@ -40,7 +40,8 @@ interface
 
 uses
   KLib.Types,
-  Vcl.StdCtrls, Vcl.Forms;
+  Vcl.StdCtrls, Vcl.Forms,
+  Xml.XMLIntf;
 
 //------REGEX----------
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
@@ -66,6 +67,10 @@ procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'Fil
 
 procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File already exists.');
 procedure validateThatFileExists(fileName: string; errMsg: string = 'File doens''t exists.');
+
+procedure validateIXMLNodeName(nodeNameExpected: string; node: IXMLNode; errMsg: string = 'Node not expected.');
+procedure validateThatIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode; errMsg: string = 'Node not exists.');
+procedure validateThatAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode; errMsg: string = 'Attribute not exists in node.');
 
 procedure validateMD5File(fileName: string; MD5: string; errMsg: string = 'MD5 check failed.');
 
@@ -100,30 +105,13 @@ implementation
 
 uses
   KLib.Utils, KLib.Windows, KLib.Constants,
-  System.RegularExpressions, System.SysUtils;
-
-const
-  REGEX_VALID_EMAIL = '([!#-''*+/-9=?A-Z^-~-]+(\.[!#-''*+/-9=?A-Z^-~-]+)*|"([]!#-[^-~ \t]|(\\[\t -~]))+")@([0'
-    + '-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?(\.[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])'
-    + '?)*|\[((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1'
-    + '-9]?[0-9])){3}|IPv6:((((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){6}|::((0|[1-9A-Fa-f][0-9A-Fa-'
-    + 'f]{0,3}):){5}|[0-9A-Fa-f]{0,4}::((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){4}|(((0|[1-9A-Fa-f]'
-    + '[0-9A-Fa-f]{0,3}):)?(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}'
-    + '):){3}|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){0,2}(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::((0|'
-    + '[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){2}|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){0,3}(0|[1-9A-Fa-'
-    + 'f][0-9A-Fa-f]{0,3}))?::(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,'
-    + '3}):){0,4}(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::)((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):(0|[1-9'
-    + 'A-Fa-f][0-9A-Fa-f]{0,3})|(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4]'
-    + '[0-9]|1[0-9]{2}|[1-9]?[0-9])){3})|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}):){0,5}(0|[1-9A-Fa-'
-    + 'f][0-9A-Fa-f]{0,3}))?::(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3})|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3'
-    + '}):){0,6}(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::)|(?!IPv6:)[0-9A-Za-z-]*[0-9A-Za-z]:[!-Z^-'
-    + '~]+)])';
+  System.SysUtils;
 
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
 var
   _errMsg: string;
 begin
-  if not TRegEx.IsMatch(email, REGEX_VALID_EMAIL) then
+  if not checkIfEmailIsValid(email) then
   begin
     _errMsg := getDoubleQuotedString(email) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -274,6 +262,39 @@ begin
   if not FileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode; errMsg: string = 'Node not exists.');
+var
+  _errMsg: string;
+begin
+  if not checkIfIXMLNodeExistsInIXMLNode(nodeName, node) then
+  begin
+    _errMsg := getDoubleQuotedString(nodeName) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateIXMLNodeName(nodeNameExpected: string; node: IXMLNode; errMsg: string = 'Node not expected.');
+var
+  _errMsg: string;
+begin
+  if not checkIXMLNodeName(nodeNameExpected, node) then
+  begin
+    _errMsg := getDoubleQuotedString(nodeNameExpected) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode; errMsg: string = 'Attribute not exists in node.');
+var
+  _errMsg: string;
+begin
+  if not checkIfAttributeExistsInIXMLNode(attributeName, node) then
+  begin
+    _errMsg := getDoubleQuotedString(attributeName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
   end;
 end;

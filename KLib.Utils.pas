@@ -54,6 +54,14 @@ type
     function GetPreamble: TBytes; override;
   end;
 
+function checkIXMLNodeName(nodeNameExpected: string; node: IXMLNode): boolean;
+function getValidIXMLNodeFromIXMLNode(nodeName: string; node: IXMLNode): IXMLNode;
+function checkIfIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode): boolean;
+function getIXMLNodeFromIXMLNode(nodeName: string; node: IXMLNode): IXMLNode;
+function getValidAttributeValueFromIXMLNode(attributeName: string; node: IXMLNode): Variant;
+function checkIfAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode): boolean;
+function getAttributeValueFromIXMLNode(attributeName: string; node: IXMLNode): Variant;
+
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer; overload;
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: integer): integer; overload;
@@ -132,6 +140,8 @@ function strToStringList(source: String; fixedLen: Integer): TStringList;
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
 
+function checkIfEmailIsValid(email: string): boolean;
+
 implementation
 
 uses
@@ -139,11 +149,71 @@ uses
   Vcl.ExtCtrls,
   Xml.XMLDoc,
   IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL,
-  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles, System.Character;
+  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles, System.Character, System.RegularExpressions;
 
 function TUTF8NoBOMEncoding.getPreamble: TBytes;
 begin
   SetLength(Result, 0);
+end;
+
+function checkIXMLNodeName(nodeNameExpected: string; node: IXMLNode): boolean;
+var
+  _result: boolean;
+begin
+  _result := node.LocalName = nodeNameExpected;
+  Result := _result;
+end;
+
+function getValidIXMLNodeFromIXMLNode(nodeName: string; node: IXMLNode): IXMLNode;
+var
+  childNode: IXMLNode;
+begin
+  validateThatIXMLNodeExistsInIXMLNode(nodeName, node);
+  childNode := getIXMLNodeFromIXMLNode(nodeName, node);
+  Result := childNode;
+end;
+
+function checkIfIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode): boolean;
+var
+  _node: IXMLNode;
+  _result: boolean;
+begin
+  _node := getIXMLNodeFromIXMLNode(nodeName, node);
+  _result := Assigned(_node);
+  Result := _result;
+end;
+
+function getIXMLNodeFromIXMLNode(nodeName: string; node: IXMLNode): IXMLNode;
+var
+  _result: IXMLNode;
+begin
+  _result := node.ChildNodes.FindNode(nodeName);
+  Result := _result;
+end;
+
+function getValidAttributeValueFromIXMLNode(attributeName: string; node: IXMLNode): Variant;
+var
+  attributeValue: Variant;
+begin
+  validateThatAttributeExistsInIXMLNode(attributeName, node);
+  attributeValue := getAttributeValueFromIXMLNode(attributeName, node);
+  Result := attributeValue;
+end;
+
+function checkIfAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode): boolean;
+var
+  _result: boolean;
+begin
+  _result := node.HasAttribute(attributeName);
+  Result := _result;
+end;
+
+function getAttributeValueFromIXMLNode(attributeName: string; node: IXMLNode): Variant;
+var
+  attributeValue: Variant;
+begin
+  attributeValue := node.Attributes[attributeName];
+  Result := attributeValue;
 end;
 
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer;
@@ -937,6 +1007,14 @@ end;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
 begin
   Result := firstString + delimiter + secondString;
+end;
+
+function checkIfEmailIsValid(email: string): boolean;
+var
+  _result: boolean;
+begin
+  _result := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
+  Result := _result;
 end;
 
 end.
