@@ -119,8 +119,10 @@ type
     SW_MAX = Winapi.Windows.SW_MAX
     );
 
-function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+  exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
@@ -644,13 +646,22 @@ begin
   Result := IsUserAnAdmin;
 end;
 
-function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
 exceptionIfFunctionFails: boolean = false): integer;
+var
+  _result: integer;
+begin
+  _result := shellExecuteExe(fileName, params, showWindowType, exceptionIfFunctionFails, 'runas');
+end;
+
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 var
   _returnCode: integer;
   errMsg: string;
 begin
-  _returnCode := shellExecute(0, 'open', pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)), nil, integer(showWindowType));
+  _returnCode := shellExecute(0, pchar(operation), pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)),
+    pchar(ExtractFileDir(fileName)), integer(showWindowType));
 
   if exceptionIfFunctionFails then
   begin

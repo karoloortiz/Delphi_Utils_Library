@@ -103,10 +103,10 @@ procedure deleteOpenSSLDLLsIfExists;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 
-function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
-function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
@@ -719,12 +719,12 @@ begin
   end;
 end;
 
-function getValidFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 var
   connection: TIdFTP;
 begin
   validateFTPCredentials(FTPCredentials);
-  connection := getFTPConnection(FTPCredentials);
+  connection := getIdFTP(FTPCredentials);
   Result := connection;
 end;
 
@@ -734,7 +734,7 @@ var
   _result: boolean;
 begin
   _result := true;
-  _connection := getFTPConnection(FTPCredentials);
+  _connection := getIdFTP(FTPCredentials);
   try
     _connection.Connect;
     if FTPCredentials.pathFTPDir <> '' then
@@ -765,7 +765,7 @@ begin
   Result := _result;
 end;
 
-function getFTPConnection(FTPCredentials: TFTPCredentials): TIdFTP;
+function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 var
   connection: TIdFTP;
 begin
