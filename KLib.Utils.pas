@@ -48,12 +48,6 @@ uses
 const
   _DEFAULT_ERROR_STRING_VALUE_INI_FILES = '*_/&@';
 
-type
-  TUTF8NoBOMEncoding = class(TUTF8Encoding)
-  public
-    function GetPreamble: TBytes; override;
-  end;
-
 function checkIXMLNodeName(nodeNameExpected: string; node: IXMLNode): boolean;
 function getValidIXMLNodeFromIXMLNode(nodeName: string; node: IXMLNode): IXMLNode;
 function checkIfIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode): boolean;
@@ -121,12 +115,18 @@ function getValidTelephoneNumber(number: string): string;
 
 function getRandString(size: integer = 5): string;
 
+function getFileNamesListInDir(dirName: string; fileType: string = ''): TStringList;
+function getFirstFileNameInDir(dirName: string; fileType: string = ''): string;
+
+function getCombinedPath(path1: string; path2: string): string;
+
 function getCurrentDayOfWeekAsString: string;
 function getDayOfWeekAsString(date: TDateTime): string;
 function getCurrentDateTimeAsString: string;
 function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
 function getDateAsString(date: TDateTime): string; //TODO REVIEW NAME?
+function getCurrentDateTimeAsStringWithFormatting(formatting: string = 'yyyy-mm-dd'): string;
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = 'yyyy-mm-dd'): string;
 
 function getDoubleQuotedString(value: string): string;
@@ -148,13 +148,8 @@ uses
   KLib.Validate, KLib.Constants,
   Vcl.ExtCtrls,
   Xml.XMLDoc,
-  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL,
-  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles, System.Character, System.RegularExpressions;
-
-function TUTF8NoBOMEncoding.getPreamble: TBytes;
-begin
-  SetLength(Result, 0);
-end;
+  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL, IdFTPCommon,
+  System.Zip, System.IOUtils, System.StrUtils, System.IniFiles, System.Character, System.RegularExpressions, System.Variants;
 
 function checkIXMLNodeName(nodeNameExpected: string; node: IXMLNode): boolean;
 var
@@ -413,7 +408,7 @@ var
   _currentDir: string;
 begin
   _currentDir := getDirExe;
-  _result := TPath.Combine(_currentDir, pathToCombine);
+  _result := getCombinedPath(_currentDir, pathToCombine);
   Result := _result;
 end;
 
@@ -509,7 +504,7 @@ var
   _tempZipFileName: string;
 begin
   _tempZipFileName := getRandString + '.' + ZIP_TYPE;
-  _tempZipFileName := TPath.Combine(destinationDir, _tempZipFileName);
+  _tempZipFileName := getCombinedPath(destinationDir, _tempZipFileName);
   getResourceAsZIPFile(nameResource, _tempZipFileName);
   unzip(_tempZipFileName, destinationDir, DELETE_ZIP_AFTER_UNZIP);
 end;
@@ -624,7 +619,7 @@ var
   pathZipFile: string;
 begin
   downloadFileWithIndy(info, forceOverwrite);
-  pathZipFile := TPath.Combine(destinationPath, info.fileName);
+  pathZipFile := getCombinedPath(destinationPath, info.fileName);
   unzip(pathZipFile, destinationPath, forceDeleteZipFile);
 end;
 
@@ -784,10 +779,15 @@ begin
       connection.username := username;
       connection.password := password;
     end;
-    connection.TransferType := transferType;
-    connection.Passive := true;
+    connection.TransferType := TIdFTPTransferType(transferType);
   end;
 
+  //todo create function checkIFEnumIsInValidRange
+  if (connection.transferType < Low(TIdFTPTransferType)) or (connection.transferType > High(TIdFTPTransferType)) then
+  begin
+    connection.transferType := ftBinary;
+  end;
+  connection.Passive := true;
   Result := connection;
 end;
 
@@ -850,6 +850,54 @@ begin
   Result := _randString;
 end;
 
+function getFirstFileNameInDir(dirName: string; fileType: string = ''): string;
+var
+  fileName: string;
+  _fileNamesList: TStringList;
+begin
+  _fileNamesList := getFileNamesListInDir(dirName, fileType);
+  if _fileNamesList.Count > 0 then
+  begin
+    fileName := _fileNamesList[0];
+  end
+  else
+  begin
+    fileName := EMPTY_STRING;
+  end;
+  FreeAndNil(_fileNamesList);
+  Result := fileName;
+end;
+
+function getFileNamesListInDir(dirName: string; fileType: string = ''): TStringList;
+var
+  fileNamesList: TStringList;
+  _searchRec: TSearchRec;
+  _mask: string;
+  _fileExists: boolean;
+  _fileName: string;
+begin
+  fileNamesList := TStringList.Create;
+  _mask := getCombinedPath(dirName, '*');
+  if fileType <> '' then
+  begin
+    _mask := _mask + '.' + fileType;
+  end;
+  _fileExists := FindFirst(_mask, faanyfile - fadirectory, _searchRec) = 0;
+  while _fileExists do
+  begin
+    _fileName := getCombinedPath(dirName, _searchRec.Name);
+    fileNamesList.Add(_fileName);
+    _fileExists := FindNext(_searchRec) = 0;
+  end;
+
+  Result := fileNamesList;
+end;
+
+function getCombinedPath(path1: string; path2: string): string;
+begin
+  Result := TPath.Combine(path1, path2);
+end;
+
 function getCurrentDayOfWeekAsString: string;
 var
   _nameDay: string;
@@ -906,7 +954,12 @@ var
 begin
   _date := DateToStr(date);
   _date := StringReplace(_date, '/', '_', [rfReplaceAll, rfIgnoreCase]);
-  result := _date;
+  Result := _date;
+end;
+
+function getCurrentDateTimeAsStringWithFormatting(formatting: string = 'yyyy-mm-dd'): string;
+begin
+  Result := getDateTimeAsStringWithFormatting(Now, formatting);
 end;
 
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = 'yyyy-mm-dd'): string;
@@ -914,7 +967,7 @@ var
   _dateTimeAsStringWithFormatting: string;
 begin
   _dateTimeAsStringWithFormatting := FormatDateTime(formatting, value);
-  result := _dateTimeAsStringWithFormatting;
+  Result := _dateTimeAsStringWithFormatting;
 end;
 
 function getDoubleQuotedString(value: string): string;

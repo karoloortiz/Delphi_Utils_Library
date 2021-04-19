@@ -39,8 +39,7 @@ unit KLib.Types;
 interface
 
 uses
-  Vcl.Graphics,
-  IdFTPCommon;
+  Vcl.Graphics;
 
 type
 
@@ -48,6 +47,8 @@ type
     username: string;
     password: string;
   end;
+
+  TIdFTPTransferType = (ftASCII, ftBinary);
 
   TFTPCredentials = record
     credentials: TCredentials;

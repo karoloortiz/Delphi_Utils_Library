@@ -51,6 +51,7 @@ const
   PNG_TYPE = 'PNG';
   ZIP_TYPE = 'ZIP';
   XSL_TYPE = 'XSL';
+  XML_TYPE = 'XML';
   EXE_TYPE = 'EXE';
   JSON_TYPE = 'JSON';
   RTF_TYPE = 'RTF';

@@ -196,7 +196,7 @@ uses
   KLib.Utils, KLib.Validate,
   Vcl.Forms,
   Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon,
-  System.IOUtils, System.SysUtils, System.Win.ComObj, System.Win.Registry,
+  System.SysUtils, System.Win.ComObj, System.Win.Registry,
   IdTCPClient;
 
 class procedure TMemoryRam.initialize;
@@ -1110,7 +1110,7 @@ begin
 
   _parentDirTargetDir := getParentDirFromDir(targetDir);
   _sourceDirName := ExtractFileName(getValidFullPathInWindowsStyle(sourceDir));
-  _tempTargetDir := TPath.Combine(_parentDirTargetDir, _sourceDirName);
+  _tempTargetDir := getCombinedPath(_parentDirTargetDir, _sourceDirName);
   copyDir(sourceDir, _parentDirTargetDir);
   if not RenameFile(_tempTargetDir, targetDir) then
   begin
