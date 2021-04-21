@@ -9,26 +9,52 @@ uses
 type
   TMyIdFTP = class(TIdFTP)
   public
+    defaultDir: string;
     constructor create(FTPCredentials: TFTPCredentials); overload;
-    procedure put(sourceFileName: string; targetFileName: string; force: boolean = FORCE_OVERWRITE); overload;
+    procedure Connect; overload;
+    procedure put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE); overload;
     procedure deleteFileIfExists(filename: string);
     function checkIfFileExists(filename: string): boolean;
+    // todo add destructor???
   end;
 
 function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-function getMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 
 implementation
 
 uses
   KLib.Utils;
 
-constructor TMyIdFTP.create(FTPCredentials: TFTPCredentials);
+function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+var
+  _IdFTP: TIdFTP;
+  connection: TMyIdFTP;
 begin
-  Self := getValidMyIdFTP(FTPCredentials);
+  _IdFTP := getValidIdFTP(FTPCredentials);
+  connection := TMyIdFTP(_IdFTP);
+  connection.defaultDir := FTPCredentials.pathFTPDir;
+  Result := connection;
 end;
 
-procedure TMyIdFTP.put(sourceFileName: string; targetFileName: string; force: boolean = FORCE_OVERWRITE);
+constructor TMyIdFTP.create(FTPCredentials: TFTPCredentials);
+var
+  _IdFTP: TIdFTP;
+begin
+  _IdFTP := getValidIdFTP(FTPCredentials);
+  self := TMyIdFTP(_IdFTP);
+  defaultDir := FTPCredentials.pathFTPDir;
+end;
+
+procedure TMyIdFTP.Connect;
+begin
+  inherited;
+  if defaultDir <> '' then
+  begin
+    ChangeDir(defaultDir);
+  end;
+end;
+
+procedure TMyIdFTP.put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE);
 const
   AAppend: Boolean = False;
   AStartPos = -1;
@@ -66,16 +92,6 @@ begin
     inc(i);
   end;
   result := existsFile;
-end;
-
-function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-begin
-  Result := TMyIdFTP(getValidIdFTP(FTPCredentials));
-end;
-
-function getMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-begin
-  Result := TMyIdFTP(getIdFTP(FTPCredentials));
 end;
 
 end.

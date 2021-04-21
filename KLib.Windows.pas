@@ -154,11 +154,13 @@ procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = t
 procedure createHideDir(dirName: string; forceDelete: boolean = false);
 procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
 
+procedure myMoveFile(sourceFileName: string; targetFileName: string);
+
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
 
 function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
-function getParentDirFromDir(sourceDir: string): string;
+function getParentDir(source: string): string;
 function getValidFullPathInWindowsStyle(path: string): string;
 function getPathInWindowsStyle(path: string): string;
 
@@ -799,7 +801,7 @@ begin
   CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
   nil, nil, _startupInfo, _processInfo) then
   begin
-    getLastSysErrorMessage
+    raiseLastSysErrorMessage;
   end;
 
   //TODO CHECK
@@ -1119,7 +1121,7 @@ begin
     validateThatDirNotExists(targetDir);
   end;
 
-  _parentDirTargetDir := getParentDirFromDir(targetDir);
+  _parentDirTargetDir := getParentDir(targetDir);
   _sourceDirName := ExtractFileName(getValidFullPathInWindowsStyle(sourceDir));
   _tempTargetDir := getCombinedPath(_parentDirTargetDir, _sourceDirName);
   copyDir(sourceDir, _parentDirTargetDir);
@@ -1209,6 +1211,17 @@ begin
   end;
 end;
 
+procedure myMoveFile(sourceFileName: string; targetFileName: string);
+var
+  _result: boolean;
+begin
+  _result := MoveFile(pchar(sourceFileName), pchar(targetFileName));
+  if not _result then
+  begin
+    raiseLastSysErrorMessage;
+  end;
+end;
+
 procedure createEmptyFileIfNotExists(filename: string);
 begin
   if not FileExists(filename) then
@@ -1244,11 +1257,11 @@ begin
   result := _isSubDir
 end;
 
-function getParentDirFromDir(sourceDir: string): string;
+function getParentDir(source: string): string;
 var
   parentDir: string;
 begin
-  parentDir := getValidFullPathInWindowsStyle(sourceDir);
+  parentDir := getValidFullPathInWindowsStyle(source);
   parentDir := ExtractFilePath(parentDir);
   result := parentDir;
 end;

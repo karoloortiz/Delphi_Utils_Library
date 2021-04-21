@@ -39,7 +39,8 @@ unit KLib.Types;
 interface
 
 uses
-  Vcl.Graphics;
+  Vcl.Graphics,
+  System.Generics.Collections;
 
 type
 
@@ -125,12 +126,16 @@ type
 
   TAsyncMethodStatus = (created, pending, fulfilled, rejected);
 
+  TListOfDouble = class(TList<Double>)
+  end;
+
 implementation
 
 uses
   System.SysUtils;
 
 function TDateTimeRange.getAsString: string;
+
 var
   _startDataTimeAsString: string;
   _endDataTimeAsString: string;

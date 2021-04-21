@@ -126,6 +126,7 @@ function getCurrentDateTimeAsString: string;
 function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
 function getDateAsString(date: TDateTime): string; //TODO REVIEW NAME?
+function getCurrentTimeStamp: string;
 function getCurrentDateTimeAsStringWithFormatting(formatting: string = 'yyyy-mm-dd'): string;
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = 'yyyy-mm-dd'): string;
 
@@ -851,6 +852,8 @@ begin
 end;
 
 function getFirstFileNameInDir(dirName: string; fileType: string = ''): string;
+const
+  ERR_MSG = 'No files found.';
 var
   fileName: string;
   _fileNamesList: TStringList;
@@ -865,6 +868,10 @@ begin
     fileName := EMPTY_STRING;
   end;
   FreeAndNil(_fileNamesList);
+  if fileName = EMPTY_STRING then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
   Result := fileName;
 end;
 
@@ -922,12 +929,12 @@ var
 begin
   _indexDayOfWeek := DayOfWeek(date) - 1;
   _nameDay := DAYS_OF_WEEK[_indexDayOfWeek];
-  result := _nameDay;
+  Result := _nameDay;
 end;
 
 function getCurrentDateTimeAsString: string;
 begin
-  result := getDateTimeAsString(Now);
+  Result := getDateTimeAsString(Now);
 end;
 
 function getDateTimeAsString(date: TDateTime): string;
@@ -940,12 +947,12 @@ begin
   _time := TimeToStr(date);
   _time := StringReplace(_time, ':', '', [rfReplaceAll, rfIgnoreCase]);
   _dateTime := _date + '_' + _time;
-  result := _dateTime;
+  Result := _dateTime;
 end;
 
 function getCurrentDateAsString: string;
 begin
-  result := getDateAsString(Now);
+  Result := getDateAsString(Now);
 end;
 
 function getDateAsString(date: TDateTime): string;
@@ -955,6 +962,13 @@ begin
   _date := DateToStr(date);
   _date := StringReplace(_date, '/', '_', [rfReplaceAll, rfIgnoreCase]);
   Result := _date;
+end;
+
+function getCurrentTimeStamp: string;
+const
+  FORMATTING_TIMESTAMP = 'yyyymmddhhnnss';
+begin
+  Result := getCurrentDateTimeAsStringWithFormatting(FORMATTING_TIMESTAMP);
 end;
 
 function getCurrentDateTimeAsStringWithFormatting(formatting: string = 'yyyy-mm-dd'): string;
