@@ -126,8 +126,10 @@ type
 
   TAsyncMethodStatus = (created, pending, fulfilled, rejected);
 
-  TListOfDouble = class(TList<Double>)
+  TListOfDoubles = class(TList<Double>)
   end;
+
+  TArrayOfStrings = TArray<string>;
 
 implementation
 

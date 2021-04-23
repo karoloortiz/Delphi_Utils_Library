@@ -39,7 +39,7 @@ unit KLib.Utils;
 interface
 
 uses
-  KLib.Types,
+  KLib.Types, KLib.Constants,
   Vcl.Imaging.pngimage,
   Xml.XMLIntf,
   IdFTP,
@@ -132,11 +132,13 @@ function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string 
 
 function getDoubleQuotedString(value: string): string;
 function getSingleQuotedString(value: string): string;
-function getSubStringInsertedIntoString(mainString: string; insertedString: string; index: integer): string;
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
 
 function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 function strToStringList(source: String; fixedLen: Integer): TStringList;
+function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
@@ -146,7 +148,7 @@ function checkIfEmailIsValid(email: string): boolean;
 implementation
 
 uses
-  KLib.Validate, KLib.Constants,
+  KLib.Validate,
   Vcl.ExtCtrls,
   Xml.XMLDoc,
   IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL, IdFTPCommon,
@@ -994,7 +996,7 @@ begin
   Result := AnsiQuotedStr(value, '"');
 end;
 
-function getSubStringInsertedIntoString(mainString: string; insertedString: string; index: integer): string;
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
 const
   ERR_MSG = 'Index out of range.';
 var
@@ -1016,6 +1018,29 @@ begin
   _stringList.Text := source;
   result := _stringList.Count;
   FreeAndNil(_stringList);
+end;
+
+function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
+const
+  ERR_MSG = 'Field index out of range.';
+var
+  _stringList: TStringList;
+  _result: string;
+begin
+  _stringList := stringToStringListWithDelimiter(mainString, delimiter);
+  try
+    try
+      _result := _stringList[index];
+    except
+      on E: Exception do
+      begin
+        raise Exception.Create(ERR_MSG);
+      end;
+    end;
+  finally
+    FreeAndNil(_stringList);
+  end;
+  Result := _result;
 end;
 
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
@@ -1054,6 +1079,18 @@ begin
   end;
 
   result := alist;
+end;
+
+function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
+var
+  _stringList: TStringList;
+begin
+  _stringList := TStringList.Create;
+  _stringList.Clear;
+  _stringList.Delimiter := delimiter;
+  _stringList.StrictDelimiter := True; // Requires D2006 or newer.
+  _stringList.DelimitedText := value;
+  Result := _stringList;
 end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);

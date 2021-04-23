@@ -39,6 +39,8 @@ unit KLib.Constants;
 interface
 
 const
+  SEMICOLON_DELIMITER = ';';
+
   DECIMAL_SEPARATOR_IT = ',';
   MYSQL_DECIMAL_SEPARATOR = '.';
 
