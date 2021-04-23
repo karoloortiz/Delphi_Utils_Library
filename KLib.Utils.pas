@@ -94,7 +94,7 @@ function getResourceAsXSL(nameResource: string): IXMLDocument;
 function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
 
-//USING INDY YOU NEED libeay32.dll AND libssl32.dll
+//USING INDY YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
 procedure downloadZipFileAndExtractWithIndy(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
 procedure downloadFileWithIndy(info: TDownloadInfo; forceOverwrite: boolean);
@@ -672,13 +672,16 @@ end;
 const
   RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
   RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: DLL_TYPE);
+  RESOURCE_SSLEAY32: TResource = (name: 'SSLEAY32'; _type: DLL_TYPE);
   FILENAME_LIBSSL32 = 'libssl32.dll';
   FILENAME_LIBEAY32 = 'libeay32.dll';
+  FILENAME_SSLEAY32 = 'ssleay32.dll';
 
 procedure getOpenSSLDLLsFromResource;
 var
   _path_libeay32: string;
   _path_libssl32: string;
+  _path_ssleay32: string;
 begin
   _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   if not FileExists(_path_libeay32) then
@@ -690,18 +693,27 @@ begin
   begin
     getResourceAsFile(RESOURCE_LIBSSL32, _path_libssl32);
   end;
+  _path_ssleay32 := getCombinedPathWithCurrentDir(FILENAME_SSLEAY32);
+  if not FileExists(_path_ssleay32) then
+  begin
+    getResourceAsFile(RESOURCE_SSLEAY32, _path_ssleay32);
+  end;
 end;
 
 procedure deleteOpenSSLDLLsIfExists;
 var
   _path_libeay32: string;
   _path_libssl32: string;
+  _path_ssleay32: string;
 begin
   UnLoadOpenSSLLibrary;
+
   _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   deleteFileIfExists(_path_libeay32);
   _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
   deleteFileIfExists(_path_libssl32);
+  _path_ssleay32 := getCombinedPathWithCurrentDir(FILENAME_SSLEAY32);
+  deleteFileIfExists(_path_ssleay32);
 end;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
