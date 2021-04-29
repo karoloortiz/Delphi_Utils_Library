@@ -67,6 +67,8 @@ const
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
   EMPTY_STRING = '';
 
+  RUN_AS_ADMIN = true;
+
   NOT_FORCE = false;
   NOT_FORCE_OVERWRITE = NOT_FORCE;
   FORCE = true;

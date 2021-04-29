@@ -11,7 +11,7 @@ type
   public
     defaultDir: string;
     constructor create(FTPCredentials: TFTPCredentials); overload;
-    procedure Connect; overload;
+    procedure Connect; overload; override;
     procedure put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE); overload;
     procedure deleteFileIfExists(filename: string);
     function checkIfFileExists(filename: string): boolean;

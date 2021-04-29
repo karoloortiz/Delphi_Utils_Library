@@ -40,53 +40,12 @@ interface
 
 uses
   KLib.Types, Klib.Constants,
-  Winapi.Windows, Winapi.Messages, Winapi.ShellApi, Winapi.AccCtrl,
+  Winapi.Windows, Winapi.ShellApi, Winapi.AccCtrl,
   System.Classes;
 
-const
-  WM_SERVICE_START = WM_USER + 0;
-  WM_SERVICE_ERROR = WM_USER + 2;
-
-  RUN_AS_ADMIN = true;
-
-type
-  TMemoryRam = class
-  private
-    class var RamStats: TMemoryStatusEx;
-  public
-    class procedure initialize;
-    class function getTotalMemoryAsString: string;
-    class function getTotalMemoryAsDouble: double;
-    class function getTotalFreeMemoryAsString: string;
-    class function getTotalFreeMemoryAsInteger: integer;
-    class function getTotalFreeMemoryAsDouble: double;
-    class function getPercentageFreeMemoryAsString: string;
-  end;
-
-  TWindowsService = class //nameService is not case-sensitive
-  private
-    constructor create; virtual; abstract; //TODO CHECK IF IS REQUIRED BY KLIB.MYSQL.SERVICE
-  protected
-    function createService: boolean; virtual; abstract; //TODO IMPLEMENTE CODE
-  public
-    class procedure aStart(handleSender: THandle; nameService: string; nameMachine: string = '');
-    class procedure startIfExists(nameService: string; nameMachine: string = '');
-    class procedure start(nameService: string; nameMachine: string = '');
-    class procedure stopIfExists(nameService: string; nameMachine: string = '';
-      force: boolean = false);
-    class procedure stop(nameService: string; nameMachine: string = '';
-      force: boolean = false);
-    class function isRunning(nameService: string; nameMachine: string = ''): boolean;
-    class function existsService(nameService: string; nameMachine: string = ''): boolean;
-    class procedure deleteService(nameService: string);
-
-    class function isPortAvaliable(host: string; port: Word): boolean; //todo move?
-  end;
-
-  //----------------------------------
-
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
-function getFirstPortAvaliable(defaultPort: integer): integer;
+function getFirstPortAvaliable(defaultPort: integer; host: string = LOCALHOST_IP_ADDRESS): integer;
+function checkIfPortIsAvaliable(host: string; port: Word): boolean;
 function checkIfAddressIsLocalhost(address: string): boolean;
 function getIPFromHostName(hostName: string): string; //if hostname is alredy an ip address, returns hostname
 function getIP: string;
@@ -199,298 +158,9 @@ implementation
 uses
   KLib.Utils, KLib.Validate,
   Vcl.Forms,
-  Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Winsvc, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon,
+  Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
   System.SysUtils, System.Win.ComObj, System.Win.Registry,
   IdTCPClient;
-
-class procedure TMemoryRam.initialize;
-begin
-  FillChar(RamStats, SizeOf(MemoryStatusEx), #0);
-  RamStats.dwLength := SizeOf(MemoryStatusEx);
-  GlobalMemoryStatusEx(RamStats);
-end;
-
-class function TMemoryRam.getTotalMemoryAsString: string;
-begin
-  result := floattostr(RamStats.ullTotalPhys / _1_MB_IN_BYTES) + ' MB';
-end;
-
-class function TMemoryRam.getTotalMemoryAsDouble: Double;
-begin
-  result := RamStats.ullTotalPhys / _1_MB_IN_BYTES;
-end;
-
-class function TMemoryRam.getTotalFreeMemoryAsString: string;
-begin
-  result := floattostr(RamStats.ullAvailPhys / _1_MB_IN_BYTES) + ' MB';
-end;
-
-class function TMemoryRam.getTotalFreeMemoryAsInteger: integer;
-var
-  _totalFreeMemoryDouble: double;
-  _totalFreeMemoryInteger: integer;
-begin
-  _totalFreeMemoryDouble := getTotalMemoryAsDouble;
-  _totalFreeMemoryInteger := trunc(_totalFreeMemoryDouble);
-  Result := _totalFreeMemoryInteger;
-end;
-
-class function TMemoryRam.getTotalFreeMemoryAsDouble: Double;
-begin
-  result := RamStats.ullAvailPhys / _1_MB_IN_BYTES;
-end;
-
-class function TMemoryRam.getPercentageFreeMemoryAsString: string;
-begin
-  result := inttostr(RamStats.dwMemoryLoad) + '%';
-end;
-
-//----------------------------------------------------------------------------------------
-
-class procedure TWindowsService.aStart(handleSender: THandle; nameService: string;
-  nameMachine: string = '');
-begin
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      try
-        TWindowsService.start(nameService, nameMachine);
-        PostMessage(handleSender, WM_SERVICE_START, 0, 0);
-      except
-        on E: Exception do
-        begin
-          PostMessage(handleSender, WM_SERVICE_ERROR, 0, 0);
-        end;
-      end;
-    end).Start;
-end;
-
-class procedure TWindowsService.startIfExists(nameService: string; nameMachine: string = '');
-begin
-  if existsService(nameService) then
-  begin
-    start(nameService, nameMachine);
-  end;
-end;
-
-class procedure TWindowsService.start(nameService: string; nameMachine: string = '');
-const
-  ERR_MSG = 'Service not started.';
-var
-  cont: integer;
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-
-  _exit: boolean;
-begin
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
-  begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
-    begin
-      if (QueryServiceStatus(handleService, serviceStatus)) then
-      begin
-        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
-        begin
-          CloseServiceHandle(handleService);
-          CloseServiceHandle(handleServiceControlManager);
-          Exit;
-        end;
-
-        if not startService(handleService, 0, PPChar(nil)^) then
-        begin
-          raise Exception.Create(ERR_MSG);
-          CloseServiceHandle(handleService);
-          CloseServiceHandle(handleServiceControlManager);
-          Exit;
-        end;
-        QueryServiceStatus(handleService, serviceStatus);
-
-        //SERVICE_START_PENDING...
-        _exit := false;
-        cont := 0;
-        while not(_exit) do
-        begin
-          case serviceStatus.dwCurrentState of
-            SERVICE_RUNNING:
-              _exit := true;
-            SERVICE_START_PENDING:
-              if (cont >= 60) then
-              begin
-                _exit := true;
-              end;
-          else
-            _exit := true;
-          end;
-
-          if not _exit then
-          begin
-            Sleep(3000);
-            cont := cont + 1;
-            QueryServiceStatus(handleService, serviceStatus);
-          end;
-        end;
-      end;
-    end;
-    QueryServiceStatus(handleService, serviceStatus);
-    if not(serviceStatus.dwCurrentState = SERVICE_RUNNING) then
-    begin
-      raise Exception.Create(ERR_MSG);
-    end;
-    CloseServiceHandle(handleService);
-  end;
-  CloseServiceHandle(handleServiceControlManager);
-end;
-
-class procedure TWindowsService.stopIfExists(nameService: string; nameMachine: string = '';
-force: boolean = false);
-begin
-  if existsService(nameService) then
-  begin
-    stop(nameService, nameMachine, force);
-  end;
-end;
-
-class procedure TWindowsService.Stop(nameService: string; nameMachine: string = '';
-force: boolean = false);
-const
-  ERR_MSG = 'Service not stopped.';
-var
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-  dwCheckpoint: DWord;
-  _cmdParams: string;
-begin
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
-  begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_STOP or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
-    begin
-      if (ControlService(handleService, SERVICE_CONTROL_STOP, serviceStatus)) then
-      begin
-        if (QueryServiceStatus(handleService, serviceStatus)) then
-        begin
-          while (SERVICE_STOPPED <> serviceStatus.dwCurrentState) do
-          begin
-            dwCheckpoint := serviceStatus.dwCheckPoint;
-            Sleep(250);
-            if (not QueryServiceStatus(handleService, serviceStatus)) then
-              break;
-            if (serviceStatus.dwCheckPoint > dwCheckpoint) then
-              break;
-          end;
-        end;
-      end
-      else
-      begin
-        if (force) then
-        begin
-          _cmdParams := '/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT';
-          shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
-        end;
-      end;
-      QueryServiceStatus(handleService, serviceStatus);
-      CloseServiceHandle(handleService);
-    end;
-    CloseServiceHandle(handleService);
-  end;
-  if not(serviceStatus.dwCurrentState = SERVICE_STOPPED) then
-  begin
-    raise Exception.Create(ERR_MSG);
-  end;
-end;
-
-class function TWindowsService.isRunning(nameService: string; nameMachine: string = ''): boolean;
-var
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-begin
-  result := false;
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
-  begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
-    begin
-      if (QueryServiceStatus(handleService, serviceStatus)) then
-      begin
-        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
-        begin
-          Result := True;
-        end;
-      end;
-    end;
-    CloseServiceHandle(handleService);
-  end;
-  CloseServiceHandle(handleServiceControlManager);
-end;
-
-class function TWindowsService.existsService(nameService: string; nameMachine: string = ''): boolean; //nameService is not case-sensitive
-var
-  _result: boolean;
-  _handleServiceControlManager: SC_HANDLE;
-  _handleService: SC_HANDLE;
-begin
-  try
-    _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-    _handleService := OpenService(_handleServiceControlManager, PChar(nameService),
-      SERVICE_ALL_ACCESS);
-
-    CloseServiceHandle(_handleService);
-    CloseServiceHandle(_handleServiceControlManager);
-  except
-    RaiseLastOSError;
-  end;
-  _result := GetLastError() = ERROR_SUCCESS;
-
-  Result := _result;
-end;
-
-class procedure TWindowsService.deleteService(nameService: string);
-const
-  ERR_MSG = 'Unable to delete the Windows service.';
-var
-  _cmdParams: string;
-begin
-  if (existsService(nameService)) then
-  begin
-    if isRunning(nameService) then
-    begin
-      stop(nameService, '', true);
-    end;
-    _cmdParams := '/K SC DELETE ' + nameService + ' & EXIT';
-    shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
-    if (existsService(nameService)) then
-    begin
-      raise Exception.Create(ERR_MSG);
-    end;
-  end;
-end;
-
-class function TWindowsService.isPortAvaliable(host: string; port: Word): boolean;
-var
-  IdTCPClient: TIdTCPClient;
-begin
-  Result := True;
-  try
-    IdTCPClient := TIdTCPClient.Create(nil);
-    try
-      IdTCPClient.Host := host;
-      IdTCPClient.Port := port;
-      IdTCPClient.Connect;
-      Result := False;
-    finally
-      IdTCPClient.Free;
-    end;
-  except
-    //Ignore exceptions
-  end;
-end;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 const
@@ -516,16 +186,36 @@ begin
   end;
 end;
 
-function getFirstPortAvaliable(defaultPort: integer): integer;
+function getFirstPortAvaliable(defaultPort: integer; host: string = LOCALHOST_IP_ADDRESS): integer;
 var
   _port: integer;
 begin
   _port := defaultPort;
-  while not TWindowsService.isPortAvaliable('127.0.0.1', _port) do
+  while not checkIfPortIsAvaliable(host, _port) do
   begin
     inc(_port);
   end;
   result := _port;
+end;
+
+function checkIfPortIsAvaliable(host: string; port: Word): boolean;
+var
+  IdTCPClient: TIdTCPClient;
+begin
+  Result := True;
+  try
+    IdTCPClient := TIdTCPClient.Create(nil);
+    try
+      IdTCPClient.Host := host;
+      IdTCPClient.Port := port;
+      IdTCPClient.Connect;
+      Result := False;
+    finally
+      IdTCPClient.Free;
+    end;
+  except
+    //Ignore exceptions
+  end;
 end;
 
 function checkIfAddressIsLocalhost(address: string): boolean;
@@ -649,15 +339,16 @@ begin
 end;
 
 function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
-exceptionIfFunctionFails: boolean = false): integer;
+  exceptionIfFunctionFails: boolean = false): integer;
 var
   _result: integer;
 begin
   _result := shellExecuteExe(fileName, params, showWindowType, exceptionIfFunctionFails, 'runas');
+  Result := _result;
 end;
 
 function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
-exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
+  exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 var
   _returnCode: integer;
   errMsg: string;
@@ -722,13 +413,13 @@ begin
 end;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
-showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 begin
   result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindowType, exceptionIfReturnCodeIsNot0);
 end;
 
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
-showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
   _shellExecuteInfo: TShellExecuteInfo;
 
@@ -797,9 +488,9 @@ begin
     wShowWindow := Winapi.Windows.SW_HIDE;
   end;
   if not CreateProcess(nil, pchar(_commad), nil, nil, false,
-  //   CREATE_NO_WINDOW,
-  CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
-  nil, nil, _startupInfo, _processInfo) then
+    //   CREATE_NO_WINDOW,
+    CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
+    nil, nil, _startupInfo, _processInfo) then
   begin
     raiseLastSysErrorMessage;
   end;
@@ -843,7 +534,7 @@ function netShareAdd(servername: PWideChar; level: DWORD; buf: Pointer; parm_err
   external 'NetAPI32.dll' name 'NetShareAdd';
 
 function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
-grantAllPermissionToEveryoneGroup: boolean = false): string;
+  grantAllPermissionToEveryoneGroup: boolean = false): string;
 const
   NERR_SUCCESS = 0;
   STYPE_DISKTREE = 0;
@@ -921,7 +612,7 @@ begin
 end;
 
 procedure addTCP_IN_FirewallException(ruleName: string; port: Word; description: string = ''; grouping: string = '';
-executable: String = '');
+  executable: String = '');
 const
   NET_FW_PROFILE2_DOMAIN = 1;
   NET_FW_PROFILE2_PRIVATE = 2;
@@ -1645,11 +1336,11 @@ begin
   while not _exit do
   begin
     _return := MsgWaitForMultipleObjects(1, { 1 handle to wait on }
-    processHandle,
+      processHandle,
       False, { wake on any event }
-    timeout,
+      timeout,
       QS_PAINT or QS_SENDMESSAGE or QS_POSTMESSAGE //todo check
-    //      QS_PAINT or QS_POSTMESSAGE or QS_SENDMESSAGE or QS_ALLPOSTMESSAGE { wake on paint messages or messages from other threads }
+      //      QS_PAINT or QS_POSTMESSAGE or QS_SENDMESSAGE or QS_ALLPOSTMESSAGE { wake on paint messages or messages from other threads }
       );
     case _return of
       WAIT_OBJECT_0:

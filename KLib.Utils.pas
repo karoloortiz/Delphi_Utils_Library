@@ -115,8 +115,8 @@ function getValidTelephoneNumber(number: string): string;
 
 function getRandString(size: integer = 5): string;
 
-function getFileNamesListInDir(dirName: string; fileType: string = ''): TStringList;
-function getFirstFileNameInDir(dirName: string; fileType: string = ''): string;
+function getFirstFileNameInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): string;
+function getFileNamesListInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): TStringList;
 
 function getCombinedPath(path1: string; path2: string): string;
 
@@ -865,14 +865,14 @@ begin
   Result := _randString;
 end;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = ''): string;
+function getFirstFileNameInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): string;
 const
   ERR_MSG = 'No files found.';
 var
   fileName: string;
   _fileNamesList: TStringList;
 begin
-  _fileNamesList := getFileNamesListInDir(dirName, fileType);
+  _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
   if _fileNamesList.Count > 0 then
   begin
     fileName := _fileNamesList[0];
@@ -889,7 +889,7 @@ begin
   Result := fileName;
 end;
 
-function getFileNamesListInDir(dirName: string; fileType: string = ''): TStringList;
+function getFileNamesListInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): TStringList;
 var
   fileNamesList: TStringList;
   _searchRec: TSearchRec;
@@ -903,10 +903,14 @@ begin
   begin
     _mask := _mask + '.' + fileType;
   end;
-  _fileExists := FindFirst(_mask, faanyfile - fadirectory, _searchRec) = 0;
+  _fileExists := FindFirst(_mask, faAnyFile - faDirectory, _searchRec) = 0;
   while _fileExists do
   begin
-    _fileName := getCombinedPath(dirName, _searchRec.Name);
+    _fileName := _searchRec.Name;
+    if fullPath then
+    begin
+      _fileName := getCombinedPath(dirName, _fileName);
+    end;
     fileNamesList.Add(_fileName);
     _fileExists := FindNext(_searchRec) = 0;
   end;
@@ -1005,7 +1009,7 @@ end;
 
 function getSingleQuotedString(value: string): string;
 begin
-  Result := AnsiQuotedStr(value, '"');
+  Result := AnsiQuotedStr(value, '''');
 end;
 
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;

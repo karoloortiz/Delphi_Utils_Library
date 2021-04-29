@@ -104,7 +104,7 @@ procedure tryToValidate(validatingMethod: TMethod; errorLabel: TLabel);
 implementation
 
 uses
-  KLib.Utils, KLib.Windows, KLib.Constants,
+  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Constants,
   System.SysUtils;
 
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
@@ -122,7 +122,7 @@ procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Se
 var
   _errMsg: string;
 begin
-  if TWindowsService.existsService(nameService) then
+  if TWindowsService.checkIfExists(nameService) then
   begin
     _errMsg := getDoubleQuotedString(nameService) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -133,7 +133,7 @@ procedure validateThatServiceExists(nameService: string; errMsg: string = 'Servi
 var
   _errMsg: string;
 begin
-  if not TWindowsService.existsService(nameService) then
+  if not TWindowsService.checkIfExists(nameService) then
   begin
     _errMsg := getDoubleQuotedString(nameService) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
