@@ -95,6 +95,10 @@ function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
 
 //USING INDY YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
+//INCLUDE RESOURCES IN YOUR PROJECT
+//  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
+//  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: DLL_TYPE);
+//  RESOURCE_SSLEAY32: TResource = (name: 'SSLEAY32'; _type: DLL_TYPE);
 procedure downloadZipFileAndExtractWithIndy(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
 procedure downloadFileWithIndy(info: TDownloadInfo; forceOverwrite: boolean);
@@ -1104,7 +1108,7 @@ begin
   _stringList := TStringList.Create;
   _stringList.Clear;
   _stringList.Delimiter := delimiter;
-  _stringList.StrictDelimiter := True; // Requires D2006 or newer.
+  _stringList.StrictDelimiter := True;
   _stringList.DelimitedText := value;
   Result := _stringList;
 end;

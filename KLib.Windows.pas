@@ -78,6 +78,8 @@ type
     SW_MAX = Winapi.Windows.SW_MAX
     );
 
+procedure openWebPageWithDefaultBrowser(url: string);
+
 function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
@@ -338,6 +340,11 @@ begin
   Result := IsUserAnAdmin;
 end;
 
+procedure openWebPageWithDefaultBrowser(url: string);
+begin
+  ShellExecute(0, 'open', PChar(url), nil, nil, Winapi.Windows.SW_NORMAL);
+end;
+
 function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 var
@@ -550,7 +557,7 @@ const
   ACCESS_PERM = $40;
   ACCESS_ALL = ACCESS_READ or ACCESS_WRITE or ACCESS_CREATE or ACCESS_EXEC or ACCESS_DELETE or ACCESS_ATRIB or ACCESS_PERM;
 
-  ERR_MSG = 'Unable to share folder.';
+  ERR_MSG = 'Unable to share folder :';
 var
   _targetDir: string;
   AShareInfo: PSHARE_INFO_2;
@@ -596,7 +603,7 @@ begin
     end;
     if not DirectoryExists(pathSharedDir) then
     begin
-      _errMsg := getDoubleQuotedString(_targetDir) + ' : ' + ERR_MSG;
+      _errMsg := ERR_MSG + getDoubleQuotedString(_targetDir);
       raise Exception.Create(_errMsg);
     end;
     pathSharedDir := '\\' + GetEnvironmentVariable('COMPUTERNAME') + '\' + AShareInfo.shi2_netname;
@@ -707,8 +714,6 @@ begin
 end;
 
 procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);
-const
-  ERR_MSG = 'Not exists in Windows Groups/Users.';
 var
   newDACL: PACl;
   oldDACL: PACl;
@@ -874,7 +879,7 @@ end;
 
 procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
 const
-  ERR_MSG = 'Unable to delete.';
+  ERR_MSG = 'Unable to delete :';
 var
   sHFileOpStruct: TSHFileOpStruct;
   shFileOperationResult: integer;
@@ -896,7 +901,7 @@ begin
     shFileOperationResult := SHFileOperation(sHFileOpStruct);
     if (shFileOperationResult <> 0) or (DirectoryExists(dirName)) then
     begin
-      errMsg := ERR_MSG + ' : ' + dirName;
+      errMsg := ERR_MSG + dirName;
       raise Exception.Create(errMsg);
     end;
   end;
