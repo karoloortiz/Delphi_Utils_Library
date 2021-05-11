@@ -119,8 +119,8 @@ function getValidTelephoneNumber(number: string): string;
 
 function getRandString(size: integer = 5): string;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): string;
-function getFileNamesListInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): TStringList;
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
 function getCombinedPath(path1: string; path2: string): string;
 
@@ -145,7 +145,7 @@ function strToStringList(source: String; fixedLen: Integer): TStringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
-function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
+function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
 function checkIfEmailIsValid(email: string): boolean;
 
@@ -756,7 +756,7 @@ begin
   _connection := getIdFTP(FTPCredentials);
   try
     _connection.Connect;
-    if FTPCredentials.pathFTPDir <> '' then
+    if FTPCredentials.pathFTPDir <> EMPTY_STRING then
     begin
       _connection.ChangeDir(FTPCredentials.pathFTPDir);
     end;
@@ -778,7 +778,7 @@ var
 begin
   with FTPCredentials do
   begin
-    _result := (server <> '') and (credentials.username <> '') and (credentials.password <> '');
+    _result := (server <> EMPTY_STRING) and (credentials.username <> EMPTY_STRING) and (credentials.password <> EMPTY_STRING);
   end;
 
   Result := _result;
@@ -869,7 +869,7 @@ begin
   Result := _randString;
 end;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): string;
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 const
   ERR_MSG = 'No files found.';
 var
@@ -893,7 +893,7 @@ begin
   Result := fileName;
 end;
 
-function getFileNamesListInDir(dirName: string; fileType: string = ''; fullPath: boolean = true): TStringList;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 var
   fileNamesList: TStringList;
   _searchRec: TSearchRec;
@@ -903,7 +903,7 @@ var
 begin
   fileNamesList := TStringList.Create;
   _mask := getCombinedPath(dirName, '*');
-  if fileType <> '' then
+  if fileType <> EMPTY_STRING then
   begin
     _mask := _mask + '.' + fileType;
   end;
@@ -944,7 +944,8 @@ const
     'Wednesday',
     'Thursday',
     'Friday',
-    'Saturday'];
+    'Saturday'
+    ];
 var
   _indexDayOfWeek: integer;
   _nameDay: string;
@@ -967,7 +968,7 @@ var
 begin
   _date := getDateAsString(date);
   _time := TimeToStr(date);
-  _time := StringReplace(_time, ':', '', [rfReplaceAll, rfIgnoreCase]);
+  _time := StringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
   _dateTime := _date + '_' + _time;
   Result := _dateTime;
 end;
@@ -1128,7 +1129,7 @@ begin
   destSecondString := Copy(source, _endIndexDelimiter, _lengthDestSecondString);
 end;
 
-function getMergedStrings(firstString: string; secondString: string; delimiter: string = ''): string;
+function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 begin
   Result := firstString + delimiter + secondString;
 end;
