@@ -105,8 +105,10 @@ procedure setComponentInMiddlePosition(control: TControl);
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
 //!not include in realease!
 
+function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
+  msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
-  captionButtons: array of string; dlgCaption: string): Integer;
+  captionButtons: array of string; dlgCaption: string): Integer; deprecated;
 
 function getComponentInFormByName(componentName: string; myForm: TForm): TComponent;
 
@@ -121,7 +123,7 @@ function getHeightOfSingleCharacter(myFont: TFont): integer;
 implementation
 
 uses
-  KLib.Utils,
+  KLib.Utils, KLib.Generic,
   Winapi.Windows,
   System.SysUtils, System.Types;
 
@@ -445,6 +447,88 @@ end;
 //  _img.LoadFromFile(pathImgFile);
 //  img.Picture.Graphic := _img;
 //end;
+
+function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
+  msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string;
+const
+  MAX_NUMBER_BUTTONS = 8;
+
+  //mbNo, mbOk, mbCancel, mbHelp are not used
+
+  MESSAGE_DIALOG_BUTTONS: array [0 .. MAX_NUMBER_BUTTONS - 1] of TMsgDlgBtn =
+    (mbYes, mbAbort, mbRetry, mbIgnore, mbAll, mbNoToAll, mbYesToAll, mbClose);
+
+  RESULTS_BUTTONS: array [0 .. MAX_NUMBER_BUTTONS - 1] of integer =
+    (mrYes, mrAbort, mrRetry, mrIgnore, mrAll, mrNoToAll, mrYesToAll, mrClose);
+
+  ERR_MSG = 'Too many buttons. The maxium number of buttons is 8.';
+var
+  _result: string;
+
+  _countButtons: integer;
+  _indexOfDefaultButton: integer;
+  _defaultMsgDlgButton: TMsgDlgBtn;
+
+  _messageDialog: TForm;
+  _buttons: TMsgDlgButtons;
+  _buttonsIndex: Integer;
+
+  _messageDialogResult: integer;
+  _RESULTS_BUTTONS_index: integer;
+
+  i: Integer;
+  _button: TButton;
+begin
+  _countButtons := Length(buttons);
+  Assert(_countButtons <= MAX_NUMBER_BUTTONS, ERR_MSG);
+
+  _indexOfDefaultButton := TGeneric.getElementIndexFromArray<string>(buttons, defaultButton);
+  if _indexOfDefaultButton = -1 then
+  begin
+    _indexOfDefaultButton := 0;
+  end;
+
+  _defaultMsgDlgButton := MESSAGE_DIALOG_BUTTONS[_indexOfDefaultButton];
+
+  _buttons := [];
+  for i := 0 to _countButtons - 1 do
+  begin
+    Include(_buttons, MESSAGE_DIALOG_BUTTONS[i]);
+  end;
+
+  _messageDialog := createMessageDialog(msg, msgDlgType, _buttons, _defaultMsgDlgButton);
+  _messageDialog.Caption := title;
+  _messageDialog.BiDiMode := bdLeftToRight;
+  _buttonsIndex := 0;
+  for i := 0 to _messageDialog.componentcount - 1 do
+  begin
+    if (_messageDialog.components[i] is TButton) then
+    Begin
+      _button := TButton(_messageDialog.components[i]);
+      if _buttonsIndex <= High(buttons) then
+      begin
+        _button.Caption := buttons[_buttonsIndex];
+      end;
+      inc(_buttonsIndex);
+    end;
+  end;
+
+  _messageDialogResult := _messageDialog.ShowModal;
+
+  FreeAndNil(_messageDialog);
+
+  if (_messageDialogResult <> mrNo) and (_messageDialogResult <> mrOk) and (_messageDialogResult <> mrCancel) then
+  begin
+    _RESULTS_BUTTONS_index := TGeneric.getElementIndexFromArray<integer>(RESULTS_BUTTONS, _messageDialogResult);
+    _result := buttons[_RESULTS_BUTTONS_index];
+  end
+  else
+  begin
+    _result := '';
+  end;
+
+  Result := _result;
+end;
 
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
   captionButtons: array of string; dlgCaption: string): Integer;

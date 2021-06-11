@@ -11,7 +11,7 @@ type
   public
     defaultDir: string;
     constructor create(FTPCredentials: TFTPCredentials); overload;
-    procedure Connect; overload; override;
+    procedure connect;
     procedure put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE); overload;
     procedure deleteFileIfExists(filename: string);
     function checkIfFileExists(filename: string): boolean;
@@ -45,7 +45,7 @@ begin
   defaultDir := FTPCredentials.pathFTPDir;
 end;
 
-procedure TMyIdFTP.Connect;
+procedure TMyIdFTP.connect;
 begin
   inherited;
   if defaultDir <> '' then
