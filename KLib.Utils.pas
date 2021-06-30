@@ -138,8 +138,14 @@ function getDoubleQuotedString(value: string): string;
 function getSingleQuotedString(value: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
 
-function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
+function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
+function getCSVFieldFromStringAsDouble(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): Double; overload;
+function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): Double; overload;
+function getCSVFieldFromStringAsInteger(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): integer;
 function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
+
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 function strToStringList(source: String; fixedLen: Integer): TStringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
@@ -1021,24 +1027,67 @@ function getMainStringWithSubStringInserted(mainString: string; insertedString: 
 const
   ERR_MSG = 'Index out of range.';
 var
+  _result: string;
   _lenght: integer;
+  _firstStringPart: string;
+  _lastStringPart: string;
 begin
   _lenght := Length(mainString);
   if (index > _lenght) or (index < 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  Result := Copy(mainString, 0, index) + insertedString + Copy(mainString, index + 1, _lenght);
+  _firstStringPart := Copy(mainString, 0, index);
+  _lastStringPart := Copy(mainString, index + 1, MaxInt);
+  _result := _firstStringPart + insertedString + _lastStringPart;
+
+  Result := _result;
 end;
 
-function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
 var
-  _stringList: TStringList;
+  _result: TDate;
 begin
-  _stringList := TStringList.Create;
-  _stringList.Text := source;
-  result := _stringList.Count;
-  FreeAndNil(_stringList);
+  _result := getCSVFieldFromStringAsDate(mainString, index, FormatSettings, delimiter);
+end;
+
+function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings;
+  delimiter: Char = SEMICOLON_DELIMITER): TDate;
+var
+  _fieldAsString: string;
+  _result: TDate;
+begin
+  _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
+  _result := StrToDate(_fieldAsString, formatSettings);
+  Result := _result;
+end;
+
+function getCSVFieldFromStringAsDouble(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): Double;
+var
+  _result: Double;
+begin
+  _result := getCSVFieldFromStringAsDouble(mainString, index, FormatSettings, delimiter);
+end;
+
+function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings;
+  delimiter: Char = SEMICOLON_DELIMITER): Double;
+var
+  _fieldAsString: string;
+  _result: Double;
+begin
+  _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
+  _result := StrToFloat(_fieldAsString, formatSettings);
+  Result := _result;
+end;
+
+function getCSVFieldFromStringAsInteger(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): integer;
+var
+  _fieldAsString: string;
+  _result: integer;
+begin
+  _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
+  _result := StrToInt(_fieldAsString);
+  Result := _result;
 end;
 
 function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
@@ -1062,6 +1111,16 @@ begin
     FreeAndNil(_stringList);
   end;
   Result := _result;
+end;
+
+function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
+var
+  _stringList: TStringList;
+begin
+  _stringList := TStringList.Create;
+  _stringList.Text := source;
+  result := _stringList.Count;
+  FreeAndNil(_stringList);
 end;
 
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
