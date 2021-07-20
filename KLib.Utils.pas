@@ -137,6 +137,7 @@ function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string 
 function getDoubleQuotedString(value: string): string;
 function getSingleQuotedString(value: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
+function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -1044,11 +1045,21 @@ begin
   Result := _result;
 end;
 
+function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
+var
+  stringWithoutLineBreaks: string;
+begin
+  stringWithoutLineBreaks := StringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
+  stringWithoutLineBreaks := StringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
+  Result := stringWithoutLineBreaks;
+end;
+
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
 var
   _result: TDate;
 begin
   _result := getCSVFieldFromStringAsDate(mainString, index, FormatSettings, delimiter);
+  Result := _result;
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings;
@@ -1059,6 +1070,7 @@ var
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToDate(_fieldAsString, formatSettings);
+
   Result := _result;
 end;
 
@@ -1067,6 +1079,8 @@ var
   _result: Double;
 begin
   _result := getCSVFieldFromStringAsDouble(mainString, index, FormatSettings, delimiter);
+
+  Result := _result;
 end;
 
 function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings;
@@ -1077,6 +1091,7 @@ var
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToFloat(_fieldAsString, formatSettings);
+
   Result := _result;
 end;
 
@@ -1087,6 +1102,7 @@ var
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToInt(_fieldAsString);
+
   Result := _result;
 end;
 
@@ -1110,55 +1126,62 @@ begin
   finally
     FreeAndNil(_stringList);
   end;
+
   Result := _result;
 end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: String): integer;
 var
   _stringList: TStringList;
+  _result: integer;
 begin
   _stringList := TStringList.Create;
   _stringList.Text := source;
-  result := _stringList.Count;
+  _result := _stringList.Count;
   FreeAndNil(_stringList);
+
+  Result := _result;
 end;
 
 function strToStrFixedWordWrap(source: String; fixedLen: Integer): String;
 var
   _stringList: TStringList;
+  _text: string;
   _result: string;
 begin
   _stringList := strToStringList(source, fixedLen);
-  _result := _stringList.Text;
-  Delete(_result, length(_result), 1);
-  result := _result;
+  _text := _stringList.Text;
   FreeAndNil(_stringList);
+  Delete(_text, length(_text), 1);
+  _result := _text;
+
+  Result := _result;
 end;
 
 function strToStringList(source: String; fixedLen: integer): TStringList;
 var
-  idx: Integer;
-  srcLen: Integer;
-  alist: TStringList;
+  stringList: TStringList;
+  i: Integer;
+  _sourceLen: Integer;
 begin
-  alist := TStringList.Create;
-  alist.LineBreak := #13;
+  stringList := TStringList.Create;
+  stringList.LineBreak := #13;
   if fixedLen = 0 then
   begin
     fixedLen := Length(source) - 1;
   end;
-  aList.Capacity := (Length(source) div fixedLen) + 1;
+  stringList.Capacity := (Length(source) div fixedLen) + 1;
 
-  idx := 1;
-  srcLen := Length(source);
+  i := 1;
+  _sourceLen := Length(source);
 
-  while idx <= srcLen do
+  while i <= _sourceLen do
   begin
-    aList.Add(Copy(source, idx, fixedLen));
-    Inc(idx, fixedLen);
+    stringList.Add(Copy(source, i, fixedLen));
+    Inc(i, fixedLen);
   end;
 
-  result := alist;
+  result := stringList;
 end;
 
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
@@ -1170,6 +1193,7 @@ begin
   _stringList.Delimiter := delimiter;
   _stringList.StrictDelimiter := True;
   _stringList.DelimitedText := value;
+
   Result := _stringList;
 end;
 

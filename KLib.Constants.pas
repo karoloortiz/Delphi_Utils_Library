@@ -65,6 +65,7 @@ const
   C_DRIVE = 'C';
 
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
+  SPACE_STRING = ' ';
   EMPTY_STRING = '';
 
   RUN_AS_ADMIN = true;
