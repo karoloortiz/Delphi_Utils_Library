@@ -153,6 +153,7 @@ procedure raiseLastSysErrorMessage;
 function getLastSysErrorMessage: string;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
+function getFloatToStrDecimalSeparator: char;
 function getLocaleDecimalSeparator: char;
 
 implementation
@@ -1431,21 +1432,34 @@ end;
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 var
   _doubleAsString: string;
-  _systemDecimalSeparator: char;
+  _FloatToStrDecimalSeparator: char;
 begin
   _doubleAsString := FloatToStr(value);
-  _systemDecimalSeparator := getLocaleDecimalSeparator();
-  _doubleAsString := StringReplace(_doubleAsString, _systemDecimalSeparator, decimalSeparator, [rfReplaceAll]);
+  _FloatToStrDecimalSeparator := getFloatToStrDecimalSeparator;
+  _doubleAsString := StringReplace(_doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
   Result := _doubleAsString;
 end;
 
+function getFloatToStrDecimalSeparator: char;
+const
+  VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
+  DECIMAL_SEPARATOR_INDEX = 2;
+var
+  _doubleAsString: string;
+begin
+  _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
+  Result := _doubleAsString[2];
+end;
+
 function getLocaleDecimalSeparator: char;
+const
+  LOCALE_NAME_SYSTEM_DEFAULT = '!x-sys-default-locale';
 var
   _buffer: array [1 .. 10] of Char;
   decimalSeparator: Char;
 begin
   FillChar(_buffer, SizeOf(_buffer), 0);
-  GetLocaleInfo(LOCALE_SYSTEM_DEFAULT, LOCALE_SDECIMAL, @_buffer[1], SizeOf(_buffer));
+  Win32Check(GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_SDECIMAL, @_buffer[1], SizeOf(_buffer)) <> 0);
   decimalSeparator := _buffer[1];
 
   Result := decimalSeparator;
