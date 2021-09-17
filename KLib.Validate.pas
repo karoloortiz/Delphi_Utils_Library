@@ -68,9 +68,9 @@ procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'Fil
 procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File already exists.');
 procedure validateThatFileExists(fileName: string; errMsg: string = 'File doens''t exists.');
 
-procedure validateIXMLNodeName(nodeNameExpected: string; node: IXMLNode; errMsg: string = 'Node not expected.');
-procedure validateThatIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode; errMsg: string = 'Node not exists.');
-procedure validateThatAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode; errMsg: string = 'Attribute not exists in node.');
+procedure validateThatIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName: string; errMsg: string = 'Node not exists.');
+procedure validateIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string; errMsg: string = 'Node not expected.');
+procedure validateThatAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string; errMsg: string = 'Attribute not exists in node.');
 
 procedure validateMD5File(fileName: string; MD5: string; errMsg: string = 'MD5 check failed.');
 
@@ -104,7 +104,7 @@ procedure tryToValidate(validatingMethod: TMethod; errorLabel: TLabel);
 implementation
 
 uses
-  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Constants,
+  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Constants, KLib.Indy, KLib.XML,
   System.SysUtils;
 
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
@@ -266,33 +266,33 @@ begin
   end;
 end;
 
-procedure validateThatIXMLNodeExistsInIXMLNode(nodeName: string; node: IXMLNode; errMsg: string = 'Node not exists.');
+procedure validateThatIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName: string; errMsg: string = 'Node not exists.');
 var
   _errMsg: string;
 begin
-  if not checkIfIXMLNodeExistsInIXMLNode(nodeName, node) then
+  if not checkIfIXMLNodeExistsInIXMLNode(mainNode, childNodeName) then
   begin
-    _errMsg := getDoubleQuotedString(nodeName) + ' : ' + errMsg;
+    _errMsg := getDoubleQuotedString(childNodeName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
   end;
 end;
 
-procedure validateIXMLNodeName(nodeNameExpected: string; node: IXMLNode; errMsg: string = 'Node not expected.');
+procedure validateIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string; errMsg: string = 'Node not expected.');
 var
   _errMsg: string;
 begin
-  if not checkIXMLNodeName(nodeNameExpected, node) then
+  if not checkIXMLNodeName(mainNode, expectedNodeName) then
   begin
-    _errMsg := getDoubleQuotedString(nodeNameExpected) + ' : ' + errMsg;
+    _errMsg := getDoubleQuotedString(expectedNodeName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
   end;
 end;
 
-procedure validateThatAttributeExistsInIXMLNode(attributeName: string; node: IXMLNode; errMsg: string = 'Attribute not exists in node.');
+procedure validateThatAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string; errMsg: string = 'Attribute not exists in node.');
 var
   _errMsg: string;
 begin
-  if not checkIfAttributeExistsInIXMLNode(attributeName, node) then
+  if not checkIfAttributeExistsInIXMLNode(mainNode, attributeName) then
   begin
     _errMsg := getDoubleQuotedString(attributeName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);

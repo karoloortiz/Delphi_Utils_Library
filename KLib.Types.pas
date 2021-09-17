@@ -43,6 +43,10 @@ uses
   System.Generics.Collections;
 
 type
+  THostPort = record
+    host: string;
+    port: integer;
+  end;
 
   TCredentials = record
     username: string;

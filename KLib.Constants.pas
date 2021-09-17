@@ -39,6 +39,10 @@ unit KLib.Constants;
 interface
 
 const
+  DATE_FORMAT = 'yyyy-mm-dd';
+  DATETIME_FORMAT = 'yyyy-mm-dd hh:nn:ss';
+  TIMESTAMP_FORMAT = 'yyyymmddhhnnss';
+
   SEMICOLON_DELIMITER = ';';
 
   DECIMAL_SEPARATOR_IT = ',';

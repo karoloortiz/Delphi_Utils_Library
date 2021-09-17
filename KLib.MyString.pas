@@ -45,13 +45,26 @@ type
   myString = type string;
 
   TMyStringHelper = record helper for myString
-    procedure setParamAsDoubleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string = 'yyyy-mm-dd');
+    procedure setParamAsDoubleQuotedDate(paramName: string; value: TDateTime);
+    procedure setParamAsDoubleQuotedDateTime(paramName: string; value: TDateTime);
+    procedure setParamAsDoubleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
     procedure setParamAsDoubleQuotedFloat(paramName: string; value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT);
     procedure setParamAsDoubleQuotedString(paramName: string; value: string);
 
-    procedure setParamAsDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string = 'yyyy-mm-dd');
+    procedure setParamAsSingleQuotedDate(paramName: string; value: TDateTime);
+    procedure setParamAsSingleQuotedDateTime(paramName: string; value: TDateTime);
+    procedure setParamAsSingleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
+    procedure setParamAsSingleQuotedFloat(paramName: string; value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT);
+    procedure setParamAsSingleQuotedString(paramName: string; value: string);
+
+    procedure setParamAsDate(paramName: string; value: TDateTime);
+    procedure setParamAsDateTime(paramName: string; value: TDateTime);
+    procedure setParamAsDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
     procedure setParamAsFloat(paramName: string; value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT);
     procedure setParamAsString(paramName: string; value: string);
+
+    procedure doubleQuoted;
+    procedure singleQuoted;
   end;
 
 implementation
@@ -60,7 +73,17 @@ uses
   KLib.Utils, KLib.Windows,
   System.SysUtils;
 
-procedure TMyStringHelper.setParamAsDoubleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string = 'yyyy-mm-dd');
+procedure TMyStringHelper.setParamAsDoubleQuotedDate(paramName: string; value: TDateTime);
+begin
+  setParamAsDoubleQuotedDateTimeWithFormatting(paramName, value, DATE_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsDoubleQuotedDateTime(paramName: string; value: TDateTime);
+begin
+  setParamAsDoubleQuotedDateTimeWithFormatting(paramName, value, DATETIME_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsDoubleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
 var
   _dateTimeAsStringWithFormatting: string;
 begin
@@ -84,7 +107,51 @@ begin
   setParamAsString(paramName, _doubleQuotedValue);
 end;
 
-procedure TMyStringHelper.setParamAsDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string = 'yyyy-mm-dd');
+procedure TMyStringHelper.setParamAsSingleQuotedDate(paramName: string; value: TDateTime);
+begin
+  setParamAsSingleQuotedDateTimeWithFormatting(paramName, value, DATE_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsSingleQuotedDateTime(paramName: string; value: TDateTime);
+begin
+  setParamAsSingleQuotedDateTimeWithFormatting(paramName, value, DATETIME_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsSingleQuotedDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
+var
+  _dateTimeAsStringWithFormatting: string;
+begin
+  _dateTimeAsStringWithFormatting := getDateTimeAsStringWithFormatting(value, formatting);
+  setParamAsSingleQuotedString(paramName, _dateTimeAsStringWithFormatting);
+end;
+
+procedure TMyStringHelper.setParamAsSingleQuotedFloat(paramName: string; value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT);
+var
+  _doubleAsString: string;
+begin
+  _doubleAsString := getDoubleAsString(value, decimalSeparator);
+  setParamAsSingleQuotedString(paramName, _doubleAsString);
+end;
+
+procedure TMyStringHelper.setParamAsSingleQuotedString(paramName: string; value: string);
+var
+  _doubleQuotedValue: string;
+begin
+  _doubleQuotedValue := getSingleQuotedString(value);
+  setParamAsString(paramName, _doubleQuotedValue);
+end;
+
+procedure TMyStringHelper.setParamAsDate(paramName: string; value: TDateTime);
+begin
+  setParamAsDateTimeWithFormatting(paramName, value, DATETIME_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsDateTime(paramName: string; value: TDateTime);
+begin
+  setParamAsDateTimeWithFormatting(paramName, value, DATETIME_FORMAT);
+end;
+
+procedure TMyStringHelper.setParamAsDateTimeWithFormatting(paramName: string; value: TDateTime; formatting: string);
 var
   _dateTimeAsStringWithFormatting: string;
 begin
@@ -110,6 +177,16 @@ begin
     _param := ':' + _param;
   end;
   Self := StringReplace(Self, _param, value, [rfReplaceAll]);
+end;
+
+procedure TMyStringHelper.doubleQuoted;
+begin
+  Self := getDoubleQuotedString(Self);
+end;
+
+procedure TMyStringHelper.singleQuoted;
+begin
+  Self := getSingleQuotedString(Self);
 end;
 
 end.

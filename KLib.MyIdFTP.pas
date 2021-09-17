@@ -61,7 +61,7 @@ function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 implementation
 
 uses
-  KLib.Utils;
+  KLib.Utils, KLib.Indy;
 
 function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 var
