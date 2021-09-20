@@ -1,6 +1,6 @@
 # Delphi_Utils_Library
 
-KLib Version = 1.0
+KLib Version = 2.0
 
 A library with some useful utilities for your Delphi Apps.
 
