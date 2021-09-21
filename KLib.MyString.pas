@@ -1,5 +1,5 @@
 {
-  KLib Version = 1.0
+  KLib Version = 2.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
