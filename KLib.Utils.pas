@@ -115,13 +115,17 @@ function strToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 function strToStringList(source: string; fixedLen: Integer): TstringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TstringList;
 
-procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
+procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
+procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
 function checkIfEmailIsValid(email: string): boolean;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = true): boolean;
+
+function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
+function getFloatToStrDecimalSeparator: char;
 
 procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false); overload;
@@ -912,6 +916,25 @@ begin
   end;
 end;
 
+procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string);
+var
+  _lenghtSource: integer;
+  _lengthDestSecondString: integer;
+begin
+  _lenghtSource := Length(source);
+  if _lenghtSource > delimiterPosition then
+  begin
+    _lengthDestSecondString := _lenghtSource - delimiterPosition;
+    destFirstString := Copy(source, 0, delimiterPosition);
+    destSecondString := Copy(source, delimiterPosition + 1, _lengthDestSecondString);
+  end
+  else
+  begin
+    destFirstString := source;
+    destSecondString := '';
+  end;
+end;
+
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 begin
   Result := firstString + delimiter + secondString;
@@ -946,6 +969,28 @@ begin
   end;
 
   Result := _result;
+end;
+
+function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
+var
+  _doubleAsString: string;
+  _FloatToStrDecimalSeparator: char;
+begin
+  _doubleAsString := FloatToStr(value);
+  _FloatToStrDecimalSeparator := getFloatToStrDecimalSeparator;
+  _doubleAsString := StringReplace(_doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
+  Result := _doubleAsString;
+end;
+
+function getFloatToStrDecimalSeparator: char;
+const
+  VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
+  DECIMAL_SEPARATOR_INDEX = 2;
+var
+  _doubleAsString: string;
+begin
+  _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
+  Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
 end;
 
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false);

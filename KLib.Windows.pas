@@ -152,8 +152,6 @@ procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: 
 procedure raiseLastSysErrorMessage;
 function getLastSysErrorMessage: string;
 
-function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
-function getFloatToStrDecimalSeparator: char;
 function getLocaleDecimalSeparator: char;
 
 implementation
@@ -1427,28 +1425,6 @@ begin
   _errorCode := GetLastError;
   sysErrMsg := SysErrorMessage(_errorCode);
   Result := sysErrMsg;
-end;
-
-function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
-var
-  _doubleAsString: string;
-  _FloatToStrDecimalSeparator: char;
-begin
-  _doubleAsString := FloatToStr(value);
-  _FloatToStrDecimalSeparator := getFloatToStrDecimalSeparator;
-  _doubleAsString := StringReplace(_doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
-  Result := _doubleAsString;
-end;
-
-function getFloatToStrDecimalSeparator: char;
-const
-  VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
-  DECIMAL_SEPARATOR_INDEX = 2;
-var
-  _doubleAsString: string;
-begin
-  _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
-  Result := _doubleAsString[2];
 end;
 
 function getLocaleDecimalSeparator: char;

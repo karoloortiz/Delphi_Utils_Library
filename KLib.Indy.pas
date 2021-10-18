@@ -70,13 +70,13 @@ function getMD5ChecksumFile(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils,
+  KLib.Validate, KLib.Utils, KLib.MyIdHTTP,
   IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
   System.SysUtils;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
 begin
-  TCPPrintFilesInDirWithStartingFileName(hostPort, dirName, fileType);
+  TCPPrintFilesInDirWithStartingFileName(hostPort, dirName, EMPTY_STRING, fileType);
 end;
 
 procedure TCPPrintFilesInDirWithStartingFileName(hostPort: THostPort;
@@ -92,7 +92,7 @@ begin
   for _file in _files do
   begin
     _fileName := ExtractFileName(_file);
-    if _fileName.StartsWith(startingFileName, IGNORE_CASE) then
+    if (_fileName.StartsWith(startingFileName, IGNORE_CASE)) or (startingFileName = EMPTY_STRING) then
     begin
       TCPPrintFromFile(hostPort, _file)
     end;
@@ -190,9 +190,9 @@ end;
 function HTTP_post(url: string; paramList: TStringList): string;
 var
   HTTP_response: string;
-  _HTTP: TIdHTTP;
+  _HTTP: TMyIdHTTP;
 begin
-  _HTTP := TIdHTTP.Create;
+  _HTTP := TMyIdHTTP.Create(nil);
   try
     HTTP_response := _HTTP.Post(url, paramList);
   finally
