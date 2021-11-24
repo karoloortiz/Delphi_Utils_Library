@@ -40,7 +40,7 @@ interface
 
 uses
   KLib.Types, KLib.Constants,
-  IdFTP,
+  IdFTP, IdHTTP,
   System.Classes;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
@@ -53,7 +53,8 @@ function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 
-function HTTP_post(url: string; paramList: TStringList): string;
+function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
+function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 //USING INDY WITH SSL (E.G downloadFileWithIndy) YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
 //INCLUDE RESOURCES IN YOUR PROJECT
 //  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
@@ -71,7 +72,7 @@ implementation
 
 uses
   KLib.Validate, KLib.Utils, KLib.MyIdHTTP,
-  IdGlobal, IdHash, IdHashMessageDigest, IdHTTP, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
+  IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
   System.SysUtils;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
@@ -187,12 +188,39 @@ begin
   Result := connection;
 end;
 
-function HTTP_post(url: string; paramList: TStringList): string;
+function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string;
+var
+  HTTP_response: string;
+  _idHTTPRequest: TIdHTTPRequest;
+begin
+  _idHTTPRequest := TIdHTTPRequest.Create(nil);
+  try
+    with _idHTTPRequest do
+    begin
+      BasicAuthentication := true;
+      Username := credentials.username;
+      Password := credentials.password;
+    end;
+    HTTP_response := HTTP_post(url, paramList, _idHTTPRequest);
+  finally
+    FreeAndNil(_idHTTPRequest);
+  end;
+
+  Result := HTTP_response;
+end;
+
+function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string;
 var
   HTTP_response: string;
   _HTTP: TMyIdHTTP;
 begin
   _HTTP := TMyIdHTTP.Create(nil);
+
+  if Assigned(idHTTPRequest) then
+  begin
+    _HTTP.Request := idHTTPRequest;
+  end;
+
   try
     HTTP_response := _HTTP.Post(url, paramList);
   finally

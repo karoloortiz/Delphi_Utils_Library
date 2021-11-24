@@ -77,6 +77,7 @@ procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip
 
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
 
+function getValidItalianTelephoneNumber(number: string): string;
 function getValidTelephoneNumber(number: string): string;
 
 function getRandString(size: integer = 5): string;
@@ -101,7 +102,7 @@ function getParsedXMLstring(mainString: string): string; //todo add to myString
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
-function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_string): string;
+function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -506,6 +507,49 @@ begin
   Result := _result;
 end;
 
+function getValidItalianTelephoneNumber(number: string): string;
+var
+  telephoneNumber: string;
+  _number: string;
+  i: integer;
+begin
+  telephoneNumber := '';
+  _number := trim(number);
+
+  if _number = '' then
+  begin
+    telephoneNumber := '';
+  end
+  else
+  begin
+    if _number.StartsWith('0039') then
+    begin
+      _number := StringReplace(_number, '0039', '+39', []);
+    end;
+
+    if not _number.StartsWith('+') then
+    begin
+      _number := '+39' + _number;
+    end;
+
+    if not _number.StartsWith('+39') then
+    begin
+      _number := StringReplace(_number, '+', '+39', []);
+    end;
+
+    telephoneNumber := '+';
+    for i := 2 to length(_number) do
+    begin
+      if _number[i].IsNumber then
+      begin
+        telephoneNumber := telephoneNumber + _number[i];
+      end;
+    end;
+  end;
+
+  Result := telephoneNumber;
+end;
+
 function getValidTelephoneNumber(number: string): string;
 const
   ERR_MSG = 'Telephone number is empty.';
@@ -741,7 +785,7 @@ begin
   Result := _result;
 end;
 
-function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_string): string;
+function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 var
   stringWithoutLineBreaks: string;
 begin

@@ -8,10 +8,11 @@ uses
 
 type
   TMyIdHTTP = class(TIdHTTP)
-  public
-    constructor Create(AOwner: TComponent);
   private
     procedure OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL; const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+  public
+    constructor Create(AOwner: TComponent);
+    destructor Destroy; override;
   end;
 
 implementation
@@ -32,6 +33,12 @@ procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;
   const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
 begin
   SSL_set_tlsext_host_name(AsslSocket, Request.Host);
+end;
+
+destructor TMyIdHTTP.Destroy;
+begin
+  IOHandler.Free;
+  inherited;
 end;
 
 end.
