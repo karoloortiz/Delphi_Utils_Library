@@ -47,7 +47,7 @@ type
   public
     defaultDir: string;
     constructor create(FTPCredentials: TFTPCredentials); overload;
-    procedure connect;
+    procedure Connect; reintroduce;
     procedure put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE); overload;
     procedure deleteFileIfExists(filename: string);
     procedure makeDirIfNotExists(dirName: string);
@@ -83,7 +83,7 @@ begin
   defaultDir := FTPCredentials.pathFTPDir;
 end;
 
-procedure TMyIdFTP.connect;
+procedure TMyIdFTP.Connect;
 begin
   inherited;
   if defaultDir <> '' then

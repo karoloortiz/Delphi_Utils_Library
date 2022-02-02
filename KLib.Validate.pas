@@ -47,7 +47,7 @@ uses
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
 //-------------------
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
-procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doens''t exists.');
+procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
 
 procedure validateThatAddressIsLocalhost(address: string; errMsg: string = 'The address does not match with the localhost ip.');
 procedure validateThatAddressIsNotLocalhost(address: string; errMsg: string = 'The address match with the localhost ip.');
@@ -61,12 +61,12 @@ procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials; errMsg:
 procedure validateThatThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64; errMsg: string = 'There is not enough space available on the Drive.');
 
 procedure validateThatDirNotExists(dirName: string; errMsg: string = 'Directory already exists.');
-procedure validateThatDirExists(dirName: string; errMsg: string = 'Directory doens''t exists.');
+procedure validateThatDirExists(dirName: string; errMsg: string = 'Directory doesn''t exists.');
 
-procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'File doens''t exists or it isn'' empty.');
+procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'File doesn''t exists or it isn'' empty.');
 
 procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File already exists.');
-procedure validateThatFileExists(fileName: string; errMsg: string = 'File doens''t exists.');
+procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn''t exists.');
 
 procedure validateThatIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName: string; errMsg: string = 'Node not exists.');
 procedure validateIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string; errMsg: string = 'Node not expected.');
@@ -79,10 +79,10 @@ procedure validateThatNotRunUnderWine(errMsg: string = 'Program is running under
 
 procedure validateThatWindowsArchitectureIsX64(errMsg: string = 'Windows architecture not is x64.');
 
-procedure validateThatUserIsAdmin(errMsg: string = 'User doens''t have administrator privileges.');
+procedure validateThatUserIsAdmin(errMsg: string = 'User doesn''t have administrator privileges.');
 procedure validateThatUserIsNotAdmin(errMsg: string = 'User have administrator privileges.');
 
-procedure validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: string = 'Key doens''t exists in HKEY_LOCAL_MACHINE.');
+procedure validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: string = 'Key doesn''t exists in HKEY_LOCAL_MACHINE.');
 procedure validateThatNotExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: string = 'Key exists in HKEY_LOCAL_MACHINE.');
 
 procedure validateThatIsWindowsSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
@@ -129,7 +129,7 @@ begin
   end;
 end;
 
-procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doens''t exists.');
+procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
 var
   _errMsg: string;
 begin
@@ -222,7 +222,7 @@ begin
   end;
 end;
 
-procedure validateThatDirExists(dirName: string; errMsg: string = 'Directory doens''t exists.');
+procedure validateThatDirExists(dirName: string; errMsg: string = 'Directory doesn''t exists.');
 var
   _errMsg: string;
 begin
@@ -233,7 +233,7 @@ begin
   end;
 end;
 
-procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'File doens''t exists or it isn'' empty.');
+procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'File doesn''t exists or it isn'' empty.');
 var
   _errMsg: string;
 begin
@@ -255,7 +255,7 @@ begin
   end;
 end;
 
-procedure validateThatFileExists(fileName: string; errMsg: string = 'File doens''t exists.');
+procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn''t exists.');
 var
   _errMsg: string;
 begin
@@ -334,7 +334,7 @@ begin
   end;
 end;
 
-procedure validateThatUserIsAdmin(errMsg: string = 'User doens''t have administrator privileges.');
+procedure validateThatUserIsAdmin(errMsg: string = 'User doesn''t have administrator privileges.');
 begin
   if not checkIfUserIsAdmin then
   begin
@@ -350,7 +350,7 @@ begin
   end;
 end;
 
-procedure validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: string = 'Key doens''t exists in HKEY_LOCAL_MACHINE.');
+procedure validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: string = 'Key doesn''t exists in HKEY_LOCAL_MACHINE.');
 var
   _errMsg: string;
 begin

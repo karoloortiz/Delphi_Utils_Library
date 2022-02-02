@@ -43,6 +43,11 @@ uses
   Vcl.Imaging.pngimage,
   System.SysUtils, System.Classes;
 
+type
+  TStringListHelper = class helper for TStringList
+    procedure AddStrings(strings: array of string); overload;
+  end;
+
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
@@ -83,7 +88,7 @@ function getValidTelephoneNumber(number: string): string;
 function getRandString(size: integer = 5): string;
 
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TstringList;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
 function getCombinedPath(path1: string; path2: string): string;
 
@@ -113,8 +118,10 @@ function getCSVFieldFromString(mainString: string; index: integer; delimiter: Ch
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
 function strToStrFixedWordWrap(source: string; fixedLen: Integer): string;
-function strToStringList(source: string; fixedLen: Integer): TstringList;
-function stringToStringListWithDelimiter(value: string; delimiter: Char): TstringList;
+function strToStringList(source: string; fixedLen: Integer): TStringList;
+function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
+
+function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
 procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string); overload;
@@ -141,11 +148,25 @@ uses
   Vcl.ExtCtrls,
   System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants;
 
+procedure TStringListHelper.AddStrings(strings: array of string);
+var
+  _stringList: TStringList;
+begin
+  _stringList := arrayOfStringToTStringList(strings);
+  try
+    AddStrings(_stringList);
+  finally
+    begin
+      FreeAndNil(_stringList);
+    end;
+  end;
+end;
+
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 const
   IGNORE_CASE = true;
 var
-  _files: TstringList;
+  _files: TStringList;
   _file: string;
   _fileName: string;
 begin
@@ -196,9 +217,9 @@ end;
 function getTextFromFile(fileName: string): string;
 var
   text: string;
-  _stringList: TstringList;
+  _stringList: TStringList;
 begin
-  _stringList := TstringList.Create;
+  _stringList := TStringList.Create;
   try
     _stringList.LoadFromFile(fileName);
     text := _stringList.Text;
@@ -368,14 +389,7 @@ var
   _MD5ChecksumFile: string;
 begin
   _MD5ChecksumFile := getMD5ChecksumFile(fileName);
-  if UpperCase(_MD5ChecksumFile) = UpperCase(MD5) then
-  begin
-    result := true;
-  end
-  else
-  begin
-    result := false;
-  end;
+  Result := (UpperCase(_MD5ChecksumFile) = UpperCase(MD5));
 end;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
@@ -444,12 +458,12 @@ end;
 function getResourceAsString(resource: TResource): string;
 var
   resourceStream: TResourceStream;
-  _stringList: TstringList;
+  _stringList: TStringList;
   resourceAsString: string;
 begin
   resourceAsString := '';
   resourceStream := getResourceAsStream(resource);
-  _stringList := TstringList.Create;
+  _stringList := TStringList.Create;
   _stringList.LoadFromStream(resourceStream);
   resourceAsString := _stringList.Text;
   resourceStream.Free;
@@ -604,7 +618,7 @@ const
   ERR_MSG = 'No files found.';
 var
   fileName: string;
-  _fileNamesList: TstringList;
+  _fileNamesList: TStringList;
 begin
   _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
   if _fileNamesList.Count > 0 then
@@ -623,15 +637,15 @@ begin
   Result := fileName;
 end;
 
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TstringList;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 var
-  fileNamesList: TstringList;
+  fileNamesList: TStringList;
   _searchRec: TSearchRec;
   _mask: string;
   _fileExists: boolean;
   _fileName: string;
 begin
-  fileNamesList := TstringList.Create;
+  fileNamesList := TStringList.Create;
   _mask := getCombinedPath(dirName, '*');
   if fileType <> EMPTY_STRING then
   begin
@@ -850,7 +864,7 @@ function getCSVFieldFromString(mainString: string; index: integer; delimiter: Ch
 const
   ERR_MSG = 'Field index out of range.';
 var
-  _stringList: TstringList;
+  _stringList: TStringList;
   _result: string;
 begin
   _stringList := stringToStringListWithDelimiter(mainString, delimiter);
@@ -872,10 +886,10 @@ end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
 var
-  _stringList: TstringList;
+  _stringList: TStringList;
   _result: integer;
 begin
-  _stringList := TstringList.Create;
+  _stringList := TStringList.Create;
   _stringList.Text := source;
   _result := _stringList.Count;
   FreeAndNil(_stringList);
@@ -885,7 +899,7 @@ end;
 
 function strToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 var
-  _stringList: TstringList;
+  _stringList: TStringList;
   _text: string;
   _result: string;
 begin
@@ -898,13 +912,13 @@ begin
   Result := _result;
 end;
 
-function strToStringList(source: string; fixedLen: integer): TstringList;
+function strToStringList(source: string; fixedLen: integer): TStringList;
 var
-  stringList: TstringList;
+  stringList: TStringList;
   i: Integer;
   _sourceLen: Integer;
 begin
-  stringList := TstringList.Create;
+  stringList := TStringList.Create;
   stringList.LineBreak := #13;
   if fixedLen = 0 then
   begin
@@ -924,17 +938,31 @@ begin
   result := stringList;
 end;
 
-function stringToStringListWithDelimiter(value: string; delimiter: Char): TstringList;
+function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 var
-  _stringList: TstringList;
+  _stringList: TStringList;
 begin
-  _stringList := TstringList.Create;
+  _stringList := TStringList.Create;
   _stringList.Clear;
   _stringList.Delimiter := delimiter;
   _stringList.StrictDelimiter := True;
   _stringList.DelimitedText := value;
 
   Result := _stringList;
+end;
+
+function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
+var
+  stringList: TStringList;
+  _string: string;
+begin
+  stringList := TStringList.Create;
+  for _string in arrayOfStrings do
+  begin
+    stringList.Add(_string);
+  end;
+
+  Result := stringList;
 end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);

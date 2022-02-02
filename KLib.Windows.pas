@@ -79,11 +79,15 @@ type
     );
 
 procedure openWebPageWithDefaultBrowser(url: string);
+function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_NORMAL;
+  exceptionIfFunctionFails: boolean = false): integer;
 
 function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
+function myShellExecute(handle: integer; operation: string; fileName: string; params: string;
+  directory: string; showWindowType: TShowWindowType; exceptionIfFunctionFails: boolean = false): integer;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
@@ -168,22 +172,36 @@ const
   ERR_MSG = 'Error downloading file.';
 var
   _downloadSuccess: boolean;
+  _links: TStringList;
+  i: integer;
 begin
-  with info do
+  if forceOverwrite then
   begin
-    if forceOverwrite then
+    deleteFileIfExists(info.fileName);
+  end;
+
+  _downloadSuccess := false;
+  i := 0;
+  _links := TStringList.Create;
+  _links.Add(info.link);
+  _links.AddStrings(info.alternative_links);
+  try
+    while (not _downloadSuccess) and (i < _links.Count) do
     begin
-      deleteFileIfExists(fileName);
+      _downloadSuccess := URLDownloadToFile(nil, pChar(_links[i]), pchar(info.fileName), 0, nil) = S_OK;
+      Inc(i);
     end;
-    _downloadSuccess := URLDownloadToFile(nil, pChar(link), pchar(fileName), 0, nil) = S_OK;
-    if not _downloadSuccess then
-    begin
-      raise Exception.Create(ERR_MSG);
-    end;
-    if md5 <> '' then
-    begin
-      validateMD5File(fileName, md5, ERR_MSG);
-    end;
+  finally
+    FreeAndNil(_links);
+  end;
+
+  if not _downloadSuccess then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+  if info.MD5 <> '' then
+  begin
+    validateMD5File(info.fileName, info.MD5, ERR_MSG);
   end;
 end;
 
@@ -341,30 +359,51 @@ end;
 
 procedure openWebPageWithDefaultBrowser(url: string);
 begin
-  ShellExecute(0, 'open', PChar(url), nil, nil, Winapi.Windows.SW_NORMAL);
+  shellExecuteOpen(url);
+end;
+
+function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_NORMAL;
+  exceptionIfFunctionFails: boolean = false): integer;
+var
+  returnCode: integer;
+begin
+  returnCode := myShellExecute(0, 'open', fileName, params, directory, showWindowType, exceptionIfFunctionFails);
+  Result := returnCode;
 end;
 
 function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 var
-  _result: integer;
+  returnCode: integer;
 begin
-  _result := shellExecuteExe(fileName, params, showWindowType, exceptionIfFunctionFails, 'runas');
-  Result := _result;
+  returnCode := shellExecuteExe(fileName, params, showWindowType, exceptionIfFunctionFails, 'runas');
+  Result := returnCode;
 end;
 
 function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
   exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 var
-  _returnCode: integer;
+  returnCode: integer;
+  _directory: string;
+begin
+  _directory := ExtractFileDir(fileName);
+  returnCode := myShellExecute(0, operation, getDoubleQuotedString(fileName), params, _directory, showWindowType, exceptionIfFunctionFails);
+
+  Result := returnCode;
+end;
+
+function myShellExecute(handle: integer; operation: string; fileName: string; params: string;
+  directory: string; showWindowType: TShowWindowType; exceptionIfFunctionFails: boolean = false): integer;
+var
+  returnCode: integer;
   errMsg: string;
 begin
-  _returnCode := shellExecute(0, pchar(operation), pchar(getDoubleQuotedString(fileName)), PCHAR(trim(params)),
-    pchar(ExtractFileDir(fileName)), integer(showWindowType));
+  returnCode := shellExecute(handle, pchar(operation), pchar(fileName), PCHAR(trim(params)),
+    pchar(directory), integer(showWindowType));
 
   if exceptionIfFunctionFails then
   begin
-    case _returnCode of
+    case returnCode of
       0:
         errMsg := 'The operating system is out of memory or resources.';
       2:
@@ -415,13 +454,13 @@ begin
     end;
   end;
 
-  result := _returnCode;
+  Result := returnCode;
 end;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 begin
-  result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindowType, exceptionIfReturnCodeIsNot0);
+  Result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindowType, exceptionIfReturnCodeIsNot0);
 end;
 
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
@@ -1435,7 +1474,9 @@ var
   decimalSeparator: Char;
 begin
   FillChar(_buffer, SizeOf(_buffer), 0);
+{$warn SYMBOL_PLATFORM OFF}
   Win32Check(GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_SDECIMAL, @_buffer[1], SizeOf(_buffer)) <> 0);
+{$warn SYMBOL_PLATFORM ON}
   decimalSeparator := _buffer[1];
 
   Result := decimalSeparator;
