@@ -586,7 +586,7 @@ var
   strFixedWordWrap: string;
 begin
   _numberMaxCharactersInWidth := getNumberOfCharactersInWidth(width, font);
-  strFixedWordWrap := strToStrFixedWordWrap(source, _numberMaxCharactersInWidth);
+  strFixedWordWrap := stringToStrFixedWordWrap(source, _numberMaxCharactersInWidth);
   result := strFixedWordWrap;
 end;
 

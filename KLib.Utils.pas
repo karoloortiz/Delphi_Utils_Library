@@ -90,6 +90,8 @@ function getRandString(size: integer = 5): string;
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
+procedure saveToFile(source: string; fileName: string);
+
 function getCombinedPath(path1: string; path2: string): string;
 
 function getCurrentDayOfWeekAsString: string;
@@ -117,9 +119,10 @@ function getCSVFieldFromStringAsInteger(mainString: string; index: integer; deli
 function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
-function strToStrFixedWordWrap(source: string; fixedLen: Integer): string;
-function strToStringList(source: string; fixedLen: Integer): TStringList;
+function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
+function stringToStringListWithFixedLen(source: string; fixedLen: Integer): TStringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
+function stringToTStringList(source: string): TStringList;
 
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 
@@ -666,6 +669,18 @@ begin
   Result := fileNamesList;
 end;
 
+procedure saveToFile(source: string; fileName: string);
+var
+  _stringList: TStringList;
+begin
+  try
+    _stringList := stringToTStringList(source);
+    _stringList.SaveToFile(fileName);
+  finally
+    FreeAndNil(_stringList);
+  end;
+end;
+
 function getCombinedPath(path1: string; path2: string): string;
 begin
   Result := TPath.Combine(path1, path2);
@@ -889,21 +904,20 @@ var
   _stringList: TStringList;
   _result: integer;
 begin
-  _stringList := TStringList.Create;
-  _stringList.Text := source;
+  _stringList := stringToTStringList(source);
   _result := _stringList.Count;
   FreeAndNil(_stringList);
 
   Result := _result;
 end;
 
-function strToStrFixedWordWrap(source: string; fixedLen: Integer): string;
+function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 var
   _stringList: TStringList;
   _text: string;
   _result: string;
 begin
-  _stringList := strToStringList(source, fixedLen);
+  _stringList := stringToStringListWithFixedLen(source, fixedLen);
   _text := _stringList.Text;
   FreeAndNil(_stringList);
   Delete(_text, length(_text), 1);
@@ -912,7 +926,7 @@ begin
   Result := _result;
 end;
 
-function strToStringList(source: string; fixedLen: integer): TStringList;
+function stringToStringListWithFixedLen(source: string; fixedLen: integer): TStringList;
 var
   stringList: TStringList;
   i: Integer;
@@ -948,6 +962,15 @@ begin
   _stringList.StrictDelimiter := True;
   _stringList.DelimitedText := value;
 
+  Result := _stringList;
+end;
+
+function stringToTStringList(source: string): TStringList;
+var
+  _stringList: TStringList;
+begin
+  _stringList := TStringList.Create;
+  _stringList.Text := source;
   Result := _stringList;
 end;
 
