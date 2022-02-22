@@ -19,14 +19,19 @@ implementation
 
 constructor TMyIdHTTP.Create(AOwner: TComponent);
 begin
-  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  inherited Create(AOwner);
+  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(Self);
   with IOHandler as TIdSSLIOHandlerSocketOpenSSL do
   begin
     OnStatusInfoEx := Self.OnStatusInfoEx;
     SSLOptions.Method := sslvSSLv23;
-    SSLOptions.SSLVersions := [sslvTLSv1_2, sslvTLSv1_1, sslvTLSv1];
+    SSLOptions.SSLVersions := [
+      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
+      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
+      TIdSSLVersion.sslvSSLv3];
   end;
-  inherited Create(AOwner);
+
+  HandleRedirects := true;
 end;
 
 procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;

@@ -78,6 +78,7 @@ const
   NOT_FORCE_OVERWRITE = NOT_FORCE;
   FORCE = true;
   FORCE_OVERWRITE = FORCE;
+  FORCE_DELETE = FORCE;
 
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input

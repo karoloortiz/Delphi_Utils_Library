@@ -64,6 +64,7 @@ procedure downloadZipFileAndExtract(info: TDownloadInfo; forceOverwrite: boolean
   destinationPath: string; forceDeleteZipFile: boolean = false);
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 procedure getOpenSSLDLLsFromResource;
+procedure tryToDeleteOpenSSLDLLsIfExists;
 procedure deleteOpenSSLDLLsIfExists;
 
 function getMD5ChecksumFile(fileName: string): string;
@@ -234,53 +235,65 @@ end;
 procedure downloadZipFileAndExtract(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
 var
-  pathZipFile: string;
+  _ZipFileName: string;
 begin
   downloadFile(info, forceOverwrite);
-  pathZipFile := getCombinedPath(destinationPath, info.fileName);
-  unzip(pathZipFile, destinationPath, forceDeleteZipFile);
+  _ZipFileName := getCombinedPath(destinationPath, info.fileName);
+  unzip(_ZipFileName, destinationPath, forceDeleteZipFile);
 end;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 const
   ERR_MSG = 'Error downloading file.';
 var
-  indyHTTP: TIdHTTP;
-  ioHandler: TIdSSLIOHandlerSocketOpenSSL;
-  memoryStream: TMemoryStream;
+  _downloadSuccess: boolean;
+  _HTTP: TMyIdHTTP;
+  _memoryStream: TMemoryStream;
+  _links: TStringList;
+  i: integer;
 begin
-  with info do
+  if forceOverwrite then
   begin
-    if forceOverwrite then
+    deleteFileIfExists(info.fileName);
+  end;
+
+  _downloadSuccess := false;
+  i := 0;
+  _HTTP := TMyIdHTTP.Create(nil);
+  _memoryStream := TMemoryStream.Create;
+  _links := TStringList.Create;
+  _links.Add(info.link);
+  _links.AddStrings(info.alternative_links);
+  try
+    while (not _downloadSuccess) and (i < _links.Count) do
     begin
-      deleteFileIfExists(fileName);
-    end;
-
-    indyHTTP := TIdHTTP.Create(nil);
-    ioHandler := TIdSSLIOHandlerSocketOpenSSL.Create(indyHTTP);
-    ioHandler.SSLOptions.SSLVersions := [
-      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
-      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
-      TIdSSLVersion.sslvSSLv3];
-    indyHTTP.IOHandler := ioHandler;
-    indyHTTP.HandleRedirects := true;
-
-    memoryStream := TMemoryStream.Create;
-    indyHTTP.Get(link, memoryStream);
-    memoryStream.SaveToFile(fileName);
-
-    FreeAndNil(memoryStream);
-    ioHandler.Close;
-    FreeAndNil(ioHandler);
-    FreeAndNil(indyHTTP);
-
-    if md5 <> '' then
-    begin
-      if not checkMD5File(fileName, md5) then
-      begin
-        raise Exception.Create(ERR_MSG);
+      try
+        _HTTP.Get(_links[i], _memoryStream);
+        _downloadSuccess := true;
+      except
+        on E: Exception do
+        begin
+          _memoryStream.Clear;
+        end;
       end;
+      Inc(i);
     end;
+
+    if not _downloadSuccess then
+    begin
+      raise Exception.Create(ERR_MSG);
+    end;
+
+    _memoryStream.SaveToFile(info.fileName);
+  finally
+    _HTTP.Free;
+    FreeAndNil(_memoryStream);
+    FreeAndNil(_links);
+  end;
+
+  if info.MD5 <> '' then
+  begin
+    validateMD5File(info.fileName, info.MD5, ERR_MSG);
   end;
 end;
 
@@ -315,6 +328,11 @@ begin
   end;
 end;
 
+procedure tryToDeleteOpenSSLDLLsIfExists;
+begin
+  tryToExecuteProcedure(deleteOpenSSLDLLsIfExists);
+end;
+
 procedure deleteOpenSSLDLLsIfExists;
 var
   _path_libeay32: string;
@@ -333,14 +351,24 @@ end;
 
 function getMD5ChecksumFile(fileName: string): string;
 var
-  MD5: TIdHashMessageDigest5;
-  fileStream: TFileStream;
+  MD5: string;
+  _IdHashMessageDigest: TIdHashMessageDigest5;
+  _fileStream: TFileStream;
 begin
-  MD5 := TIdHashMessageDigest5.Create;
-  fileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-  Result := MD5.HashStreamAsHex(fileStream);
-  fileStream.Free;
-  MD5.Free;
+  validateThatFileExists(fileName);
+
+  _IdHashMessageDigest := TIdHashMessageDigest5.Create;
+  _fileStream := TFileStream.Create(fileName, fmOpenRead or fmShareDenyWrite);
+  try
+    MD5 := _IdHashMessageDigest.HashStreamAsHex(_fileStream);
+  finally
+    begin
+      _fileStream.Free;
+      _IdHashMessageDigest.Free;
+    end;
+  end;
+
+  Result := MD5;
 end;
 
 end.

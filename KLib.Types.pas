@@ -64,9 +64,10 @@ type
 
   TDownloadInfo = record
     link: string;
+    alternative_links: array of string;
     fileName: string;
     typeFile: string;
-    md5: string;
+    MD5: string;
   end;
 
   TArrayOfDownloadInfo = array of TDownloadInfo;
