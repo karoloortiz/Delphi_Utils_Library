@@ -347,9 +347,9 @@ function checkIfIsSubDir(subDir: string; mainDir: string): boolean;
 var
   _isSubDir: Boolean;
 begin
-  mainDir := LowerCase(mainDir);
   subDir := LowerCase(subDir);
-  _isSubDir := AnsiStartsStr(subDir, mainDir);
+  mainDir := LowerCase(mainDir);
+  _isSubDir := AnsiStartsStr(mainDir, subDir);
   result := _isSubDir;
 end;
 
