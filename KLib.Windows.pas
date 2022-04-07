@@ -61,38 +61,38 @@ function IsUserAnAdmin: boolean; external shell32; //KEPT THE SIGNATURE, NOT REN
 
 type
   TShowWindowType = (
-    SW_HIDE = Winapi.Windows.SW_HIDE,
-    SW_SHOWNORMAL = Winapi.Windows.SW_SHOWNORMAL,
-    SW_NORMAL = Winapi.Windows.SW_NORMAL,
-    SW_SHOWMINIMIZED = Winapi.Windows.SW_SHOWMINIMIZED,
-    SW_SHOWMAXIMIZED = Winapi.Windows.SW_SHOWMAXIMIZED,
-    SW_MAXIMIZE = Winapi.Windows.SW_MAXIMIZE,
-    SW_SHOWNOACTIVATE = Winapi.Windows.SW_SHOWNOACTIVATE,
-    SW_SHOW = Winapi.Windows.SW_SHOW,
-    SW_MINIMIZE = Winapi.Windows.SW_MINIMIZE,
-    SW_SHOWMINNOACTIVE = Winapi.Windows.SW_SHOWMINNOACTIVE,
-    SW_SHOWNA = Winapi.Windows.SW_SHOWNA,
-    SW_RESTORE = Winapi.Windows.SW_RESTORE,
-    SW_SHOWDEFAULT = Winapi.Windows.SW_SHOWDEFAULT,
-    SW_FORCEMINIMIZE = Winapi.Windows.SW_FORCEMINIMIZE,
-    SW_MAX = Winapi.Windows.SW_MAX
+    _SW_HIDE = Winapi.Windows.SW_HIDE,
+    _SW_SHOWNORMAL = Winapi.Windows.SW_SHOWNORMAL,
+    _SW_NORMAL = Winapi.Windows.SW_NORMAL,
+    _SW_SHOWMINIMIZED = Winapi.Windows.SW_SHOWMINIMIZED,
+    _SW_SHOWMAXIMIZED = Winapi.Windows.SW_SHOWMAXIMIZED,
+    _SW_MAXIMIZE = Winapi.Windows.SW_MAXIMIZE,
+    _SW_SHOWNOACTIVATE = Winapi.Windows.SW_SHOWNOACTIVATE,
+    _SW_SHOW = Winapi.Windows.SW_SHOW,
+    _SW_MINIMIZE = Winapi.Windows.SW_MINIMIZE,
+    _SW_SHOWMINNOACTIVE = Winapi.Windows.SW_SHOWMINNOACTIVE,
+    _SW_SHOWNA = Winapi.Windows.SW_SHOWNA,
+    _SW_RESTORE = Winapi.Windows.SW_RESTORE,
+    _SW_SHOWDEFAULT = Winapi.Windows.SW_SHOWDEFAULT,
+    _SW_FORCEMINIMIZE = Winapi.Windows.SW_FORCEMINIMIZE,
+    _SW_MAX = Winapi.Windows.SW_MAX
     );
 
 procedure openWebPageWithDefaultBrowser(url: string);
-function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_NORMAL;
+function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_NORMAL;
   exceptionIfFunctionFails: boolean = false): integer;
 
-function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
-function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_HIDE;
   exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 function myShellExecute(handle: integer; operation: string; fileName: string; params: string;
   directory: string; showWindowType: TShowWindowType; exceptionIfFunctionFails: boolean = false): integer;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
-  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
-  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 
 function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
@@ -157,6 +157,9 @@ procedure raiseLastSysErrorMessage;
 function getLastSysErrorMessage: string;
 
 function getLocaleDecimalSeparator: char;
+
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 
 implementation
 
@@ -362,7 +365,7 @@ begin
   shellExecuteOpen(url);
 end;
 
-function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_NORMAL;
+function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_NORMAL;
   exceptionIfFunctionFails: boolean = false): integer;
 var
   returnCode: integer;
@@ -371,7 +374,7 @@ begin
   Result := returnCode;
 end;
 
-function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExeAsAdmin(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_HIDE;
   exceptionIfFunctionFails: boolean = false): integer;
 var
   returnCode: integer;
@@ -380,7 +383,7 @@ begin
   Result := returnCode;
 end;
 
-function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType.SW_HIDE;
+function shellExecuteExe(fileName: string; params: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_HIDE;
   exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 var
   returnCode: integer;
@@ -458,13 +461,13 @@ begin
 end;
 
 function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
-  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 begin
   Result := shellExecuteExAndWait(CMD_EXE_NAME, params, runAsAdmin, showWindowType, exceptionIfReturnCodeIsNot0);
 end;
 
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
-  showWindowType: TShowWindowType = TShowWindowType.SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+  showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
   _shellExecuteInfo: TShellExecuteInfo;
 
@@ -1480,6 +1483,25 @@ begin
   decimalSeparator := _buffer[1];
 
   Result := decimalSeparator;
+end;
+
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+var
+  _currentProcess: THandle;
+begin
+  _currentProcess := GetCurrentProcess;
+  myTerminateProcess(_currentProcess, exitCode, raiseExceptionEnabled);
+end;
+
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+var
+  _success: LongBool;
+begin
+  _success := TerminateProcess(processHandle, exitCode);
+  if not _success and raiseExceptionEnabled then
+  begin
+    raiseLastSysErrorMessage;
+  end;
 end;
 
 end.

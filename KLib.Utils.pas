@@ -440,13 +440,19 @@ end;
 procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string);
 var
   _resource: TResource;
+  _destinationFileName: string;
 begin
   with _resource do
   begin
     name := nameResource;
     _type := typeResource;
   end;
-  getResourceAsFile(_resource, destinationFileName);
+  _destinationFileName := destinationFileName;
+  if not LowerCase(_destinationFileName).EndsWith('.' + LowerCase(typeResource)) then
+  begin
+    _destinationFileName := _destinationFileName + '.' + LowerCase(typeResource);
+  end;
+  getResourceAsFile(_resource, _destinationFileName);
 end;
 
 procedure getResourceAsFile(resource: TResource; destinationFileName: string);
