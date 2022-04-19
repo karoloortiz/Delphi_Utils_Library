@@ -46,11 +46,15 @@ type
   THostPort = record
     host: string;
     port: integer;
+
+    procedure clear;
   end;
 
   TCredentials = record
     username: string;
     password: string;
+
+    procedure clear;
   end;
 
   TIdFTPTransferType = (ftASCII, ftBinary);
@@ -60,6 +64,8 @@ type
     server: string;
     pathFTPDir: string;
     transferType: TIdFTPTransferType;
+
+    procedure clear;
   end;
 
   TDownloadInfo = record
@@ -68,6 +74,8 @@ type
     fileName: string;
     typeFile: string;
     MD5: string;
+
+    procedure clear;
   end;
 
   TArrayOfDownloadInfo = array of TDownloadInfo;
@@ -75,11 +83,15 @@ type
   TPIDCredentials = record
     ownerUserName: string;
     domain: string;
+
+    procedure clear;
   end;
 
   TColorButtom = record
     enabled: TColor;
     disabled: TColor;
+
+    procedure clear;
   end;
 
   TPosition = record
@@ -87,22 +99,30 @@ type
     bottom: integer;
     left: integer;
     right: integer;
+
+    procedure clear;
   end;
 
   TSize = record
     width: integer;
     height: integer;
+
+    procedure clear;
   end;
 
   TDateTimeRange = record
     _start: TDateTime;
     _end: TDateTime;
     function getAsString: string;
+
+    procedure clear;
   end;
 
   TResource = record
     name: string;
     _type: string;
+
+    procedure clear;
   end;
 
   TTypeOfProcedure = (_procedure, _method, _anonymousMethod);
@@ -121,12 +141,16 @@ type
   TCallBacks = record
     resolve: TCallBack;
     reject: TCallBack;
+
+    procedure clear;
   end;
 
   TAsyncifyMethodReply = record
     handle: THandle;
     msg_resolve: Cardinal;
     msg_reject: Cardinal;
+
+    procedure clear;
   end;
 
   TAsyncMethodStatus = (created, pending, fulfilled, rejected);
@@ -150,6 +174,90 @@ begin
   _startDataTimeAsString := DateTimeToStr(self._start);
   _endDataTimeAsString := DateTimeToStr(self._end);
   Result := _startDataTimeAsString + ' - ' + _endDataTimeAsString;
+end;
+
+procedure THostPort.clear;
+const
+  EMPTY: THostPort = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TCredentials.clear;
+const
+  EMPTY: TCredentials = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TFTPCredentials.clear;
+const
+  EMPTY: TFTPCredentials = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TDownloadInfo.clear;
+const
+  EMPTY: TDownloadInfo = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TPIDCredentials.clear;
+const
+  EMPTY: TPIDCredentials = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TColorButtom.clear;
+const
+  EMPTY: TColorButtom = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TPosition.clear;
+const
+  EMPTY: TPosition = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TSize.clear;
+const
+  EMPTY: TSize = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TDateTimeRange.clear;
+const
+  EMPTY: TDateTimeRange = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TResource.clear;
+const
+  EMPTY: TResource = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TCallBacks.clear;
+const
+  EMPTY: TCallBacks = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TAsyncifyMethodReply.clear;
+const
+  EMPTY: TAsyncifyMethodReply = ();
+begin
+  Self := EMPTY;
 end;
 
 end.
