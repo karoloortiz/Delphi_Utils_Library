@@ -524,7 +524,8 @@ var
 begin
   with FTPCredentials do
   begin
-    _result := (server <> EMPTY_STRING) and (credentials.username <> EMPTY_STRING) and (credentials.password <> EMPTY_STRING);
+    _result := (server <> EMPTY_STRING) and (credentials.username <> EMPTY_STRING) and (credentials.password <> EMPTY_STRING)
+      and (port >= 0);
   end;
 
   Result := _result;

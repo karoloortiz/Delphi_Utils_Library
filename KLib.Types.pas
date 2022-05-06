@@ -63,6 +63,7 @@ type
     credentials: TCredentials;
     server: string;
     pathFTPDir: string;
+    port: integer;
     transferType: TIdFTPTransferType;
 
     procedure clear;

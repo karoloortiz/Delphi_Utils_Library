@@ -79,15 +79,18 @@ var
 begin
   validateRequiredFTPProperties(FTPCredentials);
   connection := TMyIdFTP.Create(nil);
-  with FTPCredentials do
+  with connection do
   begin
-    connection.host := server;
-    with credentials do
-    begin
-      connection.username := username;
-      connection.password := password;
-    end;
-    connection.TransferType := TIdFTPTransferType(transferType);
+    Host := FTPCredentials.server;
+    Username := FTPCredentials.credentials.username;
+    Password := FTPCredentials.credentials.password;
+    Port := FTPCredentials.port;
+    TransferType := TIdFTPTransferType(FTPCredentials.transferType);
+  end;
+
+  if connection.Port = 0 then
+  begin
+    connection.Port := FTP_DEFAULT_PORT;
   end;
 
   //todo create function checkIFEnumIsInValidRange
