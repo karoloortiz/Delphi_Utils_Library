@@ -62,7 +62,8 @@ implementation
 
 uses
   KLib.Utils, KLib.Indy, KLib.Validate,
-  IdFTPCommon;
+  IdFTPCommon,
+  System.Classes;
 
 function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 var

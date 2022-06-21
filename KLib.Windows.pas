@@ -40,7 +40,7 @@ interface
 
 uses
   KLib.Types, Klib.Constants,
-  Winapi.Windows, Winapi.ShellApi, Winapi.AccCtrl,
+  Winapi.Windows, Winapi.ShellApi, Winapi.AccCtrl, Winapi.ACLAPI,
   System.Classes;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
@@ -101,13 +101,21 @@ procedure addTCP_IN_FirewallException(ruleName: string; port: Word; description:
   executable: string = '');
 procedure deleteFirewallException(ruleName: string);
 
+//#####################################################################################
 type
   TExplicitAccess = EXPLICIT_ACCESS_A;
 procedure grantAllPermissionsNetToTheObjectForTheEveryoneGroup(myObject: string);
+procedure grantAllPermissionsNetToTheObjectForTheUsersGroup(myObject: string);
 procedure grantAllPermissionNetToTheObject(windowsGroupOrUser: string; myObject: string);
+//--------------------------------------------------------------------------------------
 procedure grantAllPermissionsToTheObjectForTheEveryoneGroup(myObject: string);
 procedure grantAllPermissionsToTheObjectForTheUsersGroup(myObject: string);
 procedure grantAllPermissionsToTheObject(windowsGroupOrUser: string; myObject: string);
+//--------------------------------------------------------------------------------------
+procedure grantAllPermissionsToTheObjectForTheEveryoneGroup2(myObject: string);
+procedure grantAllPermissionsToTheObjectForTheUsersGroup2(myObject: string);
+procedure grantAllPermissionsToTheObject2(windowsGroupOrUser: string; myObject: string);
+//#################################################################################
 
 function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
 
@@ -161,12 +169,18 @@ function getLocaleDecimalSeparator: char;
 procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 
+//################################################################################à
+function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
+  SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
+  var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
+  external 'ADVAPI32.DLL' name 'GetNamedSecurityInfoW';
+
 implementation
 
 uses
   KLib.Utils, KLib.Validate,
   Vcl.Forms,
-  Winapi.ACLAPI, Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
+  Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
   System.SysUtils, System.Win.ComObj, System.Win.Registry,
   IdTCPClient;
 
@@ -730,6 +744,11 @@ begin
   grantAllPermissionNetToTheObject(EVERYONE_GROUP, myObject);
 end;
 
+procedure grantAllPermissionsNetToTheObjectForTheUsersGroup(myObject: string);
+begin
+  grantAllPermissionNetToTheObject(USERS_GROUP, myObject);
+end;
+
 procedure grantAllPermissionNetToTheObject(windowsGroupOrUser: string; myObject: string);
 var
   NewDacl, OldDacl: PACl;
@@ -738,7 +757,7 @@ var
 begin
   validateThatWindowsGroupOrUserExists(windowsGroupOrUser);
 
-  GetNamedSecurityInfo(PChar(myObject), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
+  fixedGetNamedSecurityInfo(PChar(myObject), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, @OldDacl, nil, SD);
   BuildExplicitAccessWithName(@EA, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT);
   SetEntriesInAcl(1, @EA, OldDacl, NewDacl);
   SetNamedSecurityInfo(PChar(myObject), SE_LMSHARE, DACL_SECURITY_INFORMATION, nil, nil, NewDacl, nil);
@@ -763,12 +782,29 @@ var
 begin
   validateThatWindowsGroupOrUserExists(windowsGroupOrUser);
 
-  GetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @oldDACL,
+  fixedGetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, @oldDACL,
     nil, securityDescriptor);
   BuildExplicitAccessWithName(@explicitAccess, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS,
     SUB_CONTAINERS_AND_OBJECTS_INHERIT);
   SetEntriesInAcl(1, @explicitAccess, oldDACL, newDACL);
   SetNamedSecurityInfo(PChar(myObject), SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nil, nil, newDACL, nil);
+end;
+
+procedure grantAllPermissionsToTheObjectForTheEveryoneGroup2(myObject: string);
+begin
+  grantAllPermissionsToTheObject2(EVERYONE_GROUP, myObject);
+end;
+
+procedure grantAllPermissionsToTheObjectForTheUsersGroup2(myObject: string);
+begin
+  grantAllPermissionsToTheObject2(USERS_GROUP, myObject);
+end;
+
+procedure grantAllPermissionsToTheObject2(windowsGroupOrUser: string; myObject: string);
+begin
+  validateThatWindowsGroupOrUserExists(windowsGroupOrUser);
+
+  shellExecuteExeAsAdmin('icacls', getDoubleQuotedString(myObject) + ' /grant ' + getDoubleQuotedString(windowsGroupOrUser) + ':(OI)(CI)F /T');
 end;
 
 function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
