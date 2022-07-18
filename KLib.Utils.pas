@@ -43,11 +43,7 @@ uses
   Vcl.Imaging.pngimage,
   System.SysUtils, System.Classes;
 
-type
-  TStringListHelper = class helper for TStringList
-    procedure AddStrings(strings: array of string); overload;
-  end;
-
+procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
@@ -151,17 +147,27 @@ uses
   Vcl.ExtCtrls,
   System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants;
 
-procedure TStringListHelper.AddStrings(strings: array of string);
+procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
-  _stringList: TStringList;
+  _fileNamesList: TStringList;
+  _fileName: string;
+  _nameOfFile: string;
+  _keepFile: boolean;
 begin
-  _stringList := arrayOfStringToTStringList(strings);
+  validateThatDirExists(pathDir);
+  _fileNamesList := getFileNamesListInDir(pathDir);
   try
-    AddStrings(_stringList);
-  finally
+    for _fileName in _fileNamesList do
     begin
-      FreeAndNil(_stringList);
+      _nameOfFile := ExtractFileName(_fileName);
+      _keepFile := MatchText(_nameOfFile, filesToKeep);
+      if not _keepFile then
+      begin
+        deleteFileIfExists(_fileName);
+      end;
     end;
+  finally
+    FreeAndNil(_fileNamesList);
   end;
 end;
 
@@ -504,9 +510,9 @@ procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip
 const
   ERR_MSG = 'Invalid zip file.';
 begin
-  if tzipfile.isvalid(zipFileName) then
+  if TZipFile.isvalid(zipFileName) then
   begin
-    tzipfile.extractZipfile(zipFileName, destinationDir);
+    TZipFile.extractZipfile(zipFileName, destinationDir);
     if (deleteZipAfterUnzip) then
     begin
       deleteFileIfExists(zipFileName);
