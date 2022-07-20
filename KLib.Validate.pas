@@ -39,12 +39,19 @@ unit KLib.Validate;
 interface
 
 uses
-  KLib.Types,
+  KLib.Types, KLib.VC_Redist,
   Vcl.StdCtrls, Vcl.Forms,
   Xml.XMLIntf;
 
 //------REGEX----------
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
+//-------------------
+//------VCREDIST-------
+procedure validateVC_RedistIsInstalled(version: TVC_RedistVersion; errMsg: string = 'Microsoft Visual C++ Redistributable not correctly installed.');
+procedure validateThatVC_Redist2013IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 not correctly installed.');
+procedure validateThatVC_Redist2013X86IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 x86 not correctly installed.');
+procedure validateThatVC_Redist2013X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 x64 not correctly installed.');
+procedure validateThatVC_Redist2019X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2019 x64 not correctly installed.');
 //-------------------
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
@@ -107,6 +114,7 @@ uses
   KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Constants, KLib.Indy, KLib.XML,
   System.SysUtils;
 
+//############################----REGEX----##################################
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
 var
   _errMsg: string;
@@ -118,6 +126,48 @@ begin
   end;
 end;
 
+//############################-----VCREDIST-----##################################
+procedure validateVC_RedistIsInstalled(version: TVC_RedistVersion; errMsg: string = 'Microsoft Visual C++ Redistributable not correctly installed.');
+begin
+  if not checkIfVC_RedistIsInstalled(version) then
+  begin
+    raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatVC_Redist2013IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 not correctly installed.');
+begin
+  if not checkIfVC_Redist2013IsInstalled then
+  begin
+    raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatVC_Redist2013X86IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 x86 not correctly installed.');
+begin
+  if not checkIfVC_Redist2013X86IsInstalled then
+  begin
+    raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatVC_Redist2013X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 x64 not correctly installed.');
+begin
+  if not checkIfVC_Redist2013X64IsInstalled then
+  begin
+    raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatVC_Redist2019X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2019 x64 not correctly installed.');
+begin
+  if not checkIfVC_Redist2019X64IsInstalled then
+  begin
+    raise Exception.Create(errMsg);
+  end;
+end;
+
+//##################################################################à
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 var
   _errMsg: string;
