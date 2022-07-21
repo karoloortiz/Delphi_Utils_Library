@@ -83,6 +83,7 @@ const
   FORCE_OVERWRITE = FORCE;
   FORCE_DELETE = FORCE;
 
+  RAISE_EXCEPTION = true;
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
   //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
