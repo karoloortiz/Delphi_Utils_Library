@@ -40,7 +40,12 @@ interface
 
 uses
   Vcl.Graphics,
+  IdFTPCommon,
   System.Generics.Collections;
+
+const
+  ftASCII = TIdFTPTransferType(0);
+  ftBinary = TIdFTPTransferType(1);
 
 type
   THostPort = record
@@ -56,8 +61,6 @@ type
 
     procedure clear;
   end;
-
-  TIdFTPTransferType = (ftASCII, ftBinary);
 
   TFTPCredentials = record
     credentials: TCredentials;

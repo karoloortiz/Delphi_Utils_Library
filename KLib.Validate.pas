@@ -39,7 +39,7 @@ unit KLib.Validate;
 interface
 
 uses
-  KLib.Types, KLib.VC_Redist,
+  KLib.Types, KLib.VC_Redist, KLib.Constants,
   Vcl.StdCtrls, Vcl.Forms,
   Xml.XMLIntf;
 
@@ -94,7 +94,7 @@ procedure validateThatNotExistsKeyIn_HKEY_LOCAL_MACHINE(key: string; errMsg: str
 
 procedure validateThatIsWindowsSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
 procedure validateThatIsLinuxSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
-procedure validateThatIsSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
+procedure validateThatIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING; errMsg: string = 'It is not a subfolder.');
 
 procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm';
   errMsg: string = 'No window was found.');
@@ -111,7 +111,7 @@ procedure tryToValidate(validatingMethod: TMethod; errorLabel: TLabel);
 implementation
 
 uses
-  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Constants, KLib.Indy, KLib.XML,
+  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML,
   System.SysUtils;
 
 //############################----REGEX----##################################
@@ -438,9 +438,9 @@ begin
   end;
 end;
 
-procedure validateThatIsSubDir(subDir: string; mainDir: string; errMsg: string = 'It is not a subfolder.');
+procedure validateThatIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING; errMsg: string = 'It is not a subfolder.');
 begin
-  if not checkIfIsSubDir(subDir, mainDir) then
+  if not checkIfIsSubDir(subDir, mainDir, trailingPathDelimiter) then
   begin
     raise Exception.Create(errMsg);
   end;

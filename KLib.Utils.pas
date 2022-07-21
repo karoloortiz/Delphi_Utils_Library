@@ -61,7 +61,7 @@ procedure createDirIfNotExists(dirName: string);
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 function getPathInLinuxStyle(path: string): string;
 
-function checkIfIsSubDir(subDir: string; mainDir: string): boolean;
+function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 function getValidFullPath(fileName: string): string;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
@@ -361,7 +361,7 @@ var
 begin
   _subDir := getPathInLinuxStyle(subDir);
   _mainDir := getPathInLinuxStyle(mainDir);
-  _isSubDir := checkIfIsSubDir(_subDir, _mainDir);
+  _isSubDir := checkIfIsSubDir(_subDir, _mainDir, LINUX_PATH_DELIMITER);
   result := _isSubDir
 end;
 
@@ -373,24 +373,40 @@ begin
   result := _path;
 end;
 
-function checkIfIsSubDir(subDir: string; mainDir: string): boolean;
+function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 var
-  _isSubDir: Boolean;
+  isSubDir: Boolean;
+  _subDir: string;
+  _mainDir: string;
+  _trailingPathDelimiter: char;
 begin
-  subDir := LowerCase(subDir);
-  mainDir := LowerCase(mainDir);
-  _isSubDir := AnsiStartsStr(mainDir, subDir);
-  result := _isSubDir;
+  _subDir := LowerCase(subDir);
+  _mainDir := LowerCase(mainDir);
+  _trailingPathDelimiter := trailingPathDelimiter;
+  if _trailingPathDelimiter = SPACE_STRING then
+  begin
+    _trailingPathDelimiter := PathDelim;
+  end;
+
+  if not(AnsiRightStr(_mainDir, 1) = _trailingPathDelimiter) then
+  begin
+    _mainDir := _mainDir + _trailingPathDelimiter;
+  end;
+
+  isSubDir := AnsiStartsStr(_mainDir, _subDir);
+
+  Result := isSubDir;
 end;
 
 function getValidFullPath(fileName: string): string;
 var
-  _path: string;
+  path: string;
 begin
-  _path := fileName;
-  _path := ExpandFileName(_path);
-  _path := ExcludeTrailingPathDelimiter(_path);
-  result := _path;
+  path := fileName;
+  path := ExpandFileName(path);
+  path := ExcludeTrailingPathDelimiter(path);
+
+  Result := path;
 end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
@@ -398,6 +414,7 @@ var
   _MD5ChecksumFile: string;
 begin
   _MD5ChecksumFile := getMD5ChecksumFile(fileName);
+
   Result := (UpperCase(_MD5ChecksumFile) = UpperCase(MD5));
 end;
 
@@ -415,9 +432,9 @@ end;
 
 function getPNGResource(nameResource: string): TPngImage;
 var
+  resourceAsPNG: TPngImage;
   _resource: TResource;
   resourceStream: TResourceStream;
-  resourceAsPNG: TPngImage;
 begin
   with _resource do
   begin
@@ -428,6 +445,7 @@ begin
   resourceAsPNG := TPngImage.Create;
   resourceAsPNG.LoadFromStream(resourceStream);
   resourceStream.Free;
+
   Result := resourceAsPNG;
 end;
 
@@ -472,9 +490,9 @@ end;
 
 function getResourceAsString(resource: TResource): string;
 var
+  resourceAsString: string;
   resourceStream: TResourceStream;
   _stringList: TStringList;
-  resourceAsString: string;
 begin
   resourceAsString := '';
   resourceStream := getResourceAsStream(resource);
@@ -482,13 +500,14 @@ begin
   _stringList.LoadFromStream(resourceStream);
   resourceAsString := _stringList.Text;
   resourceStream.Free;
+
   Result := resourceAsString;
 end;
 
 function getResourceAsStream(resource: TResource): TResourceStream;
 var
   resourceStream: TResourceStream;
-  errMsg: string;
+  _errMsg: string;
 begin
   with resource do
   begin
@@ -499,10 +518,11 @@ begin
     end
     else
     begin
-      errMsg := 'Not found a resource with name : ' + name + ' and type : ' + _type;
-      raise Exception.Create(errMsg);
+      _errMsg := 'Not found a resource with name : ' + name + ' and type : ' + _type;
+      raise Exception.Create(_errMsg);
     end;
   end;
+
   Result := resourceStream;
 end;
 
@@ -612,21 +632,22 @@ function getRandString(size: integer = 5): string;
 const
   ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 var
-  _randString: string;
+  randString: string;
   _randCharacter: char;
   _randIndexOfAlphabet: integer;
   _lengthAlphabet: integer;
   i: integer;
 begin
-  _randString := '';
+  randString := '';
   _lengthAlphabet := length(ALPHABET);
   for i := 1 to size do
   begin
     _randIndexOfAlphabet := random(_lengthAlphabet) + 1;
     _randCharacter := ALPHABET[_randIndexOfAlphabet];
-    _randString := _randString + _randCharacter;
+    randString := randString + _randCharacter;
   end;
-  Result := _randString;
+
+  Result := randString;
 end;
 
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
@@ -650,6 +671,7 @@ begin
   begin
     raise Exception.Create(ERR_MSG);
   end;
+
   Result := fileName;
 end;
 
@@ -724,6 +746,7 @@ var
 begin
   _indexDayOfWeek := DayOfWeek(date) - 1;
   _nameDay := DAYS_OF_WEEK[_indexDayOfWeek];
+
   Result := _nameDay;
 end;
 
@@ -734,15 +757,16 @@ end;
 
 function getDateTimeAsString(date: TDateTime): string;
 var
+  dateTimeAsString: string;
   _date: string;
   _time: string;
-  _dateTime: string;
 begin
   _date := getDateAsString(date);
   _time := TimeToStr(date);
   _time := stringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
-  _dateTime := _date + '_' + _time;
-  Result := _dateTime;
+  dateTimeAsString := _date + '_' + _time;
+
+  Result := dateTimeAsString;
 end;
 
 function getCurrentDateAsString: string;
@@ -752,11 +776,12 @@ end;
 
 function getDateAsString(date: TDateTime): string;
 var
-  _date: string;
+  dateAsString: string;
 begin
-  _date := DateToStr(date);
-  _date := stringReplace(_date, '/', '_', [rfReplaceAll, rfIgnoreCase]);
-  Result := _date;
+  dateAsString := DateToStr(date);
+  dateAsString := stringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
+
+  Result := dateAsString;
 end;
 
 function getCurrentTimeStamp: string;
@@ -771,10 +796,11 @@ end;
 
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
 var
-  _dateTimeAsStringWithFormatting: string;
+  dateTimeAsStringWithFormatting: string;
 begin
-  _dateTimeAsStringWithFormatting := FormatDateTime(formatting, value);
-  Result := _dateTimeAsStringWithFormatting;
+  dateTimeAsStringWithFormatting := FormatDateTime(formatting, value);
+
+  Result := dateTimeAsStringWithFormatting;
 end;
 
 function getCurrentDateTime: TDateTime;
@@ -833,6 +859,7 @@ var
 begin
   stringWithoutLineBreaks := stringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
   stringWithoutLineBreaks := stringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
+
   Result := stringWithoutLineBreaks;
 end;
 
@@ -1053,6 +1080,7 @@ var
   _result: boolean;
 begin
   _result := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
+
   Result := _result;
 end;
 

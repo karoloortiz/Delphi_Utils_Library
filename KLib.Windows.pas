@@ -224,54 +224,60 @@ end;
 
 function getFirstPortAvaliable(defaultPort: integer; host: string = LOCALHOST_IP_ADDRESS): integer;
 var
-  _port: integer;
+  port: integer;
 begin
-  _port := defaultPort;
-  while not checkIfPortIsAvaliable(host, _port) do
+  port := defaultPort;
+  while not checkIfPortIsAvaliable(host, port) do
   begin
-    inc(_port);
+    inc(port);
   end;
-  result := _port;
+
+  Result := port;
 end;
 
 function checkIfPortIsAvaliable(host: string; port: Word): boolean;
 var
-  IdTCPClient: TIdTCPClient;
+  isPortAvaliable: boolean;
+
+  _IdTCPClient: TIdTCPClient;
 begin
-  Result := True;
+  isPortAvaliable := True;
   try
-    IdTCPClient := TIdTCPClient.Create(nil);
+    _IdTCPClient := TIdTCPClient.Create(nil);
     try
-      IdTCPClient.Host := host;
-      IdTCPClient.Port := port;
-      IdTCPClient.Connect;
-      Result := False;
+      _IdTCPClient.Host := host;
+      _IdTCPClient.Port := port;
+      _IdTCPClient.Connect;
+      isPortAvaliable := False;
     finally
-      IdTCPClient.Free;
+      _IdTCPClient.Free;
     end;
   except
     //Ignore exceptions
   end;
+
+  Result := isPortAvaliable;
 end;
 
 function checkIfAddressIsLocalhost(address: string): boolean;
 var
+  addressIsLocalhost: boolean;
+
   _address: string;
   _localhostIP_address: string;
-
-  _result: boolean;
 begin
-  _result := true;
+  addressIsLocalhost := true;
   _address := getIPFromHostName(address);
   if _address <> LOCALHOST_IP_ADDRESS then
   begin
     _localhostIP_address := getIP;
     if _address <> _localhostIP_address then
     begin
-      _result := false;
+      addressIsLocalhost := false;
     end;
   end;
-  Result := _result;
+
+  Result := addressIsLocalhost;
 end;
 
 function getIPFromHostName(hostName: string): string;
@@ -279,21 +285,22 @@ const
   ERR_WINSOCK_MSG = 'Winsock initialization error.';
   ERR_NO_IP_FOUND_WITH_HOSTBAME_MSG = 'No IP found with hostname: ';
 var
-  varTWSAData: TWSAData;
-  varPHostEnt: PHostEnt;
-  varTInAddr: TInAddr;
   ip: string;
+
+  _varTWSAData: TWSAData;
+  _varPHostEnt: PHostEnt;
+  _varTInAddr: TInAddr;
 begin
-  if WSAStartup($101, varTWSAData) <> 0 then
+  if WSAStartup($101, _varTWSAData) <> 0 then
   begin
     raise Exception.Create(ERR_WINSOCK_MSG);
   end
   else
   begin
     try
-      varPHostEnt := gethostbyname(PAnsiChar(AnsiString(hostName)));
-      varTInAddr := PInAddr(varPHostEnt^.h_Addr_List^)^;
-      ip := String(inet_ntoa(varTInAddr));
+      _varPHostEnt := gethostbyname(PAnsiChar(AnsiString(hostName)));
+      _varTInAddr := PInAddr(_varPHostEnt^.h_Addr_List^)^;
+      ip := String(inet_ntoa(_varTInAddr));
     except
       on E: Exception do
       begin
@@ -303,6 +310,7 @@ begin
     end;
   end;
   WSACleanup;
+
   Result := ip;
 end;
 
@@ -312,24 +320,26 @@ type
 const
   ERR_MSG = 'Winsock initialization error.';
 var
-  varTWSAData: TWSAData;
-  varPHostEnt: PHostEnt;
-  varTInAddr: TInAddr;
-  namebuf: Array [0 .. 255] of ansichar;
   ip: string;
+
+  _varTWSAData: TWSAData;
+  _varPHostEnt: PHostEnt;
+  _varTInAddr: TInAddr;
+  _namebuf: Array [0 .. 255] of ansichar;
 begin
-  if WSAStartup($101, varTWSAData) <> 0 then
+  if WSAStartup($101, _varTWSAData) <> 0 then
   begin
     raise Exception.Create(ERR_MSG);
   end
   else
   begin
-    getHostName(nameBuf, sizeOf(nameBuf));
-    varPHostEnt := gethostbyname(nameBuf);
-    varTInAddr.S_addr := u_long(pu_long(varPHostEnt^.h_addr_list^)^);
-    ip := string(inet_ntoa(varTInAddr));
+    getHostName(_nameBuf, sizeOf(_nameBuf));
+    _varPHostEnt := gethostbyname(_nameBuf);
+    _varTInAddr.S_addr := u_long(pu_long(_varPHostEnt^.h_addr_list^)^);
+    ip := string(inet_ntoa(_varTInAddr));
   end;
   WSACleanup;
+
   Result := ip;
 end;
 
@@ -342,16 +352,19 @@ end;
 
 function checkIfWindowsArchitectureIsX64: boolean;
 var
-  _WindowsArchitecture: TWindowsArchitecture;
+  _windowsArchitecture: TWindowsArchitecture;
 begin
-  _WindowsArchitecture := getWindowsArchitecture;
-  Result := _WindowsArchitecture = TWindowsArchitecture.WindowsX64;
+  _windowsArchitecture := getWindowsArchitecture;
+
+  Result := _windowsArchitecture = TWindowsArchitecture.WindowsX64;
 end;
 
 function getWindowsArchitecture: TWindowsArchitecture;
 const
   ERR_MSG_PLATFORM = 'The OS. is not Windows.';
   ERR_MSG_ARCHITECTURE = 'Unknown OS architecture.';
+var
+  windowsArchitecture: TWindowsArchitecture;
 begin
   if TOSVersion.Platform <> pfWindows then
   begin
@@ -359,14 +372,16 @@ begin
   end;
   case TOSVersion.Architecture of
     arIntelX86:
-      Result := TWindowsArchitecture.WindowsX86;
+      windowsArchitecture := TWindowsArchitecture.WindowsX86;
     arIntelX64:
-      Result := TWindowsArchitecture.WindowsX64;
+      windowsArchitecture := TWindowsArchitecture.WindowsX64;
   else
     begin
       raise Exception.Create(ERR_MSG_ARCHITECTURE);
     end;
   end;
+
+  Result := windowsArchitecture;
 end;
 
 function checkIfUserIsAdmin: boolean;
@@ -385,6 +400,7 @@ var
   returnCode: integer;
 begin
   returnCode := myShellExecute(0, 'open', fileName, params, directory, showWindowType, exceptionIfFunctionFails);
+
   Result := returnCode;
 end;
 
@@ -394,6 +410,7 @@ var
   returnCode: integer;
 begin
   returnCode := shellExecuteExe(fileName, params, showWindowType, exceptionIfFunctionFails, 'runas');
+
   Result := returnCode;
 end;
 
@@ -401,6 +418,7 @@ function shellExecuteExe(fileName: string; params: string = ''; showWindowType: 
   exceptionIfFunctionFails: boolean = false; operation: string = 'open'): integer;
 var
   returnCode: integer;
+
   _directory: string;
 begin
   _directory := ExtractFileDir(fileName);
@@ -413,6 +431,7 @@ function myShellExecute(handle: integer; operation: string; fileName: string; pa
   directory: string; showWindowType: TShowWindowType; exceptionIfFunctionFails: boolean = false): integer;
 var
   returnCode: integer;
+
   errMsg: string;
 begin
   returnCode := shellExecute(handle, pchar(operation), pchar(fileName), PCHAR(trim(params)),
@@ -483,9 +502,9 @@ end;
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
-  _shellExecuteInfo: TShellExecuteInfo;
-
   returnCode: Longint;
+
+  _shellExecuteInfo: TShellExecuteInfo;
 begin
   returnCode := -1;
 
@@ -533,11 +552,11 @@ end;
 
 function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 var
+  returnCode: Longint;
+
   _commad: String;
   _startupInfo: TStartupInfo;
   _processInfo: TProcessInformation;
-
-  returnCode: Longint;
 begin
   returnCode := -1;
 
@@ -614,19 +633,19 @@ const
 
   ERR_MSG = 'Unable to share folder :';
 var
-  _targetDir: string;
-  AShareInfo: PSHARE_INFO_2;
-  parmError: DWORD;
   pathSharedDir: string;
-  shareExistsAlready: boolean;
 
+  _targetDir: string;
+  _AShareInfo: PSHARE_INFO_2;
+  _parmError: DWORD;
+  _shareExistsAlready: boolean;
   _errMsg: string;
 begin
-  shareExistsAlready := false;
+  _shareExistsAlready := false;
   _targetDir := getValidFullPathInWindowsStyle(targetDir);
-  AShareInfo := New(PSHARE_INFO_2);
+  _AShareInfo := New(PSHARE_INFO_2);
   try
-    with AShareInfo^ do
+    with _AShareInfo^ do
     begin
       if (netName = '') then
       begin
@@ -652,22 +671,22 @@ begin
       end;
     end;
 
-    if (netShareAdd(nil, 2, PBYTE(AShareInfo), @parmError) <> NERR_SUCCESS) then
+    if (netShareAdd(nil, 2, PBYTE(_AShareInfo), @_parmError) <> NERR_SUCCESS) then
     begin
-      shareExistsAlready := true;
+      _shareExistsAlready := true;
     end;
     if not DirectoryExists(pathSharedDir) then
     begin
       _errMsg := ERR_MSG + getDoubleQuotedString(_targetDir);
       raise Exception.Create(_errMsg);
     end;
-    pathSharedDir := '\\' + GetEnvironmentVariable('COMPUTERNAME') + '\' + AShareInfo.shi2_netname;
-    if not(shareExistsAlready) and (grantAllPermissionToEveryoneGroup) then
+    pathSharedDir := '\\' + GetEnvironmentVariable('COMPUTERNAME') + '\' + _AShareInfo.shi2_netname;
+    if not(_shareExistsAlready) and (grantAllPermissionToEveryoneGroup) then
     begin
       grantAllPermissionsNetToTheObjectForTheEveryoneGroup(pathSharedDir);
     end;
   finally
-    FreeMem(AShareInfo, SizeOf(PSHARE_INFO_2));
+    FreeMem(_AShareInfo, SizeOf(PSHARE_INFO_2));
   end;
 
   Result := pathSharedDir;
@@ -809,16 +828,17 @@ end;
 
 function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
 var
+  windowsGroupOrUserExists: boolean;
+
   _newDACL: PACl;
   _explicitAccess: TExplicitAccess;
-
-  _result: boolean;
 begin
   BuildExplicitAccessWithName(@_explicitAccess, PChar(windowsGroupOrUser), GENERIC_ALL, GRANT_ACCESS,
     SUB_CONTAINERS_AND_OBJECTS_INHERIT);
   SetEntriesInAcl(1, @_explicitAccess, nil, _newDACL);
-  _result := Assigned(_newDACL);
-  Result := _result;
+  windowsGroupOrUserExists := Assigned(_newDACL);
+
+  Result := windowsGroupOrUserExists;
 end;
 
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
@@ -861,18 +881,22 @@ end;
 
 function getDesktopDirPath: string;
 var
-  PIDList: PItemIDList;
-  Buffer: array [0 .. MAX_PATH - 1] of Char;
+  desktopDirPath: string;
+
+  _PIDList: PItemIDList;
+  _Buffer: array [0 .. MAX_PATH - 1] of Char;
 begin
-  Result := '';
-  SHGetSpecialFolderLocation(0, CSIDL_DESKTOP, PIDList);
-  if Assigned(PIDList) then
+  desktopDirPath := '';
+  SHGetSpecialFolderLocation(0, CSIDL_DESKTOP, _PIDList);
+  if Assigned(_PIDList) then
   begin
-    if SHGetPathFromIDList(PIDList, Buffer) then
+    if SHGetPathFromIDList(_PIDList, _Buffer) then
     begin
-      Result := Buffer;
+      desktopDirPath := _Buffer;
     end;
   end;
+
+  Result := desktopDirPath;
 end;
 
 procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
@@ -1020,14 +1044,16 @@ end;
 
 function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
 var
+  isSubDir: Boolean;
+
   _subDir: string;
   _mainDir: string;
-  _isSubDir: Boolean;
 begin
   _subDir := getPathInWindowsStyle(subDir);
   _mainDir := getPathInWindowsStyle(mainDir);
-  _isSubDir := checkIfIsSubDir(_subDir, _mainDir);
-  result := _isSubDir
+  isSubDir := checkIfIsSubDir(_subDir, _mainDir, WINDOWS_PATH_DELIMITER);
+
+  Result := isSubDir
 end;
 
 function getParentDir(source: string): string;
@@ -1036,81 +1062,89 @@ var
 begin
   parentDir := getValidFullPathInWindowsStyle(source);
   parentDir := ExtractFilePath(parentDir);
-  result := parentDir;
+
+  Result := parentDir;
 end;
 
 function getValidFullPathInWindowsStyle(path: string): string;
 var
-  _path: string;
+  validFullPathInWindowsStyle: string;
 begin
-  _path := getValidFullPath(path);
-  _path := getPathInWindowsStyle(_path);
-  result := _path;
+  validFullPathInWindowsStyle := getValidFullPath(path);
+  validFullPathInWindowsStyle := getPathInWindowsStyle(validFullPathInWindowsStyle);
+
+  Result := validFullPathInWindowsStyle;
 end;
 
 function getPathInWindowsStyle(path: string): string;
 var
-  _path: string;
+  pathInWindowsStyl: string;
 begin
-  _path := StringReplace(path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
-  result := _path;
+  pathInWindowsStyl := StringReplace(path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
+
+  Result := pathInWindowsStyl;
 end;
 
 function getStringWithEnvVariablesReaded(source: string): string;
 var
-  tempStringDir: string;
-  tempStringPos: string;
-  posStart: integer;
-  posEnd: integer;
-  valueToReplace: string;
-  newValue: string;
-  _result: string;
+  stringWithEnvVariablesReaded: string;
+
+  _stringDir: string;
+  _stringPos: string;
+  _posStart: integer;
+  _posEnd: integer;
+  _valueToReplace: string;
+  _newValue: string;
 begin
-  tempStringPos := source;
-  tempStringDir := source;
-  _result := source;
+  _stringPos := source;
+  _stringDir := source;
+  stringWithEnvVariablesReaded := source;
   repeat
-    posStart := pos('%', tempStringPos);
-    tempStringPos := copy(tempStringPos, posStart + 1, length(tempStringPos));
-    posEnd := posStart + pos('%', tempStringPos);
-    if (posStart > 0) and (posEnd > 1) then
+    _posStart := pos('%', _stringPos);
+    _stringPos := copy(_stringPos, _posStart + 1, length(_stringPos));
+    _posEnd := _posStart + pos('%', _stringPos);
+    if (_posStart > 0) and (_posEnd > 1) then
     begin
-      valueToReplace := copy(tempStringDir, posStart, posEnd - posStart + 1);
-      newValue := GetEnvironmentVariable(copy(valueToReplace, 2, length(valueToReplace) - 2));
-      if newValue <> '' then
+      _valueToReplace := copy(_stringDir, _posStart, _posEnd - _posStart + 1);
+      _newValue := GetEnvironmentVariable(copy(_valueToReplace, 2, length(_valueToReplace) - 2));
+      if _newValue <> '' then
       begin
-        _result := stringreplace(_result, valueToReplace, newValue, []);
+        stringWithEnvVariablesReaded := stringreplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
       end;
     end
     else
     begin
       exit;
     end;
-    tempStringDir := copy(tempStringDir, posEnd + 1, length(tempStringDir));
-    tempStringPos := tempStringDir;
-  until posStart < 0;
+    _stringDir := copy(_stringDir, _posEnd + 1, length(_stringDir));
+    _stringPos := _stringDir;
+  until _posStart < 0;
 
-  Result := _result;
+  Result := stringWithEnvVariablesReaded;
 end;
 
 //----------------------------------------------------------------------
 function setProcessWindowToForeground(processName: string): boolean;
 var
-  PIDProcess: DWORD;
-  windowHandle: THandle;
-begin
-  PIDProcess := getPIDOfCurrentUserByProcessName(processName);
-  windowHandle := getMainWindowHandleByPID(PIDProcess);
+  _result: boolean;
 
-  if windowHandle <> 0 then
+  _PIDProcess: DWORD;
+  _windowHandle: THandle;
+begin
+  _PIDProcess := getPIDOfCurrentUserByProcessName(processName);
+  _windowHandle := getMainWindowHandleByPID(_PIDProcess);
+
+  if _windowHandle <> 0 then
   begin
-    mySetForegroundWindow(windowHandle);
-    result := true;
+    mySetForegroundWindow(_windowHandle);
+    _result := true;
   end
   else
   begin
-    result := false;
+    _result := false;
   end;
+
+  Result := _result;
 end;
 
 type
@@ -1130,53 +1164,56 @@ var
 begin
   processCompare.nameProcess := nameProcess;
   processCompare.username := getWindowsUsername();
-  result := getPID(nameProcess, checkProcessUserName, processCompare);
+
+  Result := getPID(nameProcess, checkProcessUserName, processCompare);
 end;
 
 function getWindowsUsername: string;
 var
-  userName: string;
-  userNameLen: DWORD;
+  windowsUsername: string;
+
+  _userName: string;
+  _userNameLen: DWORD;
 begin
-  userNameLen := 256;
-  SetLength(userName, userNameLen);
-  if GetUserName(PChar(userName), userNameLen) then
+  _userNameLen := 256;
+  SetLength(_userName, _userNameLen);
+  if GetUserName(PChar(_userName), _userNameLen) then
   begin
-    Result := Copy(userName, 1, userNameLen - 1);
+    windowsUsername := Copy(_userName, 1, _userNameLen - 1);
   end
   else
   begin
-    Result := '';
+    windowsUsername := '';
   end;
+
+  Result := windowsUsername;
 end;
 
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; forward;
 
 function checkProcessUserName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
 var
-  sameProcessName: boolean;
-  sameUserOfProcess: boolean;
+  _sameProcessName: boolean;
+  _sameUserOfProcess: boolean;
 begin
-  sameProcessName := checkProcessName(processEntry, processCompare);
-  sameUserOfProcess := checkUserOfProcess(processCompare.username, processEntry.th32ProcessID);
-  Result := sameProcessName and sameUserOfProcess;
+  _sameProcessName := checkProcessName(processEntry, processCompare);
+  _sameUserOfProcess := checkUserOfProcess(processCompare.username, processEntry.th32ProcessID);
+
+  Result := _sameProcessName and _sameUserOfProcess;
 end;
 
 //TODO: CREARE CLASSE PER RAGGUPPARE OGGETTI
 
 function checkUserOfProcess(userName: String; PID: DWORD): boolean;
 var
-  PIDCredentials: TPIDCredentials;
+  sameUser: boolean;
+
+  _PIDCredentials: TPIDCredentials;
 begin
-  PIDCredentials := getPIDCredentials(PID);
-  if PIDCredentials.ownerUserName = userName then
-  begin
-    Result := true;
-  end
-  else
-  begin
-    Result := false;
-  end;
+  _PIDCredentials := getPIDCredentials(PID);
+  sameUser := _PIDCredentials.ownerUserName = userName;
+
+  Result := sameUser;
 end;
 
 type
@@ -1188,57 +1225,59 @@ type
 
 function getPIDCredentials(PID: DWORD): TPIDCredentials;
 var
-  hToken: THandle;
-  cbBuf: Cardinal;
-  ptiUser: PTOKEN_USER;
-  snu: SID_NAME_USE;
-  processHandle: THandle;
-  UserSize, DomainSize: DWORD;
-  bSuccess: Boolean;
-  user: string;
-  domain: string;
   PIDCredentials: TPIDCredentials;
-begin
-  processHandle := OpenProcess(PROCESS_QUERY_INFORMATION, False, PID);
-  if processHandle <> 0 then
-  begin
-    if OpenProcessToken(processHandle, TOKEN_QUERY, hToken) then
-    begin
-      bSuccess := GetTokenInformation(hToken, TokenUser, nil, 0, cbBuf);
-      ptiUser := nil;
-      while (not bSuccess) and (GetLastError = ERROR_INSUFFICIENT_BUFFER) do
-      begin
-        ReallocMem(ptiUser, cbBuf);
-        bSuccess := GetTokenInformation(hToken, TokenUser, ptiUser, cbBuf, cbBuf);
-      end;
-      CloseHandle(hToken);
 
-      if not bSuccess then
+  _hToken: THandle;
+  _cbBuf: Cardinal;
+  _ptiUser: PTOKEN_USER;
+  _snu: SID_NAME_USE;
+  _processHandle: THandle;
+  _userSize: DWORD;
+  _domainSize: DWORD;
+  _bSuccess: Boolean;
+  _user: string;
+  _domain: string;
+begin
+  _processHandle := OpenProcess(PROCESS_QUERY_INFORMATION, False, PID);
+  if _processHandle <> 0 then
+  begin
+    if OpenProcessToken(_processHandle, TOKEN_QUERY, _hToken) then
+    begin
+      _bSuccess := GetTokenInformation(_hToken, TokenUser, nil, 0, _cbBuf);
+      _ptiUser := nil;
+      while (not _bSuccess) and (GetLastError = ERROR_INSUFFICIENT_BUFFER) do
+      begin
+        ReallocMem(_ptiUser, _cbBuf);
+        _bSuccess := GetTokenInformation(_hToken, TokenUser, _ptiUser, _cbBuf, _cbBuf);
+      end;
+      CloseHandle(_hToken);
+
+      if not _bSuccess then
       begin
         Exit;
       end;
 
-      UserSize := 0;
-      DomainSize := 0;
-      LookupAccountSid(nil, ptiUser.User.Sid, nil, UserSize, nil, DomainSize, snu);
-      if (UserSize <> 0) and (DomainSize <> 0) then
+      _userSize := 0;
+      _domainSize := 0;
+      LookupAccountSid(nil, _ptiUser.User.Sid, nil, _userSize, nil, _domainSize, _snu);
+      if (_userSize <> 0) and (_domainSize <> 0) then
       begin
-        SetLength(User, UserSize);
-        SetLength(Domain, DomainSize);
-        if LookupAccountSid(nil, ptiUser.User.Sid, PChar(User), UserSize,
-          PChar(Domain), DomainSize, snu) then
+        SetLength(_user, _userSize);
+        SetLength(_domain, _domainSize);
+        if LookupAccountSid(nil, _ptiUser.User.Sid, PChar(_user), _userSize,
+          PChar(_domain), _domainSize, _snu) then
         begin
-          PIDCredentials.ownerUserName := StrPas(PChar(User));
-          PIDCredentials.domain := StrPas(PChar(Domain));
+          PIDCredentials.ownerUserName := StrPas(PChar(_user));
+          PIDCredentials.domain := StrPas(PChar(_domain));
         end;
       end;
 
-      if bSuccess then
+      if _bSuccess then
       begin
-        FreeMem(ptiUser);
+        FreeMem(_ptiUser);
       end;
     end;
-    CloseHandle(processHandle);
+    CloseHandle(_processHandle);
   end;
 
   Result := PIDCredentials;
@@ -1246,41 +1285,43 @@ end;
 
 function getPIDByProcessName(nameProcess: string): DWORD;
 var
-  processCompare: TProcessCompare;
+  _processCompare: TProcessCompare;
 begin
-  processCompare.nameProcess := nameProcess;
-  result := getPID(nameProcess, checkProcessName, processCompare);
+  _processCompare.nameProcess := nameProcess;
+
+  Result := getPID(nameProcess, checkProcessName, _processCompare);
 end;
 
 function checkProcessName(processEntry: TProcessEntry32; processCompare: TProcessCompare): boolean; // FUNZIONE PRIVATA
 begin
-  result := processEntry.szExeFile = processCompare.nameProcess;
+  Result := processEntry.szExeFile = processCompare.nameProcess;
 end;
 
 function getPID(nameProcess: string; fn: TFunctionProcessCompare; processCompare: TProcessCompare): DWORD;
 var
-  processEntry: TProcessEntry32;
-  snapHandle: THandle;
   processID: DWORD;
+
+  _processEntry: TProcessEntry32;
+  _snapHandle: THandle;
 begin
   processID := 0;
-  snapHandle := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  processEntry.dwSize := sizeof(TProcessEntry32);
-  Process32First(snapHandle, processEntry);
-  repeat //loop su tutti i processi nello snapshot acquisito
-    with processEntry do
+  _snapHandle := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  _processEntry.dwSize := sizeof(TProcessEntry32);
+  Process32First(_snapHandle, _processEntry);
+  repeat //loop over all process in snapshot
+    with _processEntry do
     begin
-      //esegui confronto
-      if (fn(processEntry, processCompare)) then
+      //execute processCompare
+      if (fn(_processEntry, processCompare)) then
       begin
         processID := th32ProcessID;
         break;
       end;
     end;
-  until (not(Process32Next(snapHandle, processEntry)));
-  CloseHandle(snapHandle);
+  until (not(Process32Next(_snapHandle, _processEntry)));
+  CloseHandle(_snapHandle);
 
-  result := processID;
+  Result := processID;
 end;
 
 type
@@ -1298,6 +1339,7 @@ begin
   enumInfo.pid := PID;
   enumInfo.handle := 0;
   EnumWindows(@enumWindowsProc, LPARAM(@enumInfo));
+
   Result := enumInfo.handle;
 end;
 
@@ -1306,10 +1348,10 @@ type
 
 function enumWindowsProc(Wnd: THandle; Param: LPARAM): boolean; stdcall;
 var
+  _result: boolean;
+
   PID: DWORD;
   PEI: PEnumInfo;
-
-  _result: boolean;
 begin
   // Param matches the address of the param that is passed
   PEI := PEnumInfo(Param);
@@ -1350,8 +1392,9 @@ end;
 
 function sendMemoryStreamUsing_WM_COPYDATA(handle: THandle; data: TMemoryStream): integer;
 var
-  _copyDataStruct: TCopyDataStruct;
   _result: integer;
+
+  _copyDataStruct: TCopyDataStruct;
 begin
   _copyDataStruct.dwData := integer(data.Memory);
   _copyDataStruct.cbData := data.size;
@@ -1363,14 +1406,15 @@ end;
 
 function sendStringUsing_WM_COPYDATA(handle: THandle; data: string; msgIdentifier: integer = 0): integer;
 var
-  _copyDataStruct: TCopyDataStruct;
   _result: integer;
+  _copyDataStruct: TCopyDataStruct;
 begin
   _copyDataStruct.cbData := 1 + Length(data);
   _copyDataStruct.lpData := pansichar(ansistring(data));
   _copyDataStruct.dwData := integer(msgIdentifier);
 
   _result := SendMessage(handle, WM_COPYDATA, integer(handle), integer(@_copyDataStruct));
+
   Result := _result;
 end;
 
@@ -1387,21 +1431,23 @@ end;
 
 function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
 begin
-  result := FindWindow(pchar(className), pchar(captionForm));
+  Result := FindWindow(pchar(className), pchar(captionForm));
 end;
 
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 var
-  registry: TRegistry;
   isOpenKey: boolean;
+
+  _registry: TRegistry;
 begin
-  registry := TRegistry.Create;
+  _registry := TRegistry.Create;
   try
-    registry.RootKey := HKEY_LOCAL_MACHINE;
-    isOpenKey := registry.OpenKeyReadOnly(key);
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    isOpenKey := _registry.OpenKeyReadOnly(key);
   finally
-    registry.Free;
+    _registry.Free;
   end;
+
   Result := isOpenKey;
 end;
 
@@ -1497,11 +1543,12 @@ end;
 
 function getLastSysErrorMessage: string;
 var
-  _errorCode: cardinal;
   sysErrMsg: string;
+  _errorCode: cardinal;
 begin
   _errorCode := GetLastError;
   sysErrMsg := SysErrorMessage(_errorCode);
+
   Result := sysErrMsg;
 end;
 
@@ -1509,8 +1556,9 @@ function getLocaleDecimalSeparator: char;
 const
   LOCALE_NAME_SYSTEM_DEFAULT = '!x-sys-default-locale';
 var
-  _buffer: array [1 .. 10] of Char;
   decimalSeparator: Char;
+
+  _buffer: array [1 .. 10] of Char;
 begin
   FillChar(_buffer, SizeOf(_buffer), 0);
 {$warn SYMBOL_PLATFORM OFF}
