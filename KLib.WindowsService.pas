@@ -39,24 +39,40 @@ unit KLib.WindowsService;
 interface
 
 uses
-  Winapi.Messages;
+  Winapi.Messages, Winapi.Winsvc;
 
 const
   WM_SERVICE_START = WM_USER + 0;
   WM_SERVICE_ERROR = WM_USER + 2;
 
 type
+  TWindowsServiceState = (
+    _NULL = -1,
+    STOPPPED = SERVICE_STOPPED,
+    START_PENDING = SERVICE_START_PENDING,
+    STOP_PENDING = SERVICE_STOP_PENDING,
+    RUNNING = SERVICE_RUNNING,
+    CONTINUE_PENDING = SERVICE_CONTINUE_PENDING,
+    PAUSE_PENDING = SERVICE_PAUSE_PENDING,
+    PAUSED = SERVICE_PAUSED
+    );
+
   TWindowsService = class //nameService is not case-sensitive
   public
     //    class procedure createService: boolean; //TODO IMPLEMENTE CODE
     class procedure aStart(handleSender: THandle; nameService: string; nameMachine: string = '');
     class procedure startIfExists(nameService: string; nameMachine: string = '');
     class procedure start(nameService: string; nameMachine: string = '');
-    class procedure stopIfExists(nameService: string; nameMachine: string = '';
-      force: boolean = false);
-    class procedure stop(nameService: string; nameMachine: string = '';
-      force: boolean = false);
+    class procedure stopIfExists(nameService: string; nameMachine: string = ''; force: boolean = false);
+    class procedure stop(nameService: string; nameMachine: string = ''; force: boolean = false);
+
     class function checkIfIsRunning(nameService: string; nameMachine: string = ''): boolean;
+    class function checkIfIsPaused(nameService: string; nameMachine: string = ''): boolean;
+    class function checkIfIsStopped(nameService: string; nameMachine: string = ''): boolean;
+
+    class function checkCurrentState(state: TWindowsServiceState; nameService: string; nameMachine: string = ''): boolean;
+    class function getCurrentState(nameService: string; nameMachine: string = ''): TWindowsServiceState;
+
     class function checkIfExists(nameService: string; nameMachine: string = ''): boolean;
     class procedure delete(nameService: string);
   end;
@@ -65,11 +81,10 @@ implementation
 
 uses
   KLib.Windows, KLib.Constants,
-  Winapi.Windows, Winapi.Winsvc,
+  Winapi.Windows,
   System.Classes, System.SysUtils;
 
-class procedure TWindowsService.aStart(handleSender: THandle; nameService: string;
-  nameMachine: string = '');
+class procedure TWindowsService.aStart(handleSender: THandle; nameService: string; nameMachine: string = '');
 begin
   TThread.CreateAnonymousThread(
     procedure
@@ -98,47 +113,49 @@ class procedure TWindowsService.start(nameService: string; nameMachine: string =
 const
   ERR_MSG = 'Service not started.';
 var
-  cont: integer;
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-
+  _cont: integer;
+  _handleServiceControlManager: SC_HANDLE;
+  _handleService: SC_HANDLE;
+  _serviceStatus: TServiceStatus;
   _exit: boolean;
+  _errMsg: string;
 begin
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
+  _handleService := 0;
+
+  _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (_handleServiceControlManager <> 0) then
   begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
+    _handleService := OpenService(_handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
+    if (_handleService <> 0) then
     begin
-      if (QueryServiceStatus(handleService, serviceStatus)) then
+      if (QueryServiceStatus(_handleService, _serviceStatus)) then
       begin
-        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
+        if (_serviceStatus.dwCurrentState = SERVICE_RUNNING) then
         begin
-          CloseServiceHandle(handleService);
-          CloseServiceHandle(handleServiceControlManager);
+          CloseServiceHandle(_handleService);
+          CloseServiceHandle(_handleServiceControlManager);
           Exit;
         end;
 
-        if not startService(handleService, 0, PPChar(nil)^) then
+        if not startService(_handleService, 0, PPChar(nil)^) then
         begin
           raise Exception.Create(ERR_MSG);
-          CloseServiceHandle(handleService);
-          CloseServiceHandle(handleServiceControlManager);
+          CloseServiceHandle(_handleService);
+          CloseServiceHandle(_handleServiceControlManager);
           Exit;
         end;
-        QueryServiceStatus(handleService, serviceStatus);
+        QueryServiceStatus(_handleService, _serviceStatus);
 
         //SERVICE_START_PENDING...
         _exit := false;
-        cont := 0;
+        _cont := 0;
         while not(_exit) do
         begin
-          case serviceStatus.dwCurrentState of
+          case _serviceStatus.dwCurrentState of
             SERVICE_RUNNING:
               _exit := true;
             SERVICE_START_PENDING:
-              if (cont >= 60) then
+              if (_cont >= 60) then
               begin
                 _exit := true;
               end;
@@ -149,24 +166,39 @@ begin
           if not _exit then
           begin
             Sleep(3000);
-            cont := cont + 1;
-            QueryServiceStatus(handleService, serviceStatus);
+            _cont := _cont + 1;
+            QueryServiceStatus(_handleService, _serviceStatus);
           end;
         end;
       end;
     end;
-    QueryServiceStatus(handleService, serviceStatus);
-    if not(serviceStatus.dwCurrentState = SERVICE_RUNNING) then
-    begin
-      raise Exception.Create(ERR_MSG);
-    end;
-    CloseServiceHandle(handleService);
+    CloseServiceHandle(_handleService);
   end;
-  CloseServiceHandle(handleServiceControlManager);
+  CloseServiceHandle(_handleServiceControlManager);
+
+  Sleep(500);
+
+  if not checkIfIsRunning(nameService, nameMachine) then
+  begin
+    _errMsg := ERR_MSG;
+
+    if (_handleServiceControlManager = 0) or (_handleService = 0) then
+    begin
+      try
+        raiseLastSysErrorMessage;
+      except
+        on E: Exception do
+        begin
+          _errMsg := _errMsg + ': ' + E.Message;
+        end;
+      end;
+    end;
+
+    raise Exception.Create(_errMsg);
+  end;
 end;
 
-class procedure TWindowsService.stopIfExists(nameService: string; nameMachine: string = '';
-force: boolean = false);
+class procedure TWindowsService.stopIfExists(nameService: string; nameMachine: string = ''; force: boolean = false);
 begin
   if checkIfExists(nameService) then
   begin
@@ -174,89 +206,161 @@ begin
   end;
 end;
 
-class procedure TWindowsService.Stop(nameService: string; nameMachine: string = '';
-force: boolean = false);
+class procedure TWindowsService.Stop(nameService: string; nameMachine: string = ''; force: boolean = false);
 const
   ERR_MSG = 'Service not stopped.';
 var
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
-  dwCheckpoint: DWord;
+  _handleServiceControlManager: SC_HANDLE;
+  _handleService: SC_HANDLE;
+  _serviceStatus: TServiceStatus;
+  _dwCheckpoint: DWORD;
   _cmdParams: string;
+  _errMsg: string;
 begin
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
+  _handleService := 0;
+
+  _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (_handleServiceControlManager <> 0) then
   begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_STOP or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
+    _handleService := OpenService(_handleServiceControlManager, PChar(nameService), SERVICE_STOP or SERVICE_QUERY_STATUS);
+    if (_handleService <> 0) then
     begin
-      if (ControlService(handleService, SERVICE_CONTROL_STOP, serviceStatus)) then
+      if (ControlService(_handleService, SERVICE_CONTROL_STOP, _serviceStatus)) then
       begin
-        if (QueryServiceStatus(handleService, serviceStatus)) then
+        if (QueryServiceStatus(_handleService, _serviceStatus)) then
         begin
-          while (SERVICE_STOPPED <> serviceStatus.dwCurrentState) do
+          while (SERVICE_STOPPED <> _serviceStatus.dwCurrentState) do
           begin
-            dwCheckpoint := serviceStatus.dwCheckPoint;
+            _dwCheckpoint := _serviceStatus.dwCheckPoint;
             Sleep(250);
-            if (not QueryServiceStatus(handleService, serviceStatus)) then
+            if (not QueryServiceStatus(_handleService, _serviceStatus)) then
               break;
-            if (serviceStatus.dwCheckPoint > dwCheckpoint) then
+            if (_serviceStatus.dwCheckPoint > _dwCheckpoint) then
               break;
           end;
         end;
-      end
-      else
-      begin
-        if (force) then
+      end;
+      CloseServiceHandle(_handleService);
+    end;
+    CloseServiceHandle(_handleServiceControlManager);
+  end;
+
+  if (force) then
+  begin
+    _cmdParams := '/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT';
+    shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
+  end;
+
+  Sleep(500);
+
+  if not checkIfIsStopped(nameService, nameMachine) then
+  begin
+    _errMsg := ERR_MSG;
+
+    if (_handleServiceControlManager = 0) or (_handleService = 0) then
+    begin
+      try
+        raiseLastSysErrorMessage;
+      except
+        on E: Exception do
         begin
-          _cmdParams := '/K taskkill /f /fi "SERVICES eq ' + nameService + '" & EXIT';
-          shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
+          _errMsg := _errMsg + ': ' + E.Message;
         end;
       end;
-      QueryServiceStatus(handleService, serviceStatus);
-      CloseServiceHandle(handleService);
     end;
-    CloseServiceHandle(handleService);
-  end;
-  if not(serviceStatus.dwCurrentState = SERVICE_STOPPED) then
-  begin
-    raise Exception.Create(ERR_MSG);
+
+    raise Exception.Create(_errMsg);
   end;
 end;
 
 class function TWindowsService.checkIfIsRunning(nameService: string; nameMachine: string = ''): boolean;
-var
-  handleServiceControlManager: SC_HANDLE;
-  handleService: SC_HANDLE;
-  serviceStatus: TServiceStatus;
 begin
-  result := false;
-  handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
-  if (handleServiceControlManager > 0) then
+  Result := checkCurrentState(RUNNING, nameService, nameMachine);
+end;
+
+class function TWindowsService.checkIfIsPaused(nameService: string; nameMachine: string = ''): boolean;
+begin
+  Result := checkCurrentState(PAUSED, nameService, nameMachine);
+end;
+
+class function TWindowsService.checkIfIsStopped(nameService: string; nameMachine: string = ''): boolean;
+begin
+  Result := checkCurrentState(STOPPPED, nameService, nameMachine);
+end;
+
+class function TWindowsService.checkCurrentState(state: TWindowsServiceState; nameService: string; nameMachine: string = ''): boolean;
+var
+  _result: boolean;
+
+  _currentState: TWindowsServiceState;
+begin
+  _currentState := getCurrentState(nameService, nameMachine);
+  _result := state = _currentState;
+
+  Result := _result;
+end;
+
+class function TWindowsService.getCurrentState(nameService: string; nameMachine: string = ''): TWindowsServiceState;
+const
+  ERR_MSG = 'Cannot retrieve Windows service state.';
+var
+  currentState: TWindowsServiceState;
+
+  _handleServiceControlManager: SC_HANDLE;
+  _handleService: SC_HANDLE;
+  _serviceStatus: TServiceStatus;
+  _errMsg: string;
+begin
+  _handleService := 0;
+  currentState := _NULL;
+
+  _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
+  if (_handleServiceControlManager <> 0) then
   begin
-    handleService := OpenService(handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
-    if (handleService > 0) then
+    _handleService := OpenService(_handleServiceControlManager, PChar(nameService), SERVICE_START or SERVICE_QUERY_STATUS);
+    if (_handleService <> 0) then
     begin
-      if (QueryServiceStatus(handleService, serviceStatus)) then
+      if (QueryServiceStatus(_handleService, _serviceStatus)) then
       begin
-        if (serviceStatus.dwCurrentState = SERVICE_RUNNING) then
-        begin
-          Result := True;
-        end;
+        currentState := TWindowsServiceState(_serviceStatus.dwCurrentState);
       end;
     end;
-    CloseServiceHandle(handleService);
+    CloseServiceHandle(_handleService);
   end;
-  CloseServiceHandle(handleServiceControlManager);
+  CloseServiceHandle(_handleServiceControlManager);
+
+  if (_handleServiceControlManager = 0) or (_handleService = 0) then
+  begin
+    _errMsg := ERR_MSG;
+    try
+      raiseLastSysErrorMessage;
+    except
+      on E: Exception do
+      begin
+        _errMsg := _errMsg + ': ' + E.Message;
+      end;
+    end;
+
+    raise Exception.Create(_errMsg);
+  end;
+
+  Result := currentState;
 end;
 
 class function TWindowsService.checkIfExists(nameService: string; nameMachine: string = ''): boolean; //nameService is not case-sensitive
+const
+  ERR_MSG = 'Cannot check if Windows service exists.';
 var
-  _result: boolean;
+  serviceExists: boolean;
+
   _handleServiceControlManager: SC_HANDLE;
   _handleService: SC_HANDLE;
+  _errMsg: string;
 begin
+{$hints OFF}
+  _handleServiceControlManager := 0;
+  _handleService := 0;
+{$hints ON}
   try
     _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
     _handleService := OpenService(_handleServiceControlManager, PChar(nameService),
@@ -267,9 +371,24 @@ begin
   except
     RaiseLastOSError;
   end;
-  _result := GetLastError() = ERROR_SUCCESS;
+  serviceExists := GetLastError() = ERROR_SUCCESS;
 
-  Result := _result;
+  if (_handleServiceControlManager = 0) or (_handleService = 0) then
+  begin
+    _errMsg := ERR_MSG;
+    try
+      raiseLastSysErrorMessage;
+    except
+      on E: Exception do
+      begin
+        _errMsg := _errMsg + ': ' + E.Message;
+      end;
+    end;
+
+    raise Exception.Create(_errMsg);
+  end;
+
+  Result := serviceExists;
 end;
 
 class procedure TWindowsService.delete(nameService: string);
