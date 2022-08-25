@@ -129,6 +129,7 @@ procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
 
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
 
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
 
@@ -156,7 +157,10 @@ procedure mySetForegroundWindow(handle: THandle);
 function checkIfWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): boolean;
 function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
 
+procedure writeIn_HKEY_LOCAL_MACHINE(key: string; name: string; value: Variant; forceCreationKey: boolean = NOT_FORCE);
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
 
 procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
 procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
@@ -169,11 +173,23 @@ function getLocaleDecimalSeparator: char;
 procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 
+//###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
+function checkIfCurrentProcessIsAServiceProcess: boolean;
+function checkIfIsAServiceProcess(processHandle: THandle): boolean;
+//###########-----
+
+procedure myAttachConsole;
+
 //################################################################################à
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
   var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
   external 'ADVAPI32.DLL' name 'GetNamedSecurityInfoW';
+
+function GetConsoleWindow: HWnd; stdcall;
+  external 'kernel32.dll' name 'GetConsoleWindow';
+function AttachConsole(ProcessId: DWORD): BOOL; stdcall;
+  external 'kernel32.dll' name 'AttachConsole';
 
 implementation
 
@@ -181,7 +197,7 @@ uses
   KLib.Utils, KLib.Validate, KLib.MyStringList,
   Vcl.Forms,
   Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
-  System.SysUtils, System.Win.ComObj, System.Win.Registry,
+  System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants,
   IdTCPClient;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
@@ -1019,6 +1035,20 @@ begin
   end;
 end;
 
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+var
+  _file: TextFile;
+begin
+  if forceCreationFile then
+  begin
+    createEmptyFileIfNotExists(filename);
+  end;
+  AssignFile(_file, filename);
+  Append(_file);
+  Writeln(_file, text);
+  CloseFile(_file);
+end;
+
 procedure createEmptyFileIfNotExists(filename: string);
 begin
   if not FileExists(filename) then
@@ -1434,6 +1464,73 @@ begin
   Result := FindWindow(pchar(className), pchar(captionForm));
 end;
 
+procedure writeIn_HKEY_LOCAL_MACHINE(key: string; name: string; value: Variant; forceCreationKey: boolean = NOT_FORCE);
+const
+  ERR_MSG = 'Unsupported variant type.';
+var
+  _registry: TRegistry;
+  _isOpenKey: boolean;
+begin
+  _registry := TRegistry.Create(KEY_READ or KEY_WRITE);
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    _isOpenKey := _registry.OpenKey(key, forceCreationKey);
+    if _isOpenKey then
+    begin
+
+      if (VarIsEmpty(value) or VarIsNull(value)) then
+      begin
+        _registry.WriteString(name, EMPTY_STRING);
+      end
+      else if (VarIsStr(value)) then
+      begin
+        _registry.WriteString(name, value);
+      end
+      else if (VarIsNumeric(value)) then
+      begin
+        _registry.WriteInteger(name, value);
+      end
+      else if (VarIsFloat(value)) then
+      begin
+        _registry.WriteInteger(name, value);
+      end
+      else
+      begin
+        raise Exception.Create(ERR_MSG);
+      end;
+
+      _registry.CloseKey;
+    end
+    else
+    begin
+      raise Exception.Create(key + ': Key not opened.');
+    end;
+  finally
+    _registry.Free;
+  end;
+end;
+
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
+var
+  value: string;
+
+  _registry: TRegistry;
+begin
+  validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key);
+
+  _registry := TRegistry.Create(KEY_READ or KEY_WRITE);
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key);
+    _registry.OpenKeyReadOnly(key);
+    value := _registry.ReadString(name);
+  finally
+    _registry.Free;
+  end;
+
+  Result := value;
+end;
+
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 var
   isOpenKey: boolean;
@@ -1449,6 +1546,19 @@ begin
   end;
 
   Result := isOpenKey;
+end;
+
+procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
+var
+  _registry: TRegistry;
+begin
+  _registry := TRegistry.Create;
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    _registry.DeleteKey(key);
+  finally
+    _registry.Free;
+  end;
 end;
 
 procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
@@ -1586,6 +1696,57 @@ begin
   begin
     raiseLastSysErrorMessage;
   end;
+end;
+
+function checkIfCurrentProcessIsAServiceProcess: boolean;
+var
+  _currentProcess: THandle;
+begin
+  _currentProcess := GetCurrentProcess;
+
+  Result := checkIfIsAServiceProcess(_currentProcess);
+end;
+
+function checkIfIsAServiceProcess(processHandle: THandle): boolean;
+var
+  _isServiceProcess: boolean;
+  _tokenInformation: Cardinal;
+  _length: Cardinal;
+  _tokenHandle: THandle;
+  _valid: boolean;
+begin
+  _isServiceProcess := false;
+
+  _length := 0;
+  _valid := OpenProcessToken(processHandle, TOKEN_QUERY, _tokenHandle);
+  if _valid then
+  begin
+    try
+      _valid := GetTokenInformation(_tokenHandle, TokenSessionId, @_tokenInformation, SizeOf(_tokenInformation), _length);
+      if _valid then
+      begin
+        if _length <> 0 then
+        begin
+          _isServiceProcess := _tokenInformation = 0;
+        end;
+      end;
+    finally
+      CloseHandle(_tokenHandle);
+    end;
+  end;
+
+  Result := _isServiceProcess;
+end;
+
+procedure myAttachConsole;
+const
+  ATTACH_PARENT_PROCESS = DWORD(-1);
+begin
+  if not AttachConsole(ATTACH_PARENT_PROCESS) then
+  begin
+    AllocConsole;
+  end;
+  AttachConsole(ATTACH_PARENT_PROCESS);
 end;
 
 end.

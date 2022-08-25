@@ -157,12 +157,16 @@ type
     procedure clear;
   end;
 
-  TAsyncMethodStatus = (created, pending, fulfilled, rejected);
-
   TListOfDoubles = class(TList<Double>)
   end;
 
   TArrayOfStrings = TArray<string>;
+
+{$scopedenums ON}
+  TAsyncMethodStatus = (created, pending, fulfilled, rejected);
+
+  TThreadStatus = (_null, created, stopped, paused, running);
+{$scopedenums OFF}
 
 implementation
 

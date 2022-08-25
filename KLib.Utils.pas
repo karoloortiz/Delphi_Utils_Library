@@ -55,8 +55,11 @@ function getIndexOfDrive(drive: char): integer;
 function getDriveExe: char;
 function getDirSize(path: string): int64;
 function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+function DirExe: string;
 function getDirExe: string;
 procedure createDirIfNotExists(dirName: string);
+function exeFileName: string;
+function getExeFileName: string;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 function getPathInLinuxStyle(path: string): string;
@@ -198,7 +201,7 @@ var
   _result: boolean;
 begin
   _result := false;
-  if fileexists(fileName) then
+  if FileExists(fileName) then
   begin
     AssignFile(_file, fileName);
     Reset(_file);
@@ -328,16 +331,20 @@ end;
 function getCombinedPathWithCurrentDir(pathToCombine: string): string;
 var
   _result: string;
-  _currentDir: string;
 begin
-  _currentDir := getDirExe;
-  _result := getCombinedPath(_currentDir, pathToCombine);
+  _result := getCombinedPath(DirExe, pathToCombine);
+
   Result := _result;
+end;
+
+function DirExe: string;
+begin
+  Result := getDirExe;
 end;
 
 function getDirExe: string;
 begin
-  result := ExtractFileDir(ParamStr(0));
+  Result := ExtractFileDir(getExeFileName);
 end;
 
 procedure createDirIfNotExists(dirName: string);
@@ -351,6 +358,16 @@ begin
       raise Exception.Create(ERR_MSG);
     end;
   end;
+end;
+
+function ExeFileName: string;
+begin
+  Result := getExeFileName;
+end;
+
+function getExeFileName: string;
+begin
+  Result := ParamStr(0);
 end;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;

@@ -72,6 +72,9 @@ const
   EVERYONE_GROUP = 'Everyone';
   USERS_GROUP = 'Users';
 
+  SERVICES_REGKEY = '\SYSTEM\CurrentControlSet\Services';
+  EVENTLOG_APPLICATION_REGKEY = SERVICES_REGKEY + '\EventLog\Application';
+
   C_DRIVE = 'C';
 
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
@@ -85,8 +88,11 @@ const
   FORCE = true;
   FORCE_OVERWRITE = FORCE;
   FORCE_DELETE = FORCE;
+  FORCE_CREATION = true;
+  FORCE_SUSPEND = true;
 
   RAISE_EXCEPTION = true;
+  RAISE_EXCEPTION_DISABLED = false;
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
   //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
