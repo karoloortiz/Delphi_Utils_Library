@@ -179,8 +179,14 @@ function checkIfIsAServiceProcess(processHandle: THandle): boolean;
 //###########-----
 
 procedure myAttachConsole;
+function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;
+  wmiHost: string = '.'; root: string = 'root\CIMV2'): string;
+function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
+//################################################################################
+function getCurrentPidAsString: string;
+function getCurrentPid: integer;
+function GetCurrentProcessId: DWORD;
 
-//################################################################################à
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
   var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
@@ -1747,6 +1753,100 @@ begin
     AllocConsole;
   end;
   AttachConsole(ATTACH_PARENT_PROCESS);
+end;
+
+function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;
+  wmiHost: string = '.'; root: string = 'root\CIMV2'): string;
+var
+  objWMIService: OLEVariant;
+  colItems: OLEVariant;
+  colItem: OLEVariant;
+  oEnum: IEnumvariant;
+  iValue: LongWord;
+
+  function GetWMIObject(const objectName: String): IDispatch;
+  var
+    chEaten: Integer;
+    BindCtx: IBindCtx; //for access to a bind context
+    Moniker: IMoniker; //Enables you to use a moniker object
+  begin
+    OleCheck(CreateBindCtx(0, bindCtx));
+    OleCheck(MkParseDisplayName(BindCtx, StringToOleStr(objectName), chEaten, Moniker)); //Converts a string into a moniker that identifies the object named by the string
+    OleCheck(Moniker.BindToObject(BindCtx, nil, IDispatch, Result)); //Binds to the specified object
+  end;
+
+var
+  _query: string;
+begin
+  try
+    CoInitialize(nil);
+    try
+      objWMIService := GetWMIObject(Format('winmgmts:\\%s\%s', [wmiHost, root]));
+      _query := Format('SELECT * FROM %s', [wmiClass]);
+      if filter <> EMPTY_STRING then
+      begin
+        _query := _query + ' WHERE ' + filter;
+      end;
+      colItems := objWMIService.ExecQuery(_query, 'WQL', 0);
+      oEnum := IUnknown(colItems._NewEnum) as IEnumVariant;
+      while oEnum.Next(1, colItem, iValue) = 0 do
+      begin
+        Result := colItem.Properties_.Item(wmiProperty, 0); //you can improve this code  ;) , storing the results in an TString.
+      end;
+
+    finally
+      CoUninitialize;
+    end;
+  except
+    on E: Exception do
+    Begin
+      raise Exception.Create(E.Message);
+    End;
+  end;
+end;
+
+function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
+var
+  objWMIService: OLEVariant;
+  colItems: OLEVariant;
+  colItem: OLEVariant;
+  oEnum: IEnumvariant;
+  iValue: LongWord;
+
+  function GetWMIObject(const objectName: String): IDispatch;
+  var
+    chEaten: Integer;
+    BindCtx: IBindCtx; //for access to a bind context
+    Moniker: IMoniker; //Enables you to use a moniker object
+  begin
+    OleCheck(CreateBindCtx(0, bindCtx));
+    OleCheck(MkParseDisplayName(BindCtx, StringToOleStr(objectName), chEaten, Moniker)); //Converts a string into a moniker that identifies the object named by the string
+    OleCheck(Moniker.BindToObject(BindCtx, nil, IDispatch, Result)); //Binds to the specified object
+  end;
+
+begin
+  objWMIService := GetWMIObject(Format('winmgmts:\\%s\%s', [wmiHost, root]));
+  colItems := objWMIService.ExecQuery(Format('SELECT * FROM %s WHERE ProcessId = "840"', [wmiClass]), 'WQL', 0);
+  oEnum := IUnknown(colItems._NewEnum) as IEnumVariant;
+  while oEnum.Next(1, colItem, iValue) = 0 do
+  begin
+    Result := colItem.Properties_.Item(wmiProperty, 0); //you can improve this code  ;) , storing the results in an TString.
+  end;
+end;
+
+function getCurrentPidAsString: string;
+begin
+  Result := IntToStr(getCurrentPid);
+end;
+
+function getCurrentPid: integer;
+begin
+  Result := GetCurrentProcessId;
+end;
+
+function GetCurrentProcessId: DWORD;
+begin
+  Result := Winapi.Windows.GetCurrentProcessId;
 end;
 
 end.

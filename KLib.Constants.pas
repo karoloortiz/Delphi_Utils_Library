@@ -132,6 +132,8 @@ const
     + '}):){0,6}(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::)|(?!IPv6:)[0-9A-Za-z-]*[0-9A-Za-z]:[!-Z^-'
     + '~]+)])';
 
+  REGEX_ONLY_LETTERS_NUMBERS_AND__ = '^[a-zA-Z0-9_.]*$';
+
 implementation
 
 end.

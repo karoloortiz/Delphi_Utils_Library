@@ -130,12 +130,16 @@ procedure splitStrings(source: string; delimiterPosition: integer; var destFirst
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
 function checkIfEmailIsValid(email: string): boolean;
+function checkIfRegexIsValid(text: string; regex: string): boolean;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = true): boolean;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
+
+function getValueOfParameter(parameterName: string): string;
+function checkIfParameterExists(parameterName: string): boolean;
 
 procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false); overload;
@@ -1101,6 +1105,11 @@ begin
   Result := _result;
 end;
 
+function checkIfRegexIsValid(text: string; regex: string): boolean;
+begin
+  Result := TRegEx.IsMatch(text, regex);
+end;
+
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 const
   NO_CASE_SENSITIVE = false;
@@ -1144,6 +1153,68 @@ var
 begin
   _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
   Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
+end;
+
+function getValueOfParameter(parameterName: string): string;
+var
+  parameterValue: string;
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterValue := '';
+
+  _exit := false;
+  i := 1;
+  while not _exit do
+  begin
+    _parameterName := ParamStr(i);
+    if (_parameterName = parameterName) then
+    begin
+      parameterValue := ParamStr(i + 1);
+      _exit := true;
+    end;
+
+    if i >= ParamCount then
+    begin
+      _exit := true;
+    end;
+
+    inc(i);
+  end;
+
+  Result := parameterValue;
+end;
+
+function checkIfParameterExists(parameterName: string): boolean;
+var
+  parameterExists: boolean;
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterExists := false;
+
+  _exit := false;
+  i := 1;
+  while not _exit do
+  begin
+    _parameterName := ParamStr(i);
+    if (_parameterName = parameterName) then
+    begin
+      parameterExists := true;
+      _exit := true;
+    end;
+
+    if i >= ParamCount then
+    begin
+      _exit := true;
+    end;
+
+    inc(i);
+  end;
+
+  Result := parameterExists;
 end;
 
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false);

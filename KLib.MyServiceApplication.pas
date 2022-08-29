@@ -34,37 +34,55 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyStringList;
+//#########################################################################
+//TMyServiceApplication used to bypass RegisterServices not virtual method
+
+unit KLib.MyServiceApplication;
 
 interface
 
 uses
-  System.Classes;
+  Vcl.SvcMgr;
 
 type
-  TMyStringList = type TStringList;
-
-  TMyStringListHelper = class helper for TStringList
-    procedure addStrings(strings: array of string); overload;
+  TMyServiceApplication = class(TServiceApplication)
+  public
+    procedure myRegisterServices(Install, Silent: Boolean);
   end;
+
+procedure DoneServiceApplication;
 
 implementation
 
 uses
-  Klib.Utils,
+  Vcl.Forms,
+{$if NOT DEFINED(CLR)}
+  Winapi.Windows,
+{$endif}
   System.SysUtils;
 
-procedure TMyStringListHelper.addStrings(strings: array of string);
-var
-  _stringList: TStringList;
+procedure TMyServiceApplication.myRegisterServices(Install, Silent: Boolean);
 begin
-  _stringList := arrayOfStringToTStringList(strings);
-  try
-    AddStrings(_stringList);
-  finally
-    begin
-      FreeAndNil(_stringList);
-    end;
+{$if NOT DEFINED(CLR)}
+  AddExitProc(DoneServiceApplication);
+{$endif}
+  RegisterServices(Install, Silent);
+end;
+
+procedure DoneServiceApplication;
+begin
+  with Vcl.Forms.Application do
+  begin
+    if Handle <> 0 then
+      ShowOwnedPopups(Handle, False);
+    ShowHint := False;
+    Destroying;
+    DestroyComponents;
+  end;
+  with Application do
+  begin
+    Destroying;
+    DestroyComponents;
   end;
 end;
 
