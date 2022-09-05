@@ -141,6 +141,11 @@ function getFloatToStrDecimalSeparator: char;
 function getValueOfParameter(parameterName: string): string;
 function checkIfParameterExists(parameterName: string): boolean;
 
+function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
+function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal; //TODO refactor
+function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
+function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
+
 procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false); overload;
@@ -1215,6 +1220,30 @@ begin
   end;
 
   Result := parameterExists;
+end;
+
+//get a particular bit value
+function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
+begin
+  Result := (sourceValue and (1 shl bitIndex)) <> 0;
+end;
+
+//set a particular bit as 1
+function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal; //TODO refactor
+begin
+  Result := getWordWithBitSetted(sourceValue, bitIndex, true);
+end;
+
+//set a particular bit as 0
+function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
+begin
+  Result := getWordWithBitSetted(sourceValue, bitIndex, false);
+end;
+
+//enable o disable a bit
+function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
+begin
+  Result := (sourceValue or (1 shl bitIndex)) xor (Integer(not bitValue) shl bitIndex);
 end;
 
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false);
