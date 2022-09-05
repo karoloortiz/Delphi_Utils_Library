@@ -373,7 +373,7 @@ begin
   end;
   serviceExists := GetLastError() = ERROR_SUCCESS;
 
-  if (_handleServiceControlManager = 0) or (_handleService = 0) then
+  if (_handleServiceControlManager = 0) then
   begin
     _errMsg := ERR_MSG;
     try

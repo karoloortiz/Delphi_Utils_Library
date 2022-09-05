@@ -129,8 +129,6 @@ type
     procedure clear;
   end;
 
-  TTypeOfProcedure = (_procedure, _method, _anonymousMethod);
-
   TAnonymousMethod = reference to procedure;
   TArrayOfAnonymousMethods = array of TAnonymousMethod;
 
@@ -163,9 +161,13 @@ type
   TArrayOfStrings = TArray<string>;
 
 {$scopedenums ON}
-  TAsyncMethodStatus = (created, pending, fulfilled, rejected);
+  TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
+
+  TAsyncMethodStatus = (_null, created, pending, fulfilled, rejected);
 
   TThreadStatus = (_null, created, stopped, paused, running);
+
+  TExecutionMode = (_null, gui, service, console);
 {$scopedenums OFF}
 
 implementation
@@ -185,6 +187,7 @@ begin
 end;
 
 procedure THostPort.clear;
+
 const
   EMPTY: THostPort = ();
 begin
@@ -192,6 +195,7 @@ begin
 end;
 
 procedure TCredentials.clear;
+
 const
   EMPTY: TCredentials = ();
 begin
@@ -199,6 +203,7 @@ begin
 end;
 
 procedure TFTPCredentials.clear;
+
 const
   EMPTY: TFTPCredentials = ();
 begin
@@ -206,6 +211,7 @@ begin
 end;
 
 procedure TDownloadInfo.clear;
+
 const
   EMPTY: TDownloadInfo = ();
 begin
@@ -213,6 +219,7 @@ begin
 end;
 
 procedure TPIDCredentials.clear;
+
 const
   EMPTY: TPIDCredentials = ();
 begin
@@ -220,6 +227,7 @@ begin
 end;
 
 procedure TColorButtom.clear;
+
 const
   EMPTY: TColorButtom = ();
 begin
@@ -227,6 +235,7 @@ begin
 end;
 
 procedure TPosition.clear;
+
 const
   EMPTY: TPosition = ();
 begin
@@ -234,6 +243,7 @@ begin
 end;
 
 procedure TSize.clear;
+
 const
   EMPTY: TSize = ();
 begin
@@ -241,6 +251,7 @@ begin
 end;
 
 procedure TDateTimeRange.clear;
+
 const
   EMPTY: TDateTimeRange = ();
 begin
@@ -248,6 +259,7 @@ begin
 end;
 
 procedure TResource.clear;
+
 const
   EMPTY: TResource = ();
 begin
@@ -255,6 +267,7 @@ begin
 end;
 
 procedure TCallBacks.clear;
+
 const
   EMPTY: TCallBacks = ();
 begin
@@ -262,6 +275,7 @@ begin
 end;
 
 procedure TAsyncifyMethodReply.clear;
+
 const
   EMPTY: TAsyncifyMethodReply = ();
 begin

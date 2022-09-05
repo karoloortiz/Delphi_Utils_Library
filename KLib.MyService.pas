@@ -94,6 +94,7 @@ type
   public
     executorMethod: TAnonymousMethod;
     eventLogDisabled: boolean;
+    customParameters: string;
 
     procedure writeInfoInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
     procedure writeErrorInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
@@ -202,12 +203,21 @@ procedure TMyService.ServiceAfterInstall(Sender: TService);
 var
   _service_regKey: string;
   _ImagePath: string;
+  _extraParams: string;
 begin
   _service_regKey := SERVICES_REGKEY + '\' + serviceName;
   writeIn_HKEY_LOCAL_MACHINE(_service_regKey, 'Description', _regkeyDescription);
 
   _ImagePath := readStringFrom_HKEY_LOCAL_MACHINE(_service_regKey, 'ImagePath');
-  _ImagePath := _ImagePath + ' ' + installParameterName + ' ' + serviceName;
+  if customParameters <> EMPTY_STRING then
+  begin
+    _extraParams := ' ' + customParameters;
+  end
+  else
+  begin
+    _extraParams := EMPTY_STRING;
+  end;
+  _ImagePath := _ImagePath + ' ' + installParameterName + ' ' + serviceName + _extraParams;
   writeIn_HKEY_LOCAL_MACHINE(_service_regKey, 'ImagePath', _ImagePath);
 
   if not eventLogDisabled then
