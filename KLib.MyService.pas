@@ -220,6 +220,8 @@ begin
   _ImagePath := _ImagePath + ' ' + installParameterName + ' ' + serviceName + _extraParams;
   writeIn_HKEY_LOCAL_MACHINE(_service_regKey, 'ImagePath', _ImagePath);
 
+  writeIn_HKEY_LOCAL_MACHINE(_service_regKey, 'ApplicationName', applicationName);
+
   if not eventLogDisabled then
   begin
     TEventLog.addEventApplicationToRegistry(applicationName, exeFileName);
