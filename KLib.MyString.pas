@@ -80,6 +80,8 @@ type
 
     procedure doubleQuoted;
     procedure singleQuoted;
+    procedure quoted(quotedCharacter: Char);
+    procedure extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
   end;
 
 implementation
@@ -225,6 +227,16 @@ end;
 procedure TMyStringHelper.singleQuoted;
 begin
   Self := getSingleQuotedString(Self);
+end;
+
+procedure TMyStringHelper.quoted(quotedCharacter: Char);
+begin
+  Self := getQuotedString(Self, quotedCharacter);
+end;
+
+procedure TMyStringHelper.extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
+begin
+  Self := getExtractedString(Self, quoteString, raiseExceptionEnabled);
 end;
 
 end.

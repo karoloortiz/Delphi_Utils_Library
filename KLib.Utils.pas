@@ -107,7 +107,12 @@ function getCurrentDateTime: TDateTime;
 function getParsedXMLstring(mainString: string): string; //todo add to myString
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
-function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
+function getQuotedString(mainString: string; quoteCharacter: Char): string;
+function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
+  forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 function getStringWithFixedLength(value: string; fixedLength: integer): string;
 
@@ -852,31 +857,91 @@ end;
 
 function getDoubleQuotedString(mainString: string): string;
 begin
-  Result := AnsiQuotedStr(mainString, '"');
+  Result := getQuotedString(mainString, '"');
 end;
 
 function getSingleQuotedString(mainString: string): string;
 begin
-  Result := AnsiQuotedStr(mainString, '''');
+  Result := getQuotedString(mainString, '''');
 end;
 
-function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
+function getQuotedString(mainString: string; quoteCharacter: Char): string;
+begin
+  Result := AnsiQuotedStr(mainString, quoteCharacter);
+end;
+
+function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+begin
+  Result := getExtractedString(mainString, '"', raiseExceptionEnabled);
+end;
+
+function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+begin
+  Result := getExtractedString(mainString, '''', raiseExceptionEnabled);
+end;
+
+function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+const
+  ERR_MSG = 'String not found.';
+var
+  _result: string;
+
+  _lenghtQuotedString: integer;
+  _lenghtMainString: integer;
+  _firstIndex: integer;
+  _lastIndex: integer;
+begin
+  _result := EMPTY_STRING;
+
+  _lenghtQuotedString := quoteString.Length;
+  _firstIndex := mainString.IndexOf(quoteString);
+  if _firstIndex > -1 then
+  begin
+    _firstIndex := _firstIndex + _lenghtQuotedString;
+
+    _lenghtMainString := Length(mainString);
+    _lastIndex := mainString.LastIndexOf(quoteString, _lenghtMainString, _lenghtMainString - _firstIndex); //IGNORE FIRST OCCURENCE
+    if _lastIndex > -1 then
+    begin
+      _lastIndex := _lastIndex - _lenghtQuotedString;
+      _result := mainString.Substring(_lenghtQuotedString, _lastIndex);
+    end;
+  end;
+
+  if (raiseExceptionEnabled) and (_result = EMPTY_STRING) then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+
+  Result := _result;
+end;
+
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
+  forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 const
   ERR_MSG = 'Index out of range.';
 var
   _result: string;
+
   _lenght: integer;
   _firstStringPart: string;
   _lastStringPart: string;
+  _index: integer;
 begin
+  _index := index;
+
   _lenght := Length(mainString);
   if (index > _lenght) or (index < 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  _firstStringPart := Copy(mainString, 0, index);
+  _firstStringPart := getStringWithFixedLength(mainString, index);
+  if forceOverwriteIndexCharacter then
+  begin
+    Inc(index);
+  end;
   _lastStringPart := Copy(mainString, index + 1, MaxInt);
-  _result := _firstStringPart + insertedString + _lastStringPart;
+  _result := getMergedStrings(_firstStringPart, _lastStringPart, insertedString);
 
   Result := _result;
 end;
@@ -1063,25 +1128,10 @@ end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 var
-  _startIndexDelimiter: integer;
-  _endIndexDelimiter: integer;
-  _lengthDestFirstString: integer;
-  _lengthDestSecondString: integer;
+  _delimiterPosition: integer;
 begin
-  _startIndexDelimiter := AnsiPos(delimiter, source);
-  if _startIndexDelimiter > 0 then
-  begin
-    _endIndexDelimiter := _startIndexDelimiter + Length(delimiter);
-    _lengthDestFirstString := _startIndexDelimiter - 1;
-    _lengthDestSecondString := Length(source) - _endIndexDelimiter + 1;
-    destFirstString := Copy(source, 0, _lengthDestFirstString);
-    destSecondString := Copy(source, _endIndexDelimiter, _lengthDestSecondString);
-  end
-  else
-  begin
-    destFirstString := source;
-    destSecondString := '';
-  end;
+  _delimiterPosition := AnsiPos(delimiter, source);
+  splitStrings(source, _delimiterPosition, destFirstString, destSecondString);
 end;
 
 procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string);
@@ -1093,7 +1143,7 @@ begin
   if _lenghtSource > delimiterPosition then
   begin
     _lengthDestSecondString := _lenghtSource - delimiterPosition;
-    destFirstString := Copy(source, 0, delimiterPosition);
+    destFirstString := Copy(source, 0, delimiterPosition - 1);
     destSecondString := Copy(source, delimiterPosition + 1, _lengthDestSecondString);
   end
   else
