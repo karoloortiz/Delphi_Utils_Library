@@ -82,6 +82,7 @@ type
     procedure singleQuoted;
     procedure quoted(quotedCharacter: Char);
     procedure extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
+    function getVariantType(destinationTypeAsString: string): Variant;
   end;
 
 implementation
@@ -237,6 +238,11 @@ end;
 procedure TMyStringHelper.extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
 begin
   Self := getExtractedString(Self, quoteString, raiseExceptionEnabled);
+end;
+
+function TMyStringHelper.getVariantType(destinationTypeAsString: string): Variant;
+begin
+  Result := stringToVariantType(Self, destinationTypeAsString);
 end;
 
 end.

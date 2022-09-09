@@ -179,6 +179,8 @@ type
   TThreadStatus = (_null, created, stopped, paused, running);
 
   TExecutionMode = (_null, gui, service, console);
+
+  TType = (_null, _string, _integer, _double, _char, _boolean);
 {$scopedenums OFF}
 
 implementation

@@ -186,7 +186,25 @@ function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
 function getCurrentPidAsString: string;
 function getCurrentPid: integer;
 function GetCurrentProcessId: DWORD;
+//################################################################################
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+function DirExe: string;
+function getDirExe: string;
+function exeFileName: string;
+function getExeFileName: string;
 
+function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterName: string): string; overload;
+function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string; overload;
+function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean; overload;
+function checkIfParameterExists(parameterName: string): boolean; overload;
+
+function myParamCount: integer;
+function myParamStr(index: integer): string;
+function getShellParamsAsString: string;
+function getShellParams: TArrayOfStrings;
+//################################################################################
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
   var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
@@ -197,13 +215,16 @@ function GetConsoleWindow: HWnd; stdcall;
 function AttachConsole(ProcessId: DWORD): BOOL; stdcall;
   external 'kernel32.dll' name 'AttachConsole';
 
+var
+  shellParams: TArrayOfStrings;
+
 implementation
 
 uses
   KLib.Utils, KLib.Validate, KLib.MyStringList,
   Vcl.Forms,
   Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
-  System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants,
+  System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants, System.StrUtils,
   IdTCPClient;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
@@ -1848,5 +1869,302 @@ function GetCurrentProcessId: DWORD;
 begin
   Result := Winapi.Windows.GetCurrentProcessId;
 end;
+
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+var
+  _result: string;
+begin
+  _result := getCombinedPath(DirExe, pathToCombine);
+
+  Result := _result;
+end;
+
+function DirExe: string;
+begin
+  Result := getDirExe;
+end;
+
+function getDirExe: string;
+begin
+  Result := ExtractFileDir(getExeFileName);
+end;
+
+function ExeFileName: string;
+begin
+  Result := getExeFileName;
+end;
+
+function getExeFileName: string;
+begin
+  Result := myParamStr(0);
+end;
+
+function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
+begin
+  Result := getValueOfParameter(parameterNames, EMPTY_ARRAY_OF_STRINGS);
+end;
+
+function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; //get first param value finded
+var
+  parameterValue: string;
+
+  _countParameterNames: integer;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterValue := EMPTY_STRING;
+
+  _countParameterNames := Length(parameterNames);
+  if _countParameterNames > 0 then
+  begin
+    i := 0;
+    _exit := false;
+    while not _exit do
+    begin
+      parameterValue := getValueOfParameter(parameterNames[i], valuesExcluded);
+
+      if (parameterValue <> EMPTY_STRING) or (i >= (_countParameterNames - 1)) then
+      begin
+        _exit := true;
+      end
+      else
+      begin
+        inc(i);
+      end;
+    end;
+  end;
+
+  Result := parameterValue;
+end;
+
+function getValueOfParameter(parameterName: string): string;
+begin
+  Result := getValueOfParameter(parameterName, EMPTY_ARRAY_OF_STRINGS);
+end;
+
+function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string;
+var
+  parameterValue: string;
+
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterValue := EMPTY_STRING;
+
+  if myParamCount > 0 then
+  begin
+    _exit := false;
+    i := 1;
+
+    while not _exit do
+    begin
+      _parameterName := myParamStr(i);
+      if (_parameterName = parameterName) then
+      begin
+        parameterValue := myParamStr(i + 1);
+
+        if not MatchStr(parameterValue, valuesExcluded) then
+        begin
+          _exit := true;
+        end
+        else
+        begin
+          parameterValue := EMPTY_STRING;
+        end;
+      end;
+
+      if i >= myParamCount then
+      begin
+        _exit := true;
+      end;
+
+      inc(i);
+    end;
+  end;
+
+  Result := parameterValue;
+end;
+
+function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean;
+var
+  parameterExists: boolean;
+
+  _countParameterNames: integer;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterExists := false;
+
+  _countParameterNames := Length(parameterNames);
+  if _countParameterNames > 0 then
+  begin
+    i := 0;
+    _exit := false;
+    while not _exit do
+    begin
+      parameterExists := checkIfParameterExists(parameterNames[i]);
+
+      if (parameterExists) or (i >= (_countParameterNames - 1)) then
+      begin
+        _exit := true;
+      end
+      else
+      begin
+        inc(i);
+      end;
+    end;
+  end;
+
+  Result := parameterExists;
+end;
+
+function checkIfParameterExists(parameterName: string): boolean;
+var
+  parameterExists: boolean;
+
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterExists := false;
+
+  _exit := false;
+  i := 1;
+  while not _exit do
+  begin
+    _parameterName := myParamStr(i);
+    if (_parameterName = parameterName) then
+    begin
+      parameterExists := true;
+      _exit := true;
+    end;
+
+    if i >= myParamCount then
+    begin
+      _exit := true;
+    end;
+
+    inc(i);
+  end;
+
+  Result := parameterExists;
+end;
+
+function myParamCount: Integer;
+begin
+  Result := Length(shellParams) - 1;
+end;
+
+function myParamStr(index: integer): string;
+var
+  _result: string;
+begin
+  _result := EMPTY_STRING;
+  if index <= myParamCount then
+  begin
+    _result := shellParams[index];
+  end;
+
+  Result := _result;
+end;
+
+function getShellParamsAsString: string;
+var
+  shellParamsAsString: string;
+  i: integer;
+  _shellParamsLength: integer;
+begin
+  _shellParamsLength := Length(shellParams);
+
+  for i := 0 to _shellParamsLength - 1 do
+  begin
+    shellParamsAsString := shellParamsAsString + SPACE_STRING + shellParams[i];
+  end;
+
+  Result := shellParamsAsString;
+end;
+
+function getShellParams: TArrayOfStrings;
+var
+  _result: TArrayOfStrings;
+
+  _applicationPath: string;
+  _commandLine: string;
+  _params: string;
+  _paramValue: string;
+  _exit: boolean;
+
+  _indexStartSubstring: integer;
+  _indexEndSubstring: integer;
+  _subString: string;
+
+  _buffer: array [0 .. 260] of Char;
+begin
+  _result := [];
+
+  SetString(_applicationPath, _buffer, GetModuleFileName(0, _buffer, Length(_buffer)));
+
+  _result := _result + [_applicationPath];
+
+  _applicationPath := getDoubleQuotedString(_applicationPath) + ' ';
+  _commandLine := GetCommandLine;
+
+  _params := _commandLine.Replace(_applicationPath, EMPTY_STRING);
+  _params := Trim(_params);
+
+  if _params.Length > 0 then
+  begin
+    _indexStartSubstring := 0;
+    _subString := _params;
+    _exit := false;
+    while not _exit do
+    begin
+      _indexEndSubstring := -1;
+
+      if (_subString.Chars[0] <> SPACE_STRING) then
+      begin
+        if (_subString.Chars[0] = '"') then
+        begin
+          _indexEndSubstring := _subString.Remove(0, 1).IndexOf('"') + 2;
+        end
+        else if (_subString.Chars[0] = '''') then
+        begin
+          _indexEndSubstring := _subString.Remove(0, 1).IndexOf('''') + 2;
+        end;
+
+        if (_indexEndSubstring = -1) then
+        begin
+          _indexEndSubstring := _subString.IndexOf(' ');
+        end;
+
+        if (_indexEndSubstring = -1) then
+        begin
+          _indexEndSubstring := _subString.Length;
+        end;
+
+        _paramValue := _subString.Substring(_indexStartSubstring, _indexEndSubstring);
+        _result := _result + [_paramValue];
+
+        _subString := _subString.Remove(_indexStartSubstring, _indexEndSubstring);
+
+        if _subString.Length = 0 then
+        begin
+          _exit := true;
+        end;
+      end
+      else
+      begin
+        _subString := Trim(_subString);
+      end;
+    end;
+  end;
+
+  Result := _result;
+end;
+
+initialization
+
+shellParams := getShellParams;
 
 end.

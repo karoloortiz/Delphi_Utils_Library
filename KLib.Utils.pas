@@ -54,12 +54,7 @@ function getFreeSpaceOnDrive(drive: char): int64;
 function getIndexOfDrive(drive: char): integer;
 function getDriveExe: char;
 function getDirSize(path: string): int64;
-function getCombinedPathWithCurrentDir(pathToCombine: string): string;
-function DirExe: string;
-function getDirExe: string;
 procedure createDirIfNotExists(dirName: string);
-function exeFileName: string;
-function getExeFileName: string;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 function getPathInLinuxStyle(path: string): string;
@@ -128,6 +123,7 @@ function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 function stringToStringListWithFixedLen(source: string; fixedLen: Integer): TStringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 function stringToTStringList(source: string): TStringList;
+function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
 
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 
@@ -144,9 +140,6 @@ function checkIfMainStringContainsSubString(mainString: string; subString: strin
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
 
-function getValueOfParameter(parameterName: string): string;
-function checkIfParameterExists(parameterName: string): boolean;
-
 //TODO refactor
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
@@ -158,6 +151,8 @@ procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: b
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false); overload;
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
+
+function myDefault(typeAsString: string): Variant;
 
 implementation
 
@@ -344,25 +339,6 @@ begin
   Result := totalSize;
 end;
 
-function getCombinedPathWithCurrentDir(pathToCombine: string): string;
-var
-  _result: string;
-begin
-  _result := getCombinedPath(DirExe, pathToCombine);
-
-  Result := _result;
-end;
-
-function DirExe: string;
-begin
-  Result := getDirExe;
-end;
-
-function getDirExe: string;
-begin
-  Result := ExtractFileDir(getExeFileName);
-end;
-
 procedure createDirIfNotExists(dirName: string);
 const
   ERR_MSG = 'Error creating dir.';
@@ -374,16 +350,6 @@ begin
       raise Exception.Create(ERR_MSG);
     end;
   end;
-end;
-
-function ExeFileName: string;
-begin
-  Result := getExeFileName;
-end;
-
-function getExeFileName: string;
-begin
-  Result := ParamStr(0);
 end;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
@@ -926,10 +892,7 @@ var
   _lenght: integer;
   _firstStringPart: string;
   _lastStringPart: string;
-  _index: integer;
 begin
-  _index := index;
-
   _lenght := Length(mainString);
   if (index > _lenght) or (index < 0) then
   begin
@@ -1112,6 +1075,34 @@ begin
   Result := _stringList;
 end;
 
+function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
+var
+  value: Variant;
+begin
+  if destinationTypeAsString = 'string' then  //TODO CREATE TTYPE ENUM
+  begin
+    value := stringValue;
+  end
+  else if destinationTypeAsString = 'Integer' then
+  begin
+    value := StrToInt(stringValue);
+  end
+  else if destinationTypeAsString = 'Double' then
+  begin
+    value := StrToFloat(stringValue);
+  end
+  else if destinationTypeAsString = 'Char' then
+  begin
+    value := stringValue.Chars[0];
+  end
+  else if destinationTypeAsString = 'Boolean' then
+  begin
+    value := StrToBool(stringValue);
+  end;
+
+  Result := value;
+end;
+
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 var
   stringList: TStringList;
@@ -1217,68 +1208,6 @@ begin
   Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
 end;
 
-function getValueOfParameter(parameterName: string): string;
-var
-  parameterValue: string;
-  _parameterName: string;
-  i: integer;
-  _exit: boolean;
-begin
-  parameterValue := '';
-
-  _exit := false;
-  i := 1;
-  while not _exit do
-  begin
-    _parameterName := ParamStr(i);
-    if (_parameterName = parameterName) then
-    begin
-      parameterValue := ParamStr(i + 1);
-      _exit := true;
-    end;
-
-    if i >= ParamCount then
-    begin
-      _exit := true;
-    end;
-
-    inc(i);
-  end;
-
-  Result := parameterValue;
-end;
-
-function checkIfParameterExists(parameterName: string): boolean;
-var
-  parameterExists: boolean;
-  _parameterName: string;
-  i: integer;
-  _exit: boolean;
-begin
-  parameterExists := false;
-
-  _exit := false;
-  i := 1;
-  while not _exit do
-  begin
-    _parameterName := ParamStr(i);
-    if (_parameterName = parameterName) then
-    begin
-      parameterExists := true;
-      _exit := true;
-    end;
-
-    if i >= ParamCount then
-    begin
-      _exit := true;
-    end;
-
-    inc(i);
-  end;
-
-  Result := parameterExists;
-end;
-
 //get a particular bit value
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 begin
@@ -1356,6 +1285,34 @@ end;
 procedure executeProcedure(myProcedure: TCallBack);
 begin
   myProcedure('');
+end;
+
+function myDefault(typeAsString: string): Variant;
+var
+  value: Variant;
+begin
+  if typeAsString = 'string' then
+  begin
+    value := Default (string);
+  end
+  else if typeAsString = 'Integer' then
+  begin
+    value := Default (Integer);
+  end
+  else if typeAsString = 'Double' then
+  begin
+    value := Default (Double);
+  end
+  else if typeAsString = 'Char' then
+  begin
+    value := Default (Char);
+  end
+  else if typeAsString = 'Boolean' then
+  begin
+    value := Default (Boolean);
+  end;
+
+  Result := value;
 end;
 
 end.

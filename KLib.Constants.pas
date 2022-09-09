@@ -38,6 +38,9 @@ unit KLib.Constants;
 
 interface
 
+uses
+  KLib.Types;
+
 const
   DATE_FORMAT = 'yyyy-mm-dd';
   DATE_FORMAT_ITALIAN = 'dd/mm/yyyy';
@@ -80,6 +83,8 @@ const
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
+
+  EMPTY_ARRAY_OF_STRINGS: TArrayOfStrings = [];
 
   RUN_AS_ADMIN = true;
 

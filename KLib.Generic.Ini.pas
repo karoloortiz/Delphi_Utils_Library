@@ -34,8 +34,16 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
+//  ATTRIBUTES:
+//  - FileNameAttribute
+//  - SettingStringsAttribute
+//  - SettingDoubleAttribute      //TODO
+//  - SectionNameAttribute
 //###########---EXAMPLE OF USE----##########################
-//  type
+// uses
+//  KLib.Generic.Attributes; //always include
+//
+// type
 //  [
 //    FileNameAttribute('config.ini'),
 //    SettingStringsAttribute(double_quotted)
@@ -56,12 +64,12 @@
 //    char_value2: char;
 //  end;
 //
-//  implementation
+// implementation
 //
-//  var
+// var
 //  config:TConfigIni
 //
-//  begin
+// begin
 //
 //  with config do
 //  begin
@@ -71,7 +79,7 @@
 //  TGenericIni.saveTofile<TConfigIni>(config);
 //  config:= TGenericIni.getFromFile<TConfigIni>();
 //#####################################
-unit KLib.GenericIni;
+unit KLib.Generic.Ini;
 
 interface
 
@@ -79,37 +87,7 @@ uses
   KLib.Constants;
 
 type
-  FileNameAttribute = class(TCustomAttribute)
-  public
-    value: String;
-
-    constructor Create(const value: String);
-  end;
-
-  TSettingStringsAttributeType = (_null, single_quotted, double_quotted);
-
-  SettingStringsAttribute = class(TCustomAttribute)
-  public
-    value: TSettingStringsAttributeType;
-    //todo add lowercase, uppercase, casesensitive
-    constructor Create(const value: TSettingStringsAttributeType);
-  end;
-
-  //  SettingDoubleAttribute = class(TCustomAttribute)       //TODO
-  //  public
-  //    value: char;
-  //
-  //    constructor Create(const value: char);
-  //  end;
-
-  SectionNameAttribute = class(TCustomAttribute)
-  public
-    value: String;
-
-    constructor Create(const value: String);
-  end;
-
-  TGenericIni = class
+  TIniGeneric = class
   public
     class procedure saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
     class function getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
@@ -118,16 +96,16 @@ type
 implementation
 
 uses
-  KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
+  KLib.Generic.Attributes, KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
   Rtti,
   System.SysUtils;
 
-class procedure TGenericIni.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
+class procedure TIniGeneric.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
 var
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
-
   _sectionName: string;
+
   _propertyName: string;
   _propertyType: string;
   _propertyValue: Variant;
@@ -218,14 +196,14 @@ begin
   _rttiContext.Free;
 end;
 
-class function TGenericIni.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+class function TIniGeneric.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
 var
   _record: T;
 
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
-
   _sectionName: string;
+
   _propertyName: string;
   _propertyType: string;
   _propertyValue: Variant;
@@ -314,21 +292,6 @@ begin
   _rttiContext.Free;
 
   Result := _record;
-end;
-
-constructor FileNameAttribute.Create(const value: String);
-begin
-  Self.value := value;
-end;
-
-constructor SettingStringsAttribute.Create(const value: TSettingStringsAttributeType);
-begin
-  Self.value := value;
-end;
-
-constructor SectionNameAttribute.Create(const value: String);
-begin
-  Self.value := value;
 end;
 
 end.
