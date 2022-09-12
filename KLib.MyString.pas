@@ -78,10 +78,11 @@ type
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
-    procedure doubleQuoted;
-    procedure singleQuoted;
-    procedure quoted(quotedCharacter: Char);
+    procedure doubleQuote;
+    procedure singleQuote;
+    procedure quote(quotedCharacter: Char);
     procedure extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
+    procedure dequote;
     function getVariantType(destinationTypeAsString: string): Variant;
   end;
 
@@ -220,17 +221,17 @@ begin
   end;
 end;
 
-procedure TMyStringHelper.doubleQuoted;
+procedure TMyStringHelper.doubleQuote;
 begin
   Self := getDoubleQuotedString(Self);
 end;
 
-procedure TMyStringHelper.singleQuoted;
+procedure TMyStringHelper.singleQuote;
 begin
   Self := getSingleQuotedString(Self);
 end;
 
-procedure TMyStringHelper.quoted(quotedCharacter: Char);
+procedure TMyStringHelper.quote(quotedCharacter: Char);
 begin
   Self := getQuotedString(Self, quotedCharacter);
 end;
@@ -238,6 +239,11 @@ end;
 procedure TMyStringHelper.extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
 begin
   Self := getExtractedString(Self, quoteString, raiseExceptionEnabled);
+end;
+
+procedure TMyStringHelper.dequote;
+begin
+  Self := getDequotedString(Self);
 end;
 
 function TMyStringHelper.getVariantType(destinationTypeAsString: string): Variant;

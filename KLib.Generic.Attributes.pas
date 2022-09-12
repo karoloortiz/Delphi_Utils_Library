@@ -86,6 +86,11 @@ type
     constructor Create(const value: string);
   end;
 
+  SettingStringDequoteAttribute = class(TCustomAttribute)
+  public
+    constructor Create;
+  end;
+
 implementation
 
 uses
@@ -114,6 +119,10 @@ end;
 constructor DefaultValueAttribute.Create(const value: string);
 begin
   Self.value := value;
+end;
+
+constructor SettingStringDequoteAttribute.Create;
+begin
 end;
 
 end.

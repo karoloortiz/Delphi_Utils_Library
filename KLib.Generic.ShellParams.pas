@@ -35,9 +35,12 @@
 }
 
 //  ATTRIBUTES:
+//  on record
 //  - SettingStringsAttribute
+//  on fields:
 //  - ParamNameAttribute
 //  - DefaultValueAttribute
+//  - SettingStringDequoteAttribute
 //###########---EXAMPLE OF USE----##########################
 // uses
 //  KLib.Generic.Attributes; //always include
@@ -107,9 +110,8 @@ type
 implementation
 
 uses
-  KLib.Utils, KLib.Windows,
-  Rtti,
-  System.SysUtils;
+  KLib.Utils, KLib.Windows, KLib.Generic,
+  System.Rtti, System.SysUtils, System.Variants;
 
 class function TShellParamsGeneric.get<T>: T;
 var
@@ -118,7 +120,7 @@ var
   _settingStringsAttribute: TSettingStringsAttributeType;
 
   _paramNameAttribute: string;
-  _defaultValueAttribute: string;
+  _settingStringDequoteAttribute: boolean;
 
   _propertyName: string;
   _propertyType: string;
@@ -134,6 +136,8 @@ var
   _paramNames: TArrayOfStrings;
   _valuesExcluded: TArrayOfStrings;
 begin
+  _record := TGeneric.getDefault<T>;
+
   _rttiContext := TRttiContext.Create;
   _rttiType := _rttiContext.GetType(TypeInfo(T));
 
@@ -162,8 +166,12 @@ begin
 
   for _rttiField in _rttiType.GetFields do
   begin
+    _propertyName := _rttiField.Name;
+    _propertyType := _rttiField.FieldType.ToString;
+
+    VarClear(_propertyValue);
     _paramNames := [];
-    _defaultValueAttribute := EMPTY_STRING;
+    _settingStringDequoteAttribute := false;
 
     _customAttributes := _rttiField.GetAttributes;
     for _customAttribute in _customAttributes do
@@ -174,21 +182,10 @@ begin
         _paramNames := _paramNames + [_paramNameAttribute];
       end;
 
-      if _customAttribute is DefaultValueAttribute then
+      if _customAttribute is SettingStringDequoteAttribute then
       begin
-        _defaultValueAttribute := DefaultValueAttribute(_customAttribute).value;
+        _settingStringDequoteAttribute := true;
       end;
-    end;
-
-    _propertyName := _rttiField.Name;
-    _propertyType := _rttiField.FieldType.ToString;
-    if _defaultValueAttribute <> EMPTY_STRING then
-    begin
-      _propertyValue := stringToVariantType(_defaultValueAttribute, _propertyType);
-    end
-    else
-    begin
-      _propertyValue := myDefault(_propertyType);
     end;
 
     _parameterExists := checkIfParameterExists(_paramNames);
@@ -198,17 +195,24 @@ begin
 
       if _propertyType = 'string' then
       begin
-        case _settingStringsAttribute of
-          _null:
-            ;
-          single_quotted:
-            begin
-              _propertyValue := getSingleQuoteExtractedString(_propertyValue);
-            end;
-          double_quotted:
-            begin
-              _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
-            end;
+        if _settingStringDequoteAttribute then
+        begin
+          _propertyValue := getDequotedString(_propertyValue);
+        end
+        else
+        begin
+          case _settingStringsAttribute of
+            _null:
+              ;
+            single_quotted:
+              begin
+                _propertyValue := getSingleQuoteExtractedString(_propertyValue);
+              end;
+            double_quotted:
+              begin
+                _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
+              end;
+          end;
         end;
       end
       else if _propertyType = 'Integer' then
@@ -229,7 +233,10 @@ begin
       end;
     end;
 
-    _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+    if (not VarIsEmpty(_propertyValue)) then
+    begin
+      _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+    end;
   end;
 
   //  except

@@ -57,7 +57,6 @@ type
   TWindowsArchitecture = (WindowsX86, WindowsX64);
 function getWindowsArchitecture: TWindowsArchitecture;
 function checkIfUserIsAdmin: boolean;
-function IsUserAnAdmin: boolean; external shell32; //KEPT THE SIGNATURE, NOT RENAME!!!
 
 type
   TShowWindowType = (
@@ -205,6 +204,8 @@ function myParamStr(index: integer): string;
 function getShellParamsAsString: string;
 function getShellParams: TArrayOfStrings;
 //################################################################################
+ //KEPT THE SIGNATURES, NOT RENAME!!!
+function IsUserAnAdmin: boolean; external shell32;
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
   var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
@@ -1078,7 +1079,7 @@ end;
 
 procedure createEmptyFileIfNotExists(filename: string);
 begin
-  if not FileExists(filename) then
+  if not checkIfFileExists(filename) then
   begin
     createEmptyFile(filename);
   end;

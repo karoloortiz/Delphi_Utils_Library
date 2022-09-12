@@ -298,7 +298,7 @@ procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File alr
 var
   _errMsg: string;
 begin
-  if FileExists(fileName) then
+  if checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -309,7 +309,7 @@ procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn'
 var
   _errMsg: string;
 begin
-  if not FileExists(fileName) then
+  if not checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);

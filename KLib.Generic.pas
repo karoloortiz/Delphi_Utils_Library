@@ -43,12 +43,15 @@ type
   public
     class function getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer; overload;
     class function getElementIndexFromArray<T>(myArray: array of T; element: T): integer; overload;
+
+    class function getDefault<T>: T;
   end;
 
 implementation
 
 uses
-  System.Generics.Collections, System.SysUtils;
+  KLib.Generic.Attributes, KLib.Constants, KLib.Utils,
+  System.Generics.Collections, System.SysUtils, System.Rtti, System.Variants;
 
 class function TGeneric.getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer;
 var
@@ -83,6 +86,88 @@ begin
   FreeAndNil(_list);
 
   Result := elementIndex;
+end;
+
+class function TGeneric.getDefault<T>: T;
+var
+  _record: T;
+
+  _defaultValueAttribute: string;
+
+  _propertyName: string;
+  _propertyType: string;
+  _propertyValue: Variant;
+
+  _rttiContext: TRttiContext;
+  _rttiType: TRttiType;
+  _customAttributes: TArray<TCustomAttribute>;
+  _customAttribute: TCustomAttribute;
+  _rttiField: TRttiField;
+begin
+  _rttiContext := TRttiContext.Create;
+  _rttiType := _rttiContext.GetType(TypeInfo(T));
+
+  //  try
+  for _rttiField in _rttiType.GetFields do
+  begin
+    _propertyName := _rttiField.Name;
+    _propertyType := _rttiField.FieldType.ToString;
+
+    VarClear(_propertyValue);
+    _defaultValueAttribute := EMPTY_STRING;
+
+    _customAttributes := _rttiField.GetAttributes;
+    for _customAttribute in _customAttributes do
+    begin
+      if _customAttribute is DefaultValueAttribute then
+      begin
+        _defaultValueAttribute := DefaultValueAttribute(_customAttribute).value;
+      end;
+    end;
+
+    if _defaultValueAttribute <> EMPTY_STRING then
+    begin
+      _propertyValue := stringToVariantType(_defaultValueAttribute, _propertyType);
+    end
+    else
+    begin
+      _propertyValue := myDefault(_propertyType);
+    end;
+
+    if _propertyType = 'string' then
+    begin
+      // already a string
+    end
+    else if _propertyType = 'Integer' then
+    begin
+      _propertyValue := StrToInt(_propertyValue);
+    end
+    else if _propertyType = 'Double' then
+    begin
+      _propertyValue := StrToFloat(_propertyValue);
+    end
+    else if _propertyType = 'Char' then
+    begin
+      // already a string
+    end
+    else if _propertyType = 'Boolean' then
+    begin
+      _propertyValue := StrToBool(_propertyValue);
+    end;
+
+    if (not VarIsEmpty(_propertyValue)) then
+    begin
+      _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+    end;
+  end;
+
+  //  except
+  //    { ... Do something here ... }
+  //  end;
+
+  _rttiContext.Free;
+
+  Result := _record;
 end;
 
 end.

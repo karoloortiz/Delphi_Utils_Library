@@ -39,18 +39,20 @@
 //  - SettingStringsAttribute
 //  - SettingDoubleAttribute      //TODO
 //  - SectionNameAttribute
+//  - DefaultValueAttribute
 //###########---EXAMPLE OF USE----##########################
 // uses
-//  KLib.Generic.Attributes; //always include
+//  KLib.Generic.Ini, KLib.Generic.Attributes; //always include
 //
 // type
 //  [
-//    FileNameAttribute('config.ini'),
+//    FileNameAttribute('settings.ini'),
 //    SettingStringsAttribute(double_quotted)
 //    ]
-//  TConfigIni = record
+//  TSettingsIni = record
 //  public
 //    [SectionNameAttribute('section_1')]
+//    [DefaultValueAttribute('log.txt')]
 //    string_value: string;
 //    integer_value: integer;
 //    double_value: double;
@@ -67,17 +69,17 @@
 // implementation
 //
 // var
-//  config:TConfigIni
+//  settings:TSettingsIni;
 //
 // begin
 //
-//  with config do
+//  with settings do
 //  begin
 //  ...
 //  end;
 //
-//  TGenericIni.saveTofile<TConfigIni>(config);
-//  config:= TGenericIni.getFromFile<TConfigIni>();
+//  TIniGeneric.saveTofile<TSettingsIni>(settings);
+//  settings:= TIniGeneric.tryGetFromFile<TSettingsIni>();
 //#####################################
 unit KLib.Generic.Ini;
 
@@ -90,15 +92,16 @@ type
   TIniGeneric = class
   public
     class procedure saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
-    class function getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+    class function tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+    class function getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
+      raiseException: boolean = RAISE_EXCEPTION): T;
   end;
 
 implementation
 
 uses
-  KLib.Generic.Attributes, KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
-  Rtti,
-  System.SysUtils;
+  KLib.Generic.Attributes, KLib.Generic, KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
+  System.Rtti, System.SysUtils, System.Variants;
 
 class procedure TIniGeneric.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
 var
@@ -140,6 +143,11 @@ begin
 
   for _rttiField in _rttiType.GetFields do
   begin
+    _propertyName := _rttiField.Name;
+    _propertyType := _rttiField.FieldType.ToString;
+
+    VarClear(_propertyValue);
+
     for _customAttribute in _rttiField.GetAttributes do
     begin
       if _customAttribute is SectionNameAttribute then
@@ -147,10 +155,6 @@ begin
         _sectionName := SectionNameAttribute(_customAttribute).value;
       end;
     end;
-
-    _propertyName := _rttiField.Name;
-
-    _propertyType := _rttiField.FieldType.ToString;
 
     if _propertyType = 'string' then
     begin
@@ -196,13 +200,20 @@ begin
   _rttiContext.Free;
 end;
 
-class function TIniGeneric.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+class function TIniGeneric.tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+begin
+  Result := getFromFile<T>(fileName, sectionName, RAISE_EXCEPTION_DISABLED);
+end;
+
+class function TIniGeneric.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
+  raiseException: boolean = RAISE_EXCEPTION): T;
 var
   _record: T;
 
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
   _sectionName: string;
+  _fileExists: boolean;
 
   _propertyName: string;
   _propertyType: string;
@@ -213,6 +224,8 @@ var
   _customAttribute: TCustomAttribute;
   _rttiField: TRttiField;
 begin
+  _record := TGeneric.getDefault<T>;
+
   _fileName := fileName;
   _settingStringsAttribute := _null;
   _sectionName := sectionName;
@@ -234,62 +247,75 @@ begin
     end;
   end;
 
-  validateThatFileExists(_fileName);
+  _fileExists := checkIfFileExists(_fileName);
 
-  for _rttiField in _rttiType.GetFields do
+  if _fileExists then
   begin
-    for _customAttribute in _rttiField.GetAttributes do
+    for _rttiField in _rttiType.GetFields do
     begin
-      if _customAttribute is SectionNameAttribute then
+      _propertyName := _rttiField.Name;
+      _propertyType := _rttiField.FieldType.ToString;
+
+      VarClear(_propertyValue);
+
+      for _customAttribute in _rttiField.GetAttributes do
       begin
-        _sectionName := SectionNameAttribute(_customAttribute).value;
+        if _customAttribute is SectionNameAttribute then
+        begin
+          _sectionName := SectionNameAttribute(_customAttribute).value;
+        end;
+      end;
+
+      _propertyValue := getStringValueFromIniFile(_fileName, _sectionName, _propertyName, EMPTY_STRING); //TODO STRICT READ???
+
+      if _propertyType = 'string' then
+      begin
+        case _settingStringsAttribute of
+          _null:
+            ;
+          single_quotted:
+            begin
+              _propertyValue := getSingleQuoteExtractedString(_propertyValue);
+            end;
+          double_quotted:
+            begin
+              _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
+            end;
+        end;
+      end
+      else if _propertyType = 'Integer' then
+      begin
+        _propertyValue := StrToInt(_propertyValue);
+      end
+      else if _propertyType = 'Double' then
+      begin
+        _propertyValue := StrToFloat(_propertyValue);
+      end
+      else if _propertyType = 'Char' then
+      begin
+        //
+      end
+      else if _propertyType = 'Boolean' then
+      begin
+        _propertyValue := StrToBool(_propertyValue);
+      end;
+
+      if (not VarIsEmpty(_propertyValue)) then
+      begin
+        _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
       end;
     end;
-
-    _propertyName := _rttiField.Name;
-    _propertyType := _rttiField.FieldType.ToString;
-
-    _propertyValue := getStringValueFromIniFile(_fileName, _sectionName, _propertyName, EMPTY_STRING); //TODO STRICT READ???
-
-    if _propertyType = 'string' then
-    begin
-      case _settingStringsAttribute of
-        _null:
-          ;
-        single_quotted:
-          begin
-            _propertyValue := getSingleQuoteExtractedString(_propertyValue);
-          end;
-        double_quotted:
-          begin
-            _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
-          end;
-      end;
-    end
-    else if _propertyType = 'Integer' then
-    begin
-      _propertyValue := StrToInt(_propertyValue);
-    end
-    else if _propertyType = 'Double' then
-    begin
-      _propertyValue := StrToFloat(_propertyValue);
-    end
-    else if _propertyType = 'Char' then
-    begin
-      //
-    end
-    else if _propertyType = 'Boolean' then
-    begin
-      _propertyValue := StrToBool(_propertyValue);
-    end;
-    _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
-
   end;
   //  except
   //    { ... Do something here ... }
   //  end;
 
   _rttiContext.Free;
+
+  if (raiseException) and (not _fileExists) then
+  begin
+    validateThatFileExists(_fileName);
+  end;
 
   Result := _record;
 end;

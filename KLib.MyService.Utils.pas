@@ -58,6 +58,7 @@ type
     regkeyDescription: string;
     applicationName: string;
     installParameterName: string;
+    defaults_file: string;
     customParameters: string;
 
     procedure clear;
@@ -70,17 +71,17 @@ procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean
 procedure installService(params: TInstallServiceParams); overload;
 procedure installService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 procedure uninstallService(params: TInstallServiceParams); overload;
 procedure uninstallService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 procedure installOrUninstallService(install: boolean; params: TInstallServiceParams); overload;
 procedure installOrUninstallService(install: boolean; silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 implementation
 
@@ -109,6 +110,7 @@ begin
     regkeyDescription := EMPTY_STRING;
     applicationName := EMPTY_STRING;
     installParameterName := EMPTY_STRING;
+    defaults_file := EMPTY_STRING;
     customParameters := EMPTY_STRING
   end;
 end;
@@ -142,13 +144,14 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure installService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
   installOrUninstallService(true, silent, serviceName, regkeyDescription, applicationName, installParameterName, customParameters);
 end;
@@ -161,15 +164,17 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure uninstallService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
-  installOrUninstallService(false, silent, serviceName, regkeyDescription, applicationName, installParameterName, customParameters);
+  installOrUninstallService(false, silent, serviceName, regkeyDescription, applicationName, installParameterName,
+    defaults_file, customParameters);
 end;
 
 procedure installOrUninstallService(install: boolean; params: TInstallServiceParams);
@@ -181,13 +186,14 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure installOrUninstallService(install: boolean; silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
   if not Vcl.SvcMgr.Application.DelayInitialize or Vcl.SvcMgr.Application.Installing then
   begin
@@ -197,6 +203,7 @@ begin
     MyService.regkeyDescription := regkeyDescription;
     MyService.applicationName := applicationName;
     MyService.installParameterName := installParameterName;
+    MyService.defaults_file := defaults_file;
     MyService.customParameters := customParameters;
     TMyServiceApplication(Vcl.SvcMgr.Application).myRegisterServices(install, silent);
     with Vcl.SvcMgr.Application do

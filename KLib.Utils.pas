@@ -45,8 +45,9 @@ uses
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
+function checkIfFileExists(fileName: string): boolean;
 function getTextFromFile(fileName: string): string;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
@@ -106,6 +107,7 @@ function getQuotedString(mainString: string; quoteCharacter: Char): string;
 function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getDequotedString(mainString: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
   forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
@@ -205,36 +207,42 @@ begin
   FreeAndNil(_files);
 end;
 
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
-var
-  _file: file of Byte;
-  _size: integer;
-  _result: boolean;
-begin
-  _result := false;
-  if FileExists(fileName) then
-  begin
-    AssignFile(_file, fileName);
-    Reset(_file);
-    _size := FileSize(_file);
-    _result := _size = 0;
-    CloseFile(_file);
-  end;
-
-  Result := _result;
-end;
-
 procedure deleteFileIfExists(fileName: string);
 const
   ERR_MSG = 'Error deleting file.';
 begin
-  if FileExists(fileName) then
+  if checkIfFileExists(fileName) then
   begin
     if not DeleteFile(pchar(fileName)) then
     begin
       raise Exception.Create(ERR_MSG);
     end;
   end;
+end;
+
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
+var
+  _fileExists: boolean;
+
+  _file: file of Byte;
+  _size: integer;
+begin
+  _fileExists := false;
+  if checkIfFileExists(fileName) then
+  begin
+    AssignFile(_file, fileName);
+    Reset(_file);
+    _size := FileSize(_file);
+    _fileExists := _size = 0;
+    CloseFile(_file);
+  end;
+
+  Result := _fileExists;
+end;
+
+function checkIfFileExists(fileName: string): boolean;
+begin
+  Result := FileExists(fileName);
 end;
 
 function getTextFromFile(fileName: string): string;
@@ -882,6 +890,20 @@ begin
   Result := _result;
 end;
 
+function getDequotedString(mainString: string): string;
+var
+  value: string;
+begin
+  value := mainString;
+  if ((mainString.Chars[0] = '"') and (mainString.Chars[value.Length - 1] = '"'))
+    or ((mainString.Chars[0] = '''') and (mainString.Chars[value.Length - 1] = '''')) then
+  begin
+    value := mainString.Substring(1, mainString.Length - 2);
+  end;
+
+  Result := value;
+end;
+
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
   forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 const
@@ -1079,7 +1101,7 @@ function stringToVariantType(stringValue: string; destinationTypeAsString: strin
 var
   value: Variant;
 begin
-  if destinationTypeAsString = 'string' then  //TODO CREATE TTYPE ENUM
+  if destinationTypeAsString = 'string' then //TODO CREATE TTYPE ENUM
   begin
     value := stringValue;
   end
