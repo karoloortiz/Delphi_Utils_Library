@@ -112,6 +112,7 @@ function getMainStringWithSubStringInserted(mainString: string; insertedString: 
   forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 function getStringWithFixedLength(value: string; fixedLength: integer): string;
+function getStringFromStream(stream: TStream): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -949,6 +950,28 @@ end;
 function getStringWithFixedLength(value: string; fixedLength: integer): string;
 begin
   Result := Copy(value, 1, fixedLength);
+end;
+
+function getStringFromStream(stream: TStream): string;
+var
+  _string: string;
+
+  _stringStream: TStringStream;
+begin
+  _string := '';
+
+  if Assigned(stream) then
+  begin
+    _stringStream := TStringStream.Create('');
+    try
+      _stringStream.CopyFrom(stream, 0);
+      _string := _stringStream.DataString;
+    finally
+      _stringStream.Free;
+    end;
+  end;
+
+  Result := _string
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
