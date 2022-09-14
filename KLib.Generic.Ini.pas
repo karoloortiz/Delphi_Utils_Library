@@ -266,43 +266,47 @@ begin
         end;
       end;
 
-      _propertyValue := getStringValueFromIniFile(_fileName, _sectionName, _propertyName, EMPTY_STRING); //TODO STRICT READ???
+      try
+        _propertyValue := getStringValueFromIniFile(_fileName, _sectionName, _propertyName);
 
-      if _propertyType = 'string' then
-      begin
-        case _settingStringsAttribute of
-          _null:
-            ;
-          single_quotted:
-            begin
-              _propertyValue := getSingleQuoteExtractedString(_propertyValue);
-            end;
-          double_quotted:
-            begin
-              _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
-            end;
+        if _propertyType = 'string' then
+        begin
+          case _settingStringsAttribute of
+            _null:
+              ;
+            single_quotted:
+              begin
+                _propertyValue := getSingleQuoteExtractedString(_propertyValue);
+              end;
+            double_quotted:
+              begin
+                _propertyValue := getDoubleQuoteExtractedString(_propertyValue);
+              end;
+          end;
+        end
+        else if _propertyType = 'Integer' then
+        begin
+          _propertyValue := StrToInt(_propertyValue);
+        end
+        else if _propertyType = 'Double' then
+        begin
+          _propertyValue := StrToFloat(_propertyValue);
+        end
+        else if _propertyType = 'Char' then
+        begin
+          //
+        end
+        else if _propertyType = 'Boolean' then
+        begin
+          _propertyValue := StrToBool(_propertyValue);
         end;
-      end
-      else if _propertyType = 'Integer' then
-      begin
-        _propertyValue := StrToInt(_propertyValue);
-      end
-      else if _propertyType = 'Double' then
-      begin
-        _propertyValue := StrToFloat(_propertyValue);
-      end
-      else if _propertyType = 'Char' then
-      begin
-        //
-      end
-      else if _propertyType = 'Boolean' then
-      begin
-        _propertyValue := StrToBool(_propertyValue);
-      end;
 
-      if (not VarIsEmpty(_propertyValue)) then
-      begin
-        _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+        if (not VarIsEmpty(_propertyValue)) then
+        begin
+          _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+        end;
+      except
+        on E: Exception do
       end;
     end;
   end;

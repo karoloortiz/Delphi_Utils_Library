@@ -45,7 +45,7 @@ uses
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 function getFirstPortAvaliable(defaultPort: integer; host: string = LOCALHOST_IP_ADDRESS): integer;
-function checkIfPortIsAvaliable(host: string; port: Word): boolean;
+function checkIfPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS): boolean;
 function checkIfAddressIsLocalhost(address: string): boolean;
 function getIPFromHostName(hostName: string): string; //if hostname is alredy an ip address, returns hostname
 function getIP: string;
@@ -204,7 +204,7 @@ function myParamStr(index: integer): string;
 function getShellParamsAsString: string;
 function getShellParams: TArrayOfStrings;
 //################################################################################
- //KEPT THE SIGNATURES, NOT RENAME!!!
+//KEPT THE SIGNATURES, NOT RENAME!!!
 function IsUserAnAdmin: boolean; external shell32;
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
@@ -271,7 +271,7 @@ var
   port: integer;
 begin
   port := defaultPort;
-  while not checkIfPortIsAvaliable(host, port) do
+  while not checkIfPortIsAvaliable(port, host) do
   begin
     inc(port);
   end;
@@ -279,7 +279,7 @@ begin
   Result := port;
 end;
 
-function checkIfPortIsAvaliable(host: string; port: Word): boolean;
+function checkIfPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS): boolean;
 var
   isPortAvaliable: boolean;
 

@@ -42,7 +42,7 @@
   1)CALL KLib.MyService.Utils.runService(runServiceParams);
   2)INHERITED MODE:
   ___-OVERRIDE procedure ServiceCreate(Sender: TObject); AND SET:
-  ______- executorMethod: TAnonymousMethod; // REQUIRED
+  ______- serviceApp: IServiceApp or executorMethod: TAnonymousMethod; // REQUIRED
   ______- eventLogDisabled: boolean; // NOT REQUIRED
   ______- rejectCallback: TCallBack; // NOT REQUIRED
   - IN PROJECT START SERVICE WITH
@@ -60,7 +60,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.SvcMgr, Vcl.Dialogs,
-  KLib.MyThread, KLib.Windows.EventLog, KLib.Types;
+  KLib.MyThread, KLib.Windows.EventLog, KLib.Types, KLib.ServiceAppPort;
 
 const
   DEFAULT_INSTALL_PARAMETER_NAME = '--install';
@@ -68,17 +68,16 @@ const
 
 type
   TMyService = class(TService)
+    procedure ServiceCreate(Sender: TObject);
+    procedure ServiceStart(Sender: TService; var Started: Boolean);
     procedure ServiceContinue(Sender: TService; var Continued: Boolean);
     procedure ServicePause(Sender: TService; var Paused: Boolean);
-    procedure ServiceCreate(Sender: TObject);
-    procedure ServiceAfterInstall(Sender: TService);
-    procedure ServiceAfterUninstall(Sender: TService);
     procedure ServiceShutdown(Sender: TService);
     procedure ServiceStop(Sender: TService; var Stopped: Boolean);
+    procedure ServiceAfterInstall(Sender: TService);
+    procedure ServiceAfterUninstall(Sender: TService);
     procedure ServiceDestroy(Sender: TObject);
-    procedure ServiceStart(Sender: TService; var Started: Boolean);
   private
-    workerThread: TMyThread;
     eventLog: TEventLog;
     _serviceName: string;
     _regkeyDescription: string;
@@ -93,6 +92,7 @@ type
     function _get_rejectCallback: TCallBack;
   protected
   public
+    serviceApp: IServiceAppPort;
     executorMethod: TAnonymousMethod;
     eventLogDisabled: boolean;
     defaults_file: string;
@@ -119,7 +119,7 @@ implementation
 
 
 uses
-  KLib.Windows, KLib.Utils, KLib.Constants, KLib.MyString,
+  KLib.Windows, KLib.Utils, KLib.Constants, KLib.MyString, KLib.ServiceApp.ThreadAdapter,
   System.Win.Registry;
 
 procedure TMyService.ServiceCreate(Sender: TObject);
@@ -135,12 +135,17 @@ procedure TMyService.ServiceStart(Sender: TService; var Started: Boolean);
 begin
   Started := False;
   try
-    if not Assigned(executorMethod) then
+    if not Assigned(serviceApp) then
     begin
-      raise Exception.Create('executorMethod not assigned. Set executorMethod before create TMyService.');
+      if not Assigned(executorMethod) then
+      begin
+        raise Exception.Create('executorMethod not assigned. Set executorMethod before create TMyService.');
+      end;
+      serviceApp := TThreadAdapter.Create(executorMethod, rejectCallback);
     end;
 
-    workerThread := TMyThread.Create(executorMethod, rejectCallback);
+    serviceApp.start;
+
     if not eventLogDisabled then
     begin
       eventLog := TEventLog.Create(applicationName);
@@ -158,14 +163,14 @@ end;
 
 procedure TMyService.ServiceContinue(Sender: TService; var Continued: Boolean);
 begin
-  workerThread.myResume;
+  serviceApp.resume;
   Continued := True;
   writeInfoInEventLog('Service has been resumed.', RAISE_EXCEPTION_DISABLED);
 end;
 
 procedure TMyService.ServicePause(Sender: TService; var Paused: Boolean);
 begin
-  workerThread.pause;
+  serviceApp.pause;
   Paused := True;
   writeInfoInEventLog('Service has been paused.', RAISE_EXCEPTION_DISABLED);
 end;
@@ -182,14 +187,13 @@ begin
   try
     Stopped := True; // always stop service, even if we had exceptions, this is to prevent "stuck" service (must reboot then)
 
-    if Assigned(workerThread) then
+    if Assigned(serviceApp) then
     begin
-      workerThread.stop;
-      while WaitForSingleObject(workerThread.Handle, WaitHint - 100) = WAIT_TIMEOUT do
+      serviceApp.stop;
+      while WaitForSingleObject(serviceApp.getHandle, WaitHint - 100) = WAIT_TIMEOUT do
       begin
         ReportStatus;
       end;
-      FreeAndNil(workerThread);
     end;
 
     writeInfoInEventLog('Service has been stopped.', RAISE_EXCEPTION_DISABLED);

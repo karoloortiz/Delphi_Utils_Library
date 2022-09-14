@@ -89,15 +89,18 @@ const
   RUN_AS_ADMIN = true;
 
   NOT_FORCE = false;
-  NOT_FORCE_OVERWRITE = NOT_FORCE;
+  NOT_FORCE_OVERWRITE = false;
+  RAISE_EXCEPTION_DISABLED = false;
+  NOT_IGNORE_EMPTY_STRINGS = false;
+
   FORCE = true;
-  FORCE_OVERWRITE = FORCE;
-  FORCE_DELETE = FORCE;
+  FORCE_OVERWRITE = true;
+  FORCE_DELETE = true;
   FORCE_CREATION = true;
   FORCE_SUSPEND = true;
-
   RAISE_EXCEPTION = true;
-  RAISE_EXCEPTION_DISABLED = false;
+  IGNORE_EMPTY_STRINGS = true;
+
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
   //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html

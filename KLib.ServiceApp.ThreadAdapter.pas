@@ -34,104 +34,88 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Generic.Attributes;
+unit KLib.ServiceApp.ThreadAdapter;
 
 interface
 
 uses
-  KLib.Types;
+  KLib.ServiceAppPort, KLib.Types, KLib.MyThread,
+  System.Classes;
 
 type
-  FileNameAttribute = class(TCustomAttribute)
+  TThreadAdapter = class(TInterfacedObject, IServiceAppPort)
+  private
   public
-    value: string;
+    _myThread: TMyThread;
 
-    constructor Create(const value: string);
-  end;
-
-  TSettingStringsAttributeType = (_null, single_quotted, double_quotted);
-
-  SettingStringsAttribute = class(TCustomAttribute)
-  public
-    value: TSettingStringsAttributeType;
-    //todo add lowercase, uppercase, casesensitive
-    constructor Create(const value: TSettingStringsAttributeType);
-  end;
-
-  //  SettingDoubleAttribute = class(TCustomAttribute)       //TODO
-  //  public
-  //    value: char;
-  //
-  //    constructor Create(const value: char);
-  //  end;
-
-  SectionNameAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  ParamNameAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  DefaultValueAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  SettingStringDequoteAttribute = class(TCustomAttribute)
-  public
-    constructor Create;
-  end;
-
-  ValidateFullPathAttribute = class(TCustomAttribute)
-  public
-    constructor Create;
+    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+    procedure start;
+    procedure pause;
+    procedure resume;
+    procedure stop;
+    procedure restart;
+    function getStatus: TStatus;
+    function getHandle: integer;
+    procedure Run; virtual; abstract;
+    destructor Destroy; override;
   end;
 
 implementation
 
 uses
-  System.Variants;
+  KLib.Constants, KLib.Utils,
+  System.SysUtils;
 
-constructor FileNameAttribute.Create(const value: string);
+constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
-  Self.value := value;
+  _myThread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
-constructor SettingStringsAttribute.Create(const value: TSettingStringsAttributeType);
+constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
-  Self.value := value;
+  _myThread := TMyThread.Create(run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
-constructor SectionNameAttribute.Create(const value: string);
+procedure TThreadAdapter.start;
 begin
-  Self.value := value;
+  _myThread.myStart();
 end;
 
-constructor ParamNameAttribute.Create(const value: string);
+procedure TThreadAdapter.pause;
 begin
-  Self.value := value;
+  _myThread.pause;
 end;
 
-constructor DefaultValueAttribute.Create(const value: string);
+procedure TThreadAdapter.resume;
 begin
-  Self.value := value;
+  _myThread.myResume;
 end;
 
-constructor SettingStringDequoteAttribute.Create;
+procedure TThreadAdapter.stop;
 begin
+  _myThread.stop;
 end;
 
-constructor ValidateFullPathAttribute.Create;
+procedure TThreadAdapter.restart;
 begin
+  restartMyThread(_myThread);
+end;
+
+function TThreadAdapter.getStatus: TStatus;
+begin
+  Result := _myThread.status;
+end;
+
+function TThreadAdapter.getHandle: integer;
+begin
+  Result := _myThread.Handle;
+end;
+
+destructor TThreadAdapter.Destroy;
+begin
+  FreeAndNil(_myThread);
+  inherited;
 end;
 
 end.

@@ -34,104 +34,80 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Generic.Attributes;
+unit KLib.MyEvent;
 
 interface
 
 uses
-  KLib.Types;
+  System.SyncObjs;
 
 type
-  FileNameAttribute = class(TCustomAttribute)
+  TMyEvent = class(TEvent)
+  private
+    _value: boolean;
+  protected
+    procedure _set_value(myValue: boolean);
+    function _get_value: boolean;
   public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  TSettingStringsAttributeType = (_null, single_quotted, double_quotted);
-
-  SettingStringsAttribute = class(TCustomAttribute)
-  public
-    value: TSettingStringsAttributeType;
-    //todo add lowercase, uppercase, casesensitive
-    constructor Create(const value: TSettingStringsAttributeType);
-  end;
-
-  //  SettingDoubleAttribute = class(TCustomAttribute)       //TODO
-  //  public
-  //    value: char;
-  //
-  //    constructor Create(const value: char);
-  //  end;
-
-  SectionNameAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  ParamNameAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  DefaultValueAttribute = class(TCustomAttribute)
-  public
-    value: string;
-
-    constructor Create(const value: string);
-  end;
-
-  SettingStringDequoteAttribute = class(TCustomAttribute)
-  public
-    constructor Create;
-  end;
-
-  ValidateFullPathAttribute = class(TCustomAttribute)
-  public
-    constructor Create;
+    property value: boolean read _get_value write _set_value;
+    constructor Create(initialValue: boolean = false); overload;
+    procedure enable;
+    procedure disable;
+    procedure SetEvent;
+    procedure ResetEvent;
+    destructor Destroy; override;
   end;
 
 implementation
 
-uses
-  System.Variants;
-
-constructor FileNameAttribute.Create(const value: string);
+constructor TMyEvent.Create(initialValue: boolean = false);
 begin
-  Self.value := value;
+  inherited Create(nil, true, initialValue, '');
+  _value := initialValue;
 end;
 
-constructor SettingStringsAttribute.Create(const value: TSettingStringsAttributeType);
+procedure TMyEvent._set_value(myValue: boolean);
 begin
-  Self.value := value;
+  if myValue then
+  begin
+    SetEvent;
+  end
+  else
+  begin
+    ResetEvent;
+  end;
 end;
 
-constructor SectionNameAttribute.Create(const value: string);
+function TMyEvent._get_value: boolean;
 begin
-  Self.value := value;
+  Result := Self._value;
 end;
 
-constructor ParamNameAttribute.Create(const value: string);
+procedure TMyEvent.enable;
 begin
-  Self.value := value;
+  SetEvent;
 end;
 
-constructor DefaultValueAttribute.Create(const value: string);
+procedure TMyEvent.disable;
 begin
-  Self.value := value;
+  ResetEvent;
 end;
 
-constructor SettingStringDequoteAttribute.Create;
+procedure TMyEvent.SetEvent;
 begin
+  inherited;
+  _value := true;
 end;
 
-constructor ValidateFullPathAttribute.Create;
+procedure TMyEvent.ResetEvent;
 begin
+  inherited;
+  _value := false;
+end;
+
+destructor TMyEvent.destroy;
+begin
+  inherited;
 end;
 
 end.

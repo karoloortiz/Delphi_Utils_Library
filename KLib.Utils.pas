@@ -39,7 +39,7 @@ unit KLib.Utils;
 interface
 
 uses
-  KLib.Types, KLib.Constants,
+  KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
   System.SysUtils, System.Classes;
 
@@ -100,7 +100,7 @@ function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORM
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
-function getParsedXMLstring(mainString: string): string; //todo add to myString
+function getParsedXMLstring(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getQuotedString(mainString: string; quoteCharacter: Char): string;
@@ -142,6 +142,10 @@ function checkIfMainStringContainsSubString(mainString: string; subString: strin
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
 
+function get_status_asString(status: TStatus): string;
+
+procedure restartMyThread(var myThread: TMyThread);
+
 //TODO refactor
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
@@ -154,6 +158,7 @@ procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: 
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 function myDefault(typeAsString: string): Variant;
 
 implementation
@@ -815,7 +820,7 @@ begin
   Result := Now;
 end;
 
-function getParsedXMLstring(mainString: string): string; //todo add to myString
+function getParsedXMLstring(mainString: string): string;
 var
   parsedXMLstring: string;
 begin
@@ -1230,6 +1235,36 @@ begin
   Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
 end;
 
+function get_status_asString(status: TStatus): string;
+var
+  status_asString: string;
+begin
+  case status of
+    TStatus._null:
+      status_asString := '_null';
+    TStatus.created:
+      status_asString := 'created';
+    TStatus.stopped:
+      status_asString := 'stopped';
+    TStatus.paused:
+      status_asString := 'paused';
+    TStatus.running:
+      status_asString := 'running';
+  end;
+
+  Result := status_asString;
+end;
+
+procedure restartMyThread(var myThread: TMyThread);
+var
+  _tempThread: TMyThread;
+begin
+  _tempThread := myThread.getACopyMyThread;
+  FreeAndNil(myThread);
+  myThread := _tempThread;
+  myThread.myStart(RAISE_EXCEPTION_DISABLED);
+end;
+
 //get a particular bit value
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 begin
@@ -1307,6 +1342,17 @@ end;
 procedure executeProcedure(myProcedure: TCallBack);
 begin
   myProcedure('');
+end;
+
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+var
+  isEmpty: boolean;
+  _emptyValue: variant;
+begin
+  _emptyValue := myDefault(typeAsString);
+  isEmpty := value = _emptyValue;
+
+  Result := isEmpty;
 end;
 
 function myDefault(typeAsString: string): Variant;

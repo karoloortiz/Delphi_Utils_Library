@@ -39,11 +39,10 @@ unit KLib.MyService.Utils;
 interface
 
 uses
-  KLib.Types, KLib.Constants;
+  KLib.Types, KLib.Constants, KLib.ServiceAppPort;
 
 type
   TRunServiceParams = record
-    executorMethod: TAnonymousMethod;
     eventLogDisabled: boolean;
     rejectCallback: TCallBack;
     applicationName: string;
@@ -64,7 +63,10 @@ type
     procedure clear;
   end;
 
-procedure runService(params: TRunServiceParams); overload;
+procedure runService(serviceApp: IServiceAppPort; params: TRunServiceParams); overload;
+procedure runService(serviceApp: IServiceAppPort; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
+  applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING); overload;
+procedure runService(executorMethod: TAnonymousMethod; params: TRunServiceParams); overload;
 procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
   applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING); overload;
 
@@ -93,7 +95,6 @@ procedure TRunServiceParams.clear;
 begin
   with Self do
   begin
-    executorMethod := nil;
     eventLogDisabled := false;
     rejectCallback := nil;
     applicationName := EMPTY_STRING;
@@ -115,9 +116,30 @@ begin
   end;
 end;
 
-procedure runService(params: TRunServiceParams);
+procedure runService(serviceApp: IServiceAppPort; params: TRunServiceParams);
 begin
-  runService(params.executorMethod, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+  runService(serviceApp, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+end;
+
+procedure runService(serviceApp: IServiceAppPort; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
+  applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING);
+begin
+  if not Vcl.SvcMgr.Application.DelayInitialize or Vcl.SvcMgr.Application.Installing then
+  begin
+    Vcl.SvcMgr.Application.Initialize;
+    Vcl.SvcMgr.Application.CreateForm(TMyService, MyService);
+    MyService.serviceApp := serviceApp;
+    MyService.eventLogDisabled := eventLogDisabled;
+    MyService.rejectCallback := rejectCallback;
+    MyService.applicationName := applicationName;
+    MyService.installParameterName := installParameterName;
+    Vcl.SvcMgr.Application.Run;
+  end;
+end;
+
+procedure runService(executorMethod: TAnonymousMethod; params: TRunServiceParams);
+begin
+  runService(executorMethod, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
 end;
 
 procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;

@@ -39,36 +39,34 @@ unit KLib.MyThread;
 interface
 
 uses
-  KLib.Types, KLib.Constants,
-  System.Classes, System.SyncObjs;
+  KLib.Types, KLib.Constants, KLib.MyEvent,
+  System.Classes;
 
 type
-  TOnChangeStatus = procedure(value: TThreadStatus);
-
   TMyThread = class(TThread)
   private
     _executorMethod: TAnonymousMethod;
     _rejectCallBack: TCallBack;
     _CreateSuspended: boolean;
 
-    _event: TEvent;
+    _event: TMyEvent;
 
-    procedure _set_status(value: TThreadStatus);
+    procedure _set_status(value: TStatus);
   protected
-    _status: TThreadStatus;
+    _status: TStatus;
   public
     onChangeStatus: TCallBack;
-    property status: TThreadStatus read _status write _set_status;
+    property status: TStatus read _status write _set_status;
 
-    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false; onChangeStatus: TCallBack = nil);
+    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
+      onChangeStatus: TCallBack = nil);
     procedure Execute; override;
     procedure myStart(raiseExceptionEnabled: boolean = true);
     procedure pause;
     procedure myResume;
     procedure stop(force: boolean = false);
 
-    function copy: TMyThread;
-    function get_status_asString: string;
+    function getACopyMyThread: TMyThread;
     destructor Destroy; override;
   end;
 
@@ -78,41 +76,42 @@ uses
   KLib.Utils,
   System.SysUtils;
 
-constructor TMyThread.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false; onChangeStatus: TCallBack = nil);
+constructor TMyThread.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
+  onChangeStatus: TCallBack = nil);
 begin
   Self._executorMethod := executorMethod;
   Self._rejectCallBack := rejectCallBack;
   Self._CreateSuspended := CreateSuspended;
   Self.onChangeStatus := onChangeStatus;
 
-  Self.status := TThreadStatus.created;
-  Self._event := TEvent.Create(nil, true, not CreateSuspended, '');
+  Self.status := TStatus.created;
+  Self._event := TMyEvent.Create(not CreateSuspended);
   inherited Create(CreateSuspended);
   if not CreateSuspended then
   begin
-    _event.SetEvent;
-    status := TThreadStatus.running;
+    _event.enable;
+    status := TStatus.running;
   end;
 end;
 
 procedure TMyThread.myStart(raiseExceptionEnabled: boolean = true);
 begin
   case status of
-    TThreadStatus.created:
+    TStatus.created:
       begin
         Start;
-        _event.SetEvent;
-        status := TThreadStatus.running;
+        _event.enable;
+        status := TStatus.running;
       end;
-    TThreadStatus.stopped:
+    TStatus.stopped:
       begin
         raise Exception.Create('Thread stopped, you cannot restart it.');
       end;
-    TThreadStatus.paused:
+    TStatus.paused:
       begin
         myResume;
       end;
-    TThreadStatus.running:
+    TStatus.running:
       begin
         if raiseExceptionEnabled then
         begin
@@ -129,24 +128,24 @@ end;
 procedure TMyThread.pause;
 begin
   case status of
-    TThreadStatus.created:
+    TStatus.created:
       begin
         raise Exception.Create('Thread not started, you cannot pause it.');
       end;
-    TThreadStatus.stopped:
+    TStatus.stopped:
       begin
         raise Exception.Create('Thread stopped, you cannot pause it.');
       end;
-    TThreadStatus.paused:
+    TStatus.paused:
       begin
         raise Exception.Create('Thread already paused.');
       end;
-    TThreadStatus.running:
+    TStatus.running:
       begin
         if (not Terminated) then
         begin
-          _event.ResetEvent;
-          status := TThreadStatus.paused;
+          _event.disable;
+          status := TStatus.paused;
         end;
       end;
   else
@@ -159,20 +158,20 @@ end;
 procedure TMyThread.myResume;
 begin
   case status of
-    TThreadStatus.created:
+    TStatus.created:
       begin
         raise Exception.Create('Thread not started, you cannot resume it.');
       end;
-    TThreadStatus.stopped:
+    TStatus.stopped:
       begin
         raise Exception.Create('Thread stopped, you cannot restart it.');
       end;
-    TThreadStatus.paused:
+    TStatus.paused:
       begin
-        _event.SetEvent;
-        status := TThreadStatus.running;
+        _event.enable;
+        status := TStatus.running;
       end;
-    TThreadStatus.running:
+    TStatus.running:
       begin
         raise Exception.Create('Thread already running.');
       end;
@@ -205,21 +204,20 @@ procedure TMyThread.stop(force: boolean = false);
   procedure _stop;
   begin
     Terminate;
-    if (status <> TThreadStatus.created) and (status <> TThreadStatus.paused) then
+    if (status <> TStatus.created) and (status <> TStatus.paused) then
     begin
       WaitFor;
     end;
-    _event.SetEvent;
-    status := TThreadStatus.stopped;
+    _event.enable;
+    status := TStatus.stopped;
   end;
-
 begin
   case status of
-    TThreadStatus.created:
+    TStatus.created:
       begin
         _stop;
       end;
-    TThreadStatus.stopped:
+    TStatus.stopped:
       begin
         if force then
         begin
@@ -230,11 +228,11 @@ begin
           raise Exception.Create('Thread already stopped.');
         end;
       end;
-    TThreadStatus.paused:
+    TStatus.paused:
       begin
         _stop;
       end;
-    TThreadStatus.running:
+    TStatus.running:
       begin
         _stop;
       end;
@@ -245,7 +243,7 @@ begin
   end;
 end;
 
-function TMyThread.copy: TMyThread;
+function TMyThread.getACopyMyThread: TMyThread;
 var
   myThread: TMyThread;
 begin
@@ -254,33 +252,13 @@ begin
   Result := myThread;
 end;
 
-procedure TMyThread._set_status(value: TThreadStatus);
+procedure TMyThread._set_status(value: TStatus);
 begin
   _status := value;
   if Assigned(onChangeStatus) then
   begin
-    onChangeStatus(get_status_asString);
+    onChangeStatus(get_status_asString(_status));
   end;
-end;
-
-function TMyThread.get_status_asString: string;
-var
-  status_asString: string;
-begin
-  case _status of
-    TThreadStatus._null:
-      status_asString := '_null';
-    TThreadStatus.created:
-      status_asString := 'created';
-    TThreadStatus.stopped:
-      status_asString := 'stopped';
-    TThreadStatus.paused:
-      status_asString := 'paused';
-    TThreadStatus.running:
-      status_asString := 'running';
-  end;
-
-  Result := status_asString;
 end;
 
 destructor TMyThread.Destroy;

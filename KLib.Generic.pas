@@ -34,9 +34,37 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
+//##### JSON #################
+//  ATTRIBUTES:
+//  - DefaultValueAttribute
+//###########---EXAMPLE OF USE----##########################
+// uses
+//  KLib.Generic, KLib.Generic.Attributes; //always include
+//
+// type
+//  TResponse = record
+//  public
+//    timestamp: string;
+//    sucess: string;
+//    [DefaultValueAttribute('yes')]
+//    error: string;
+//  end;
+//
+//  ...
+//  var
+//  _response: TResponse;
+//
+//  begin
+//  ...
+//  _responseText := TGeneric.getJSONAsString<TResponse>(_response);
+//#####################################
 unit KLib.Generic;
 
 interface
+
+uses
+  KLib.Constants,
+  System.JSON;
 
 type
   TGeneric = class
@@ -44,13 +72,15 @@ type
     class function getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer; overload;
     class function getElementIndexFromArray<T>(myArray: array of T; element: T): integer; overload;
 
+    class function getJSONAsString<T>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
+    class function getJSONObject<T>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
     class function getDefault<T>: T;
   end;
 
 implementation
 
 uses
-  KLib.Generic.Attributes, KLib.Constants, KLib.Utils,
+  KLib.Generic.Attributes, KLib.Utils,
   System.Generics.Collections, System.SysUtils, System.Rtti, System.Variants;
 
 class function TGeneric.getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer;
@@ -86,6 +116,110 @@ begin
   FreeAndNil(_list);
 
   Result := elementIndex;
+end;
+
+class function TGeneric.getJSONAsString<T>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
+var
+  jsonAsString: string;
+  _JSONObject: TJSONObject;
+begin
+  _JSONObject := getJSONObject<T>(myRecord, ignoreEmptyStrings);
+  jsonAsString := _JSONObject.ToString;
+  _JSONObject.Free;
+
+  Result := jsonAsString;
+end;
+
+class function TGeneric.getJSONObject<T>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
+var
+  JSONObject: TJSONObject;
+  _record: T;
+
+  _propertyName: string;
+  _propertyType: string;
+  _propertyValue: Variant;
+
+  _rttiContext: TRttiContext;
+  _rttiType: TRttiType;
+  _customAttributes: TArray<TCustomAttribute>;
+  _customAttribute: TCustomAttribute;
+  _rttiField: TRttiField;
+
+  _propertyValueIsEmpty: boolean;
+begin
+  JSONObject := TJSONObject.Create();
+
+  _record := TGeneric.getDefault<T>;
+
+  _rttiContext := TRttiContext.Create;
+  _rttiType := _rttiContext.GetType(TypeInfo(T));
+
+  for _rttiField in _rttiType.GetFields do
+  begin
+    _propertyName := _rttiField.Name;
+    _propertyType := _rttiField.FieldType.ToString;
+
+    if (_propertyType = 'string') or (_propertyType = 'Char') then
+    begin
+      _propertyValue := _rttiField.GetValue(@myRecord).AsString;
+      _propertyValueIsEmpty := checkIfVariantTypeIsEmpty(_propertyValue, _propertyType);
+      if _propertyValueIsEmpty then
+      begin
+        _propertyValue := _rttiField.GetValue(@_record).AsString;
+      end;
+
+      if not ignoreEmptyStrings then
+      begin
+        JSONObject.AddPair(TJSONPair.Create(_propertyName, _propertyValue));
+      end
+      else
+      begin
+        JSONObject.AddPair(_propertyName, _propertyValue);
+      end;
+    end
+    else if _propertyType = 'Integer' then
+    begin
+      _propertyValue := _rttiField.GetValue(@myRecord).AsInteger;
+      _propertyValueIsEmpty := checkIfVariantTypeIsEmpty(_propertyValue, _propertyType);
+      if _propertyValueIsEmpty then
+      begin
+        _propertyValue := _rttiField.GetValue(@_record).AsInteger;
+      end;
+
+      JSONObject.AddPair(_propertyName, TJSONNumber.Create(_propertyValue));
+    end
+    else if _propertyType = 'Double' then
+    begin
+      _propertyValue := _rttiField.GetValue(@myRecord).AsExtended;
+      _propertyValueIsEmpty := checkIfVariantTypeIsEmpty(_propertyValue, _propertyType);
+      if _propertyValueIsEmpty then
+      begin
+        _propertyValue := _rttiField.GetValue(@_record).AsExtended;
+      end;
+
+      JSONObject.AddPair(_propertyName, TJSONNumber.Create(_propertyValue));
+    end
+    else if _propertyType = 'Boolean' then
+    begin
+      _propertyValue := _rttiField.GetValue(@myRecord).AsBoolean;
+      _propertyValueIsEmpty := checkIfVariantTypeIsEmpty(_propertyValue, _propertyType);
+      if _propertyValueIsEmpty then
+      begin
+        _propertyValue := _rttiField.GetValue(@_record).AsBoolean;
+      end;
+
+      JSONObject.AddPair(_propertyName, TJSONBool.Create(_propertyValue));
+    end;
+
+  end;
+
+  //  except
+  //    { ... Do something here ... }
+  //  end;
+
+  _rttiContext.Free;
+
+  Result := JSONObject;
 end;
 
 class function TGeneric.getDefault<T>: T;

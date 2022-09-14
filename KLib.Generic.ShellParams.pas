@@ -41,6 +41,7 @@
 //  - ParamNameAttribute
 //  - DefaultValueAttribute
 //  - SettingStringDequoteAttribute
+//  - ValidateFullPath
 //###########---EXAMPLE OF USE----##########################
 // uses
 //  KLib.Generic.Attributes; //always include
@@ -74,6 +75,14 @@
 //      DefaultValueAttribute('false')
 //      ]
 //    silent: boolean;
+//
+//    [
+//      ParamNameAttribute(DEFAULTS_FILE_PARAMETER_NAME),
+//      DefaultValueAttribute('settings.ini'),
+//      SettingStringDequoteAttribute,
+//      ValidateFullPathAttribute
+//      ]
+//    defaults_file: string;
 //
 //    [
 //      ParamNameAttribute(HELP_PARAMETER_NAME),
@@ -121,6 +130,7 @@ var
 
   _paramNameAttribute: string;
   _settingStringDequoteAttribute: boolean;
+  _validateFullPathAttribute: boolean;
 
   _propertyName: string;
   _propertyType: string;
@@ -135,6 +145,8 @@ var
   _parameterExists: boolean;
   _paramNames: TArrayOfStrings;
   _valuesExcluded: TArrayOfStrings;
+
+  _parentDir: string;
 begin
   _record := TGeneric.getDefault<T>;
 
@@ -172,6 +184,7 @@ begin
     VarClear(_propertyValue);
     _paramNames := [];
     _settingStringDequoteAttribute := false;
+    _validateFullPathAttribute := false;
 
     _customAttributes := _rttiField.GetAttributes;
     for _customAttribute in _customAttributes do
@@ -185,6 +198,11 @@ begin
       if _customAttribute is SettingStringDequoteAttribute then
       begin
         _settingStringDequoteAttribute := true;
+      end;
+
+      if _customAttribute is ValidateFullPathAttribute then
+      begin
+        _validateFullPathAttribute := true;
       end;
     end;
 
@@ -231,6 +249,20 @@ begin
       begin
         _propertyValue := true;
       end;
+    end;
+
+    if _validateFullPathAttribute then
+    begin
+      if (not _parameterExists) and (_propertyType = 'string') then
+      begin
+        _propertyValue := _rttiField.GetValue(@_record).AsString;
+      end;
+      _parentDir := ExtractFilePath(_propertyValue);
+      if _parentDir = EMPTY_STRING then
+      begin
+        _propertyValue := getCombinedPathWithCurrentDir(_propertyValue);
+      end;
+      _propertyValue := getValidFullPath(_propertyValue);
     end;
 
     if (not VarIsEmpty(_propertyValue)) then

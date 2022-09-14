@@ -78,6 +78,7 @@ type
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
+    procedure parseXML;
     procedure doubleQuote;
     procedure singleQuote;
     procedure quote(quotedCharacter: Char);
@@ -219,6 +220,11 @@ begin
   begin
     Self := StringReplace(Self, _param, value, [rfReplaceAll, rfIgnoreCase]);
   end;
+end;
+
+procedure TMyStringHelper.parseXML;
+begin
+  Self := getParsedXMLstring(Self);
 end;
 
 procedure TMyStringHelper.doubleQuote;
