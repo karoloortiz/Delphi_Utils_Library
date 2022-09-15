@@ -72,7 +72,7 @@ function getMD5ChecksumFile(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList,
+  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList, Klib.Windows,
   IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
   System.SysUtils;
 
@@ -316,17 +316,17 @@ var
   _path_ssleay32: string;
 begin
   _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
-  if not FileExists(_path_libeay32) then
+  if not checkIfFileExists(_path_libeay32) then
   begin
     getResourceAsFile(RESOURCE_LIBEAY32, _path_libeay32);
   end;
   _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
-  if not FileExists(_path_libssl32) then
+  if not checkIfFileExists(_path_libssl32) then
   begin
     getResourceAsFile(RESOURCE_LIBSSL32, _path_libssl32);
   end;
   _path_ssleay32 := getCombinedPathWithCurrentDir(FILENAME_SSLEAY32);
-  if not FileExists(_path_ssleay32) then
+  if not checkIfFileExists(_path_ssleay32) then
   begin
     getResourceAsFile(RESOURCE_SSLEAY32, _path_ssleay32);
   end;

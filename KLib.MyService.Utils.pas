@@ -39,11 +39,10 @@ unit KLib.MyService.Utils;
 interface
 
 uses
-  KLib.Types, KLib.Constants;
+  KLib.Types, KLib.Constants, KLib.ServiceAppPort;
 
 type
   TRunServiceParams = record
-    executorMethod: TAnonymousMethod;
     eventLogDisabled: boolean;
     rejectCallback: TCallBack;
     applicationName: string;
@@ -58,29 +57,33 @@ type
     regkeyDescription: string;
     applicationName: string;
     installParameterName: string;
+    defaults_file: string;
     customParameters: string;
 
     procedure clear;
   end;
 
-procedure runService(params: TRunServiceParams); overload;
+procedure runService(serviceApp: IServiceAppPort; params: TRunServiceParams); overload;
+procedure runService(serviceApp: IServiceAppPort; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
+  applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING); overload;
+procedure runService(executorMethod: TAnonymousMethod; params: TRunServiceParams); overload;
 procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
   applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING); overload;
 
 procedure installService(params: TInstallServiceParams); overload;
 procedure installService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 procedure uninstallService(params: TInstallServiceParams); overload;
 procedure uninstallService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 procedure installOrUninstallService(install: boolean; params: TInstallServiceParams); overload;
 procedure installOrUninstallService(install: boolean; silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING); overload;
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING); overload;
 
 implementation
 
@@ -92,7 +95,6 @@ procedure TRunServiceParams.clear;
 begin
   with Self do
   begin
-    executorMethod := nil;
     eventLogDisabled := false;
     rejectCallback := nil;
     applicationName := EMPTY_STRING;
@@ -109,13 +111,37 @@ begin
     regkeyDescription := EMPTY_STRING;
     applicationName := EMPTY_STRING;
     installParameterName := EMPTY_STRING;
+    defaults_file := EMPTY_STRING;
     customParameters := EMPTY_STRING
   end;
 end;
 
-procedure runService(params: TRunServiceParams);
+procedure runService(serviceApp: IServiceAppPort; params: TRunServiceParams);
 begin
-  runService(params.executorMethod, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+  runService(serviceApp,
+    params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+end;
+
+procedure runService(serviceApp: IServiceAppPort; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
+  applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING);
+begin
+  if not Vcl.SvcMgr.Application.DelayInitialize or Vcl.SvcMgr.Application.Installing then
+  begin
+    Vcl.SvcMgr.Application.Initialize;
+    Vcl.SvcMgr.Application.CreateForm(TMyService, MyService);
+    MyService.serviceApp := serviceApp;
+    MyService.eventLogDisabled := eventLogDisabled;
+    MyService.rejectCallback := rejectCallback;
+    MyService.applicationName := applicationName;
+    MyService.installParameterName := installParameterName;
+    Vcl.SvcMgr.Application.Run;
+  end;
+end;
+
+procedure runService(executorMethod: TAnonymousMethod; params: TRunServiceParams);
+begin
+  runService(executorMethod,
+    params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
 end;
 
 procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
@@ -142,15 +168,16 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure installService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
-  installOrUninstallService(true, silent, serviceName, regkeyDescription, applicationName, installParameterName, customParameters);
+  installOrUninstallService(true, silent, serviceName, regkeyDescription, applicationName, installParameterName, defaults_file, customParameters);
 end;
 
 procedure uninstallService(params: TInstallServiceParams);
@@ -161,15 +188,17 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure uninstallService(silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
-  installOrUninstallService(false, silent, serviceName, regkeyDescription, applicationName, installParameterName, customParameters);
+  installOrUninstallService(false, silent, serviceName, regkeyDescription, applicationName, installParameterName,
+    defaults_file, customParameters);
 end;
 
 procedure installOrUninstallService(install: boolean; params: TInstallServiceParams);
@@ -181,13 +210,14 @@ begin
     params.regkeyDescription,
     params.applicationName,
     params.installParameterName,
+    params.defaults_file,
     params.customParameters
     );
 end;
 
 procedure installOrUninstallService(install: boolean; silent: boolean = false; serviceName: string = EMPTY_STRING;
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
-  customParameters: string = EMPTY_STRING);
+  defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
   if not Vcl.SvcMgr.Application.DelayInitialize or Vcl.SvcMgr.Application.Installing then
   begin
@@ -197,6 +227,7 @@ begin
     MyService.regkeyDescription := regkeyDescription;
     MyService.applicationName := applicationName;
     MyService.installParameterName := installParameterName;
+    MyService.defaults_file := defaults_file;
     MyService.customParameters := customParameters;
     TMyServiceApplication(Vcl.SvcMgr.Application).myRegisterServices(install, silent);
     with Vcl.SvcMgr.Application do

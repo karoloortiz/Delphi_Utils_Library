@@ -48,6 +48,18 @@ const
   ftBinary = TIdFTPTransferType(1);
 
 type
+{$scopedenums ON}
+  TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
+
+  TAsyncMethodStatus = (_null, created, pending, fulfilled, rejected);
+
+  TStatus = (_null, created, stopped, paused, running);
+
+  TExecutionMode = (_null, gui, service, console);
+
+  TType = (_null, _string, _integer, _double, _char, _boolean);
+{$scopedenums OFF}
+
   THostPort = record
     host: string;
     port: integer;
@@ -170,16 +182,6 @@ type
   //              reject(e.Message);
   //            end;
   //####---
-
-{$scopedenums ON}
-  TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
-
-  TAsyncMethodStatus = (_null, created, pending, fulfilled, rejected);
-
-  TThreadStatus = (_null, created, stopped, paused, running);
-
-  TExecutionMode = (_null, gui, service, console);
-{$scopedenums OFF}
 
 implementation
 

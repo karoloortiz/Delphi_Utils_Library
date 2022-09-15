@@ -34,52 +34,104 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyIdHTTP;
+unit KLib.Generic.Attributes;
 
 interface
 
 uses
-  IdHttp, IdSSLOpenSSLHeaders, IdSSLOpenSSL, IdCTypes,
-  System.Classes;
+  KLib.Types;
 
 type
-  TMyIdHTTP = class(TIdHTTP)
-  private
-    procedure OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL; const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+  FileNameAttribute = class(TCustomAttribute)
   public
-    constructor Create(AOwner: TComponent);
-    destructor Destroy; override;
+    value: string;
+
+    constructor Create(const value: string);
+  end;
+
+  TSettingStringsAttributeType = (_null, single_quotted, double_quotted);
+
+  SettingStringsAttribute = class(TCustomAttribute)
+  public
+    value: TSettingStringsAttributeType;
+    //todo add lowercase, uppercase, casesensitive
+    constructor Create(const value: TSettingStringsAttributeType);
+  end;
+
+  //  SettingDoubleAttribute = class(TCustomAttribute)       //TODO
+  //  public
+  //    value: char;
+  //
+  //    constructor Create(const value: char);
+  //  end;
+
+  SectionNameAttribute = class(TCustomAttribute)
+  public
+    value: string;
+
+    constructor Create(const value: string);
+  end;
+
+  ParamNameAttribute = class(TCustomAttribute)
+  public
+    value: string;
+
+    constructor Create(const value: string);
+  end;
+
+  DefaultValueAttribute = class(TCustomAttribute)
+  public
+    value: string;
+
+    constructor Create(const value: string);
+  end;
+
+  SettingStringDequoteAttribute = class(TCustomAttribute)
+  public
+    constructor Create;
+  end;
+
+  ValidateFullPathAttribute = class(TCustomAttribute)
+  public
+    constructor Create;
   end;
 
 implementation
 
-constructor TMyIdHTTP.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(Self);
-  with IOHandler as TIdSSLIOHandlerSocketOpenSSL do
-  begin
-    OnStatusInfoEx := Self.OnStatusInfoEx;
-    SSLOptions.Method := sslvSSLv23;
-    SSLOptions.SSLVersions := [
-      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
-      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
-      TIdSSLVersion.sslvSSLv3];
-  end;
+uses
+  System.Variants;
 
-  HandleRedirects := true;
+constructor FileNameAttribute.Create(const value: string);
+begin
+  Self.value := value;
 end;
 
-procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;
-  const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+constructor SettingStringsAttribute.Create(const value: TSettingStringsAttributeType);
 begin
-  SSL_set_tlsext_host_name(AsslSocket, Request.Host);
+  Self.value := value;
 end;
 
-destructor TMyIdHTTP.Destroy;
+constructor SectionNameAttribute.Create(const value: string);
 begin
-  IOHandler.Free;
-  inherited;
+  Self.value := value;
+end;
+
+constructor ParamNameAttribute.Create(const value: string);
+begin
+  Self.value := value;
+end;
+
+constructor DefaultValueAttribute.Create(const value: string);
+begin
+  Self.value := value;
+end;
+
+constructor SettingStringDequoteAttribute.Create;
+begin
+end;
+
+constructor ValidateFullPathAttribute.Create;
+begin
 end;
 
 end.

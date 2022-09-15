@@ -34,51 +34,87 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyIdHTTP;
+unit KLib.ServiceApp.ThreadAdapter;
 
 interface
 
 uses
-  IdHttp, IdSSLOpenSSLHeaders, IdSSLOpenSSL, IdCTypes,
+  KLib.ServiceAppPort, KLib.Types, KLib.MyThread,
   System.Classes;
 
 type
-  TMyIdHTTP = class(TIdHTTP)
+  TThreadAdapter = class(TInterfacedObject, IServiceAppPort)
   private
-    procedure OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL; const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
   public
-    constructor Create(AOwner: TComponent);
+    _myThread: TMyThread;
+
+    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+    procedure start; virtual;
+    procedure pause; virtual;
+    procedure resume; virtual;
+    procedure stop; virtual;
+    procedure restart; virtual;
+    function getStatus: TStatus; virtual;
+    function getHandle: integer; virtual;
+    procedure Run; virtual; abstract;
     destructor Destroy; override;
   end;
 
 implementation
 
-constructor TMyIdHTTP.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(Self);
-  with IOHandler as TIdSSLIOHandlerSocketOpenSSL do
-  begin
-    OnStatusInfoEx := Self.OnStatusInfoEx;
-    SSLOptions.Method := sslvSSLv23;
-    SSLOptions.SSLVersions := [
-      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
-      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
-      TIdSSLVersion.sslvSSLv3];
-  end;
+uses
+  KLib.Constants, KLib.Utils,
+  System.SysUtils;
 
-  HandleRedirects := true;
+constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
+begin
+  _myThread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
-procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;
-  const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
-  SSL_set_tlsext_host_name(AsslSocket, Request.Host);
+  _myThread := TMyThread.Create(run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
-destructor TMyIdHTTP.Destroy;
+procedure TThreadAdapter.start;
 begin
-  IOHandler.Free;
+  _myThread.myStart();
+end;
+
+procedure TThreadAdapter.pause;
+begin
+  _myThread.pause;
+end;
+
+procedure TThreadAdapter.resume;
+begin
+  _myThread.myResume;
+end;
+
+procedure TThreadAdapter.stop;
+begin
+  _myThread.stop;
+end;
+
+procedure TThreadAdapter.restart;
+begin
+  restartMyThread(_myThread);
+end;
+
+function TThreadAdapter.getStatus: TStatus;
+begin
+  Result := _myThread.status;
+end;
+
+function TThreadAdapter.getHandle: integer;
+begin
+  Result := _myThread.Handle;
+end;
+
+destructor TThreadAdapter.Destroy;
+begin
+  FreeAndNil(_myThread);
   inherited;
 end;
 

@@ -56,6 +56,11 @@ procedure validateThatVC_Redist2019X64IsInstalled(errMsg: string = 'Microsoft Vi
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
 
+procedure validateThatPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is not avaliable.');
+procedure validateThatPortIsNotAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is avaliable.');
+
 procedure validateThatAddressIsLocalhost(address: string; errMsg: string = 'The address does not match with the localhost ip.');
 procedure validateThatAddressIsNotLocalhost(address: string; errMsg: string = 'The address match with the localhost ip.');
 
@@ -190,6 +195,30 @@ begin
   end;
 end;
 
+procedure validateThatPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is not avaliable.');
+var
+  _errMsg: string;
+begin
+  if not checkIfPortIsAvaliable(port, host) then
+  begin
+    _errMsg := getDoubleQuotedString(host + ':' + IntToStr(port)) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatPortIsNotAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is avaliable.');
+var
+  _errMsg: string;
+begin
+  if checkIfPortIsAvaliable(port, host) then
+  begin
+    _errMsg := getDoubleQuotedString(host + ':' + IntToStr(port)) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
 procedure validateThatAddressIsLocalhost(address: string; errMsg: string = 'The address does not match with the localhost ip.');
 var
   _errMsg: string;
@@ -298,7 +327,7 @@ procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File alr
 var
   _errMsg: string;
 begin
-  if FileExists(fileName) then
+  if checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -309,7 +338,7 @@ procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn'
 var
   _errMsg: string;
 begin
-  if not FileExists(fileName) then
+  if not checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);

@@ -38,6 +38,9 @@ unit KLib.Constants;
 
 interface
 
+uses
+  KLib.Types;
+
 const
   DATE_FORMAT = 'yyyy-mm-dd';
   DATE_FORMAT_ITALIAN = 'dd/mm/yyyy';
@@ -81,18 +84,23 @@ const
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
 
+  EMPTY_ARRAY_OF_STRINGS: TArrayOfStrings = [];
+
   RUN_AS_ADMIN = true;
 
   NOT_FORCE = false;
-  NOT_FORCE_OVERWRITE = NOT_FORCE;
+  NOT_FORCE_OVERWRITE = false;
+  RAISE_EXCEPTION_DISABLED = false;
+  NOT_IGNORE_EMPTY_STRINGS = false;
+
   FORCE = true;
-  FORCE_OVERWRITE = FORCE;
-  FORCE_DELETE = FORCE;
+  FORCE_OVERWRITE = true;
+  FORCE_DELETE = true;
   FORCE_CREATION = true;
   FORCE_SUSPEND = true;
-
   RAISE_EXCEPTION = true;
-  RAISE_EXCEPTION_DISABLED = false;
+  IGNORE_EMPTY_STRINGS = true;
+
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
   //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html

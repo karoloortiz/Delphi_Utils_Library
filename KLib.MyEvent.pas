@@ -34,51 +34,79 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyIdHTTP;
+unit KLib.MyEvent;
 
 interface
 
 uses
-  IdHttp, IdSSLOpenSSLHeaders, IdSSLOpenSSL, IdCTypes,
-  System.Classes;
+  System.SyncObjs;
 
 type
-  TMyIdHTTP = class(TIdHTTP)
+  TMyEvent = class(TEvent)
   private
-    procedure OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL; const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+    _value: boolean;
+  protected
+    procedure _set_value(myValue: boolean);
+    function _get_value: boolean;
   public
-    constructor Create(AOwner: TComponent);
+    property value: boolean read _get_value write _set_value;
+    constructor Create(initialValue: boolean = false); overload;
+    procedure enable;
+    procedure disable;
+    procedure SetEvent;
+    procedure ResetEvent;
     destructor Destroy; override;
   end;
 
 implementation
 
-constructor TMyIdHTTP.Create(AOwner: TComponent);
+constructor TMyEvent.Create(initialValue: boolean = false);
 begin
-  inherited Create(AOwner);
-  IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create(Self);
-  with IOHandler as TIdSSLIOHandlerSocketOpenSSL do
+  inherited Create(nil, true, initialValue, '');
+  _value := initialValue;
+end;
+
+procedure TMyEvent._set_value(myValue: boolean);
+begin
+  if myValue then
   begin
-    OnStatusInfoEx := Self.OnStatusInfoEx;
-    SSLOptions.Method := sslvSSLv23;
-    SSLOptions.SSLVersions := [
-      TIdSSLVersion.sslvTLSv1, TIdSSLVersion.sslvTLSv1_1, TIdSSLVersion.sslvTLSv1_2,
-      TIdSSLVersion.sslvSSLv2, TIdSSLVersion.sslvSSLv23,
-      TIdSSLVersion.sslvSSLv3];
+    SetEvent;
+  end
+  else
+  begin
+    ResetEvent;
   end;
-
-  HandleRedirects := true;
 end;
 
-procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;
-  const AWhere, Aret: TIdC_INT; const AType, AMsg: String);
+function TMyEvent._get_value: boolean;
 begin
-  SSL_set_tlsext_host_name(AsslSocket, Request.Host);
+  Result := Self._value;
 end;
 
-destructor TMyIdHTTP.Destroy;
+procedure TMyEvent.enable;
 begin
-  IOHandler.Free;
+  SetEvent;
+end;
+
+procedure TMyEvent.disable;
+begin
+  ResetEvent;
+end;
+
+procedure TMyEvent.SetEvent;
+begin
+  inherited;
+  _value := true;
+end;
+
+procedure TMyEvent.ResetEvent;
+begin
+  inherited;
+  _value := false;
+end;
+
+destructor TMyEvent.destroy;
+begin
   inherited;
 end;
 

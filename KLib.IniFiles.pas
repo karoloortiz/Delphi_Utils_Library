@@ -38,6 +38,9 @@ unit KLib.IniFiles;
 
 interface
 
+uses
+  KLib.Constants;
+
 const
   _DEFAULT_ERROR_STRING_VALUE_INI_FILES = '*_/&@';
 
@@ -45,7 +48,7 @@ function getIntValueFromIniFile(fileNameIni: string; nameSection: string; namePr
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: integer): integer; overload;
 function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
-  defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
+  defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES; forceDequote: boolean = NOT_FORCE): string;
 procedure setIntValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: integer);
 procedure setStringValueToIniFile(fileNameIni: string; nameSection: string; nameProperty: string; value: string);
 
@@ -57,20 +60,23 @@ uses
 
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer;
 var
+  intValue: integer;
+
   _stringValue: string;
-  _intValue: integer;
 begin
   _stringValue := getStringValueFromIniFile(fileNameIni, nameSection, nameProperty);
-  _intValue := StrToInt(_stringValue);
-  Result := _intValue;
+  intValue := StrToInt(_stringValue);
+
+  Result := intValue;
 end;
 
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
   defaultPropertyValue: integer): integer;
 var
+  value: integer;
+
   _pathIniFile: string;
   _iniManipulator: TIniFile;
-  value: integer;
 begin
   _pathIniFile := getValidFullPath(fileNameIni);
   validateThatFileExists(_pathIniFile);
@@ -82,23 +88,30 @@ begin
 end;
 
 function getStringValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string;
-  defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES): string;
+  defaultPropertyValue: string = _DEFAULT_ERROR_STRING_VALUE_INI_FILES; forceDequote: boolean = NOT_FORCE): string;
 const
   ERR_MSG = 'No property assigned.';
 var
-  _pathIniFile: string;
-  _iniManipulator: TIniFile;
   value: string;
+
+  _pathIniFile: string;
+  _iniManipulator: TMemIniFile;
 begin
   _pathIniFile := getValidFullPath(fileNameIni);
   validateThatFileExists(_pathIniFile);
-  _iniManipulator := TIniFile.Create(_pathIniFile);
+  _iniManipulator := TMemIniFile.Create(_pathIniFile);
   value := _iniManipulator.ReadString(nameSection, nameProperty, defaultPropertyValue);
+  if forceDequote then
+  begin
+    value := getDequotedString(value);
+  end;
+
   FreeAndNil(_iniManipulator);
   if value = _DEFAULT_ERROR_STRING_VALUE_INI_FILES then
   begin
     raise Exception.Create(ERR_MSG);
   end;
+
   Result := value;
 end;
 

@@ -78,8 +78,13 @@ type
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
-    procedure doubleQuoted;
-    procedure singleQuoted;
+    procedure parseXML;
+    procedure doubleQuote;
+    procedure singleQuote;
+    procedure quote(quotedCharacter: Char);
+    procedure extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
+    procedure dequote;
+    function getVariantType(destinationTypeAsString: string): Variant;
   end;
 
 implementation
@@ -217,14 +222,39 @@ begin
   end;
 end;
 
-procedure TMyStringHelper.doubleQuoted;
+procedure TMyStringHelper.parseXML;
+begin
+  Self := getParsedXMLstring(Self);
+end;
+
+procedure TMyStringHelper.doubleQuote;
 begin
   Self := getDoubleQuotedString(Self);
 end;
 
-procedure TMyStringHelper.singleQuoted;
+procedure TMyStringHelper.singleQuote;
 begin
   Self := getSingleQuotedString(Self);
+end;
+
+procedure TMyStringHelper.quote(quotedCharacter: Char);
+begin
+  Self := getQuotedString(Self, quotedCharacter);
+end;
+
+procedure TMyStringHelper.extractString(quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED);
+begin
+  Self := getExtractedString(Self, quoteString, raiseExceptionEnabled);
+end;
+
+procedure TMyStringHelper.dequote;
+begin
+  Self := getDequotedString(Self);
+end;
+
+function TMyStringHelper.getVariantType(destinationTypeAsString: string): Variant;
+begin
+  Result := stringToVariantType(Self, destinationTypeAsString);
 end;
 
 end.
