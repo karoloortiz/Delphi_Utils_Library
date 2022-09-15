@@ -58,13 +58,13 @@ type
 
     constructor Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
       onChangeStatus: TCallBack = nil); overload;
-    procedure start;
-    procedure pause;
-    procedure resume;
-    procedure stop;
-    procedure restart;
-    function getStatus: TStatus;
-    function getHandle: integer;
+    procedure start; virtual;
+    procedure pause; virtual;
+    procedure resume; virtual;
+    procedure stop; virtual;
+    procedure restart; virtual;
+    function getStatus: TStatus; virtual;
+    function getHandle: integer; virtual;
     destructor Destroy; override;
   end;
 

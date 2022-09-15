@@ -50,13 +50,13 @@ type
 
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
     constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
-    procedure start;
-    procedure pause;
-    procedure resume;
-    procedure stop;
-    procedure restart;
-    function getStatus: TStatus;
-    function getHandle: integer;
+    procedure start; virtual;
+    procedure pause; virtual;
+    procedure resume; virtual;
+    procedure stop; virtual;
+    procedure restart; virtual;
+    function getStatus: TStatus; virtual;
+    function getHandle: integer; virtual;
     procedure Run; virtual; abstract;
     destructor Destroy; override;
   end;

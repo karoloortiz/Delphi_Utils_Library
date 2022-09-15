@@ -72,8 +72,8 @@ type
     class function getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer; overload;
     class function getElementIndexFromArray<T>(myArray: array of T; element: T): integer; overload;
 
-    class function getJSONAsString<T, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
-    class function getJSONObject<T, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
+    class function getJSONAsString<T, U, V, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
+    class function getJSONObject<T, U, V, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
 
     class function getParsedJSON<T, U, V, Z>(jsonAsString: string): T;
 
@@ -122,19 +122,19 @@ begin
   Result := elementIndex;
 end;
 
-class function TGeneric.getJSONAsString<T, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
+class function TGeneric.getJSONAsString<T, U, V, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
 var
   jsonAsString: string;
   _JSONObject: TJSONObject;
 begin
-  _JSONObject := getJSONObject<T, Z>(myRecord, ignoreEmptyStrings);
+  _JSONObject := getJSONObject<T, U, V, Z>(myRecord, ignoreEmptyStrings);
   jsonAsString := _JSONObject.ToString;
   _JSONObject.Free;
 
   Result := jsonAsString;
 end;
 
-class function TGeneric.getJSONObject<T, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
+class function TGeneric.getJSONObject<T, U, V, Z>(myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject;
 type
   PZ = ^Z;
 var
@@ -153,6 +153,11 @@ var
 
   _propertyValueIsEmpty: boolean;
 
+  _subObject: TJSONObject;
+  _T_sub: T;
+  _U_sub: U;
+  _V_sub: V;
+  _newTvalue: TValue;
 begin
   JSONObject := TJSONObject.Create();
 
@@ -189,7 +194,7 @@ begin
         JSONObject.AddPair(_propertyName, _propertyValue);
       end;
     end
-    else if _propertyType = 'Integer' then
+    else if (_propertyType = 'Integer') or (_propertyType = 'Word') then
     begin
       _propertyValue := _rttiField.GetValue(@myRecord).AsInteger;
       _propertyValueIsEmpty := checkIfVariantTypeIsEmpty(_propertyValue, _propertyType);
@@ -221,6 +226,43 @@ begin
       end;
 
       JSONObject.AddPair(_propertyName, TJSONBool.Create(_propertyValue));
+    end
+    else
+    begin
+      try
+        //        _subObject := _JSONMain.GetValue<TJSONObject>(_propertyName);
+
+        //        if _propertyType = _rttiContext.GetType(TypeInfo(T)).ToString then
+        //        begin
+        //          _T_sub := TGeneric.getParsedJSON<T, U, V, Z>(_subObject.ToString);
+        //          TValue.Make(@_T_sub, TypeInfo(T), _newTvalue);
+        //          _rttiField.SetValue(@_record, _newTvalue);
+        //        end
+
+        if _propertyType = _rttiContext.GetType(TypeInfo(T)).ToString then
+        begin
+          _T_sub := _rttiField.GetValue(@myRecord).AsType<T>;
+          _subObject := TGeneric.getJSONObject<T, U, V, Z>(_T_sub, NOT_IGNORE_EMPTY_STRINGS);
+          JSONObject.AddPair(_propertyName, _subObject);
+        end
+        else if _propertyType = _rttiContext.GetType(TypeInfo(U)).ToString then
+        begin
+          _U_sub := _rttiField.GetValue(@myRecord).AsType<U>;
+          _subObject := TGeneric.getJSONObject<U, V, T, Z>(_U_sub, NOT_IGNORE_EMPTY_STRINGS);
+          JSONObject.AddPair(_propertyName, _subObject);
+        end
+        else if _propertyType = _rttiContext.GetType(TypeInfo(V)).ToString then
+        begin
+          _V_sub := _rttiField.GetValue(@myRecord).AsType<V>;
+          _subObject := TGeneric.getJSONObject<V, T, U, Z>(_V_sub, NOT_IGNORE_EMPTY_STRINGS);
+          JSONObject.AddPair(_propertyName, _subObject);
+        end;
+      except
+        on E: Exception do
+        begin
+          //          _string := _string; //for debug
+        end;
+      end;
     end;
 
   end;
@@ -310,175 +352,175 @@ begin
         //          _rttiField.SetValue(PPointer(@_record, _newTvalue);
         //          end;
 
-            VarClear(_propertyValue);
+        VarClear(_propertyValue);
 
-            //    _customAttributes := _rttiField.GetAttributes;
-            //    for _customAttribute in _customAttributes do
-            //    begin
-            //
-            //    end;
+        //    _customAttributes := _rttiField.GetAttributes;
+        //    for _customAttribute in _customAttributes do
+        //    begin
+        //
+        //    end;
 
-            if (_propertyType = 'string') or (_propertyType = 'Char') then
-          begin
-            if _JSONMain.TryGetValue(_propertyName, _string) then
+        if (_propertyType = 'string') or (_propertyType = 'Char') then
+        begin
+          if _JSONMain.TryGetValue(_propertyName, _string) then
           begin
             _propertyValue := _string;
           end;
-          end
-          else if _propertyType = 'Integer' then
-          begin
-            if _JSONMain.TryGetValue(_propertyName, _integer) then
+        end
+        else if (_propertyType = 'Integer') or (_propertyType = 'Word') then
+        begin
+          if _JSONMain.TryGetValue(_propertyName, _integer) then
           begin
             _propertyValue := _integer;
           end;
-          end
-          else if _propertyType = 'Double' then
-          begin
-            if _JSONMain.TryGetValue(_propertyName, _double) then
+        end
+        else if _propertyType = 'Double' then
+        begin
+          if _JSONMain.TryGetValue(_propertyName, _double) then
           begin
             _propertyValue := _double;
           end;
-          end
-          else if _propertyType = 'Boolean' then
-          begin
-            if _JSONMain.TryGetValue(_propertyName, _boolean) then
+        end
+        else if _propertyType = 'Boolean' then
+        begin
+          if _JSONMain.TryGetValue(_propertyName, _boolean) then
           begin
             _propertyValue := _boolean;
           end;
-          end
-          else
-          begin
-            try
+        end
+        else
+        begin
+          try
             _subObject := _JSONMain.GetValue<TJSONObject>(_propertyName);
 
             if _propertyType = _rttiContext.GetType(TypeInfo(T)).ToString then
-          begin
-            _T_sub := TGeneric.getParsedJSON<T, U, V, Z>(_subObject.ToString);
-            TValue.Make(@_T_sub, TypeInfo(T), _newTvalue);
-            _rttiField.SetValue(@_record, _newTvalue);
-          end
-          else if _propertyType = _rttiContext.GetType(TypeInfo(U)).ToString then
-          begin
-            _U_sub := TGeneric.getParsedJSON<U, V, T, Z>(_subObject.ToString);
-            TValue.Make(@_U_sub, TypeInfo(U), _newTvalue);
-            _rttiField.SetValue(@_record, _newTvalue);
-          end
-          else if _propertyType = _rttiContext.GetType(TypeInfo(V)).ToString then
-          begin
-            _V_sub := TGeneric.getParsedJSON<V, U, T, Z>(_subObject.ToString);
-            TValue.Make(@_V_sub, TypeInfo(V), _newTvalue);
-            _rttiField.SetValue(@_record, _newTvalue);
-          end;
-            except
+            begin
+              _T_sub := TGeneric.getParsedJSON<T, U, V, Z>(_subObject.ToString);
+              TValue.Make(@_T_sub, TypeInfo(T), _newTvalue);
+              _rttiField.SetValue(@_record, _newTvalue);
+            end
+            else if _propertyType = _rttiContext.GetType(TypeInfo(U)).ToString then
+            begin
+              _U_sub := TGeneric.getParsedJSON<U, V, T, Z>(_subObject.ToString);
+              TValue.Make(@_U_sub, TypeInfo(U), _newTvalue);
+              _rttiField.SetValue(@_record, _newTvalue);
+            end
+            else if _propertyType = _rttiContext.GetType(TypeInfo(V)).ToString then
+            begin
+              _V_sub := TGeneric.getParsedJSON<V, U, T, Z>(_subObject.ToString);
+              TValue.Make(@_V_sub, TypeInfo(V), _newTvalue);
+              _rttiField.SetValue(@_record, _newTvalue);
+            end;
+          except
             on E: Exception do
-          begin
-            _string := _string; //for debug
+            begin
+              _string := _string; //for debug
+            end;
           end;
-          end;
-          end;
+        end;
 
-            if (not VarIsEmpty(_propertyValue)) then
-          begin
-            _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
-          end;
-          end;
-          end;
+        if (not VarIsEmpty(_propertyValue)) then
+        begin
+          _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+        end;
+      end;
+    end;
 
-            //  except
-            //    { ... Do something here ... }
-            //  end;
+    //  except
+    //    { ... Do something here ... }
+    //  end;
 
-            finally
-          begin
-            _rttiContext.Free;
-            FreeAndNil(_JSONMain);
-          end;
-          end;
+  finally
+    begin
+      _rttiContext.Free;
+      FreeAndNil(_JSONMain);
+    end;
+  end;
 
-            Result := _record;
-          end;
+  Result := _record;
+end;
 
-            class
-          function TGeneric.getDefault<T>: T;
-          var
-            _record: T;
+class
+  function TGeneric.getDefault<T>: T;
+var
+  _record: T;
 
-          _defaultValueAttribute: string;
+  _defaultValueAttribute: string;
 
-          _propertyName: string;
-          _propertyType: string;
-          _propertyValue: Variant;
+  _propertyName: string;
+  _propertyType: string;
+  _propertyValue: Variant;
 
-          _rttiContext: TRttiContext;
-          _rttiType: TRttiType;
-          _customAttributes: TArray<TCustomAttribute>;
-          _customAttribute: TCustomAttribute;
-          _rttiField: TRttiField;
-          begin
-            _rttiContext := TRttiContext.Create;
-          _rttiType := _rttiContext.GetType(TypeInfo(T));
+  _rttiContext: TRttiContext;
+  _rttiType: TRttiType;
+  _customAttributes: TArray<TCustomAttribute>;
+  _customAttribute: TCustomAttribute;
+  _rttiField: TRttiField;
+begin
+  _rttiContext := TRttiContext.Create;
+  _rttiType := _rttiContext.GetType(TypeInfo(T));
 
-          //  try
-          for _rttiField in _rttiType.GetFields do
-          begin
-            _propertyName := _rttiField.Name;
-          _propertyType := _rttiField.FieldType.ToString;
+  //  try
+  for _rttiField in _rttiType.GetFields do
+  begin
+    _propertyName := _rttiField.Name;
+    _propertyType := _rttiField.FieldType.ToString;
 
-          VarClear(_propertyValue);
-          _defaultValueAttribute := EMPTY_STRING;
+    VarClear(_propertyValue);
+    _defaultValueAttribute := EMPTY_STRING;
 
-          _customAttributes := _rttiField.GetAttributes;
-          for _customAttribute in _customAttributes do
-          begin
-            if _customAttribute is DefaultValueAttribute then
-          begin
-            _defaultValueAttribute := DefaultValueAttribute(_customAttribute).value;
-          end;
-          end;
+    _customAttributes := _rttiField.GetAttributes;
+    for _customAttribute in _customAttributes do
+    begin
+      if _customAttribute is DefaultValueAttribute then
+      begin
+        _defaultValueAttribute := DefaultValueAttribute(_customAttribute).value;
+      end;
+    end;
 
-          if _defaultValueAttribute <> EMPTY_STRING then
-          begin
-            _propertyValue := stringToVariantType(_defaultValueAttribute, _propertyType);
-          end
-          else
-          begin
-            _propertyValue := myDefault(_propertyType);
-          end;
+    if _defaultValueAttribute <> EMPTY_STRING then
+    begin
+      _propertyValue := stringToVariantType(_defaultValueAttribute, _propertyType);
+    end
+    else
+    begin
+      _propertyValue := myDefault(_propertyType);
+    end;
 
-          if _propertyType = 'string' then
-          begin
-          // already a string
-          end
-          else if _propertyType = 'Integer' then
-          begin
-            _propertyValue := StrToInt(_propertyValue);
-          end
-          else if _propertyType = 'Double' then
-          begin
-            _propertyValue := StrToFloat(_propertyValue);
-          end
-          else if _propertyType = 'Char' then
-          begin
-          // already a string
-          end
-          else if _propertyType = 'Boolean' then
-          begin
-            _propertyValue := StrToBool(_propertyValue);
-          end;
+    if _propertyType = 'string' then
+    begin
+      // already a string
+    end
+    else if _propertyType = 'Integer' then
+    begin
+      _propertyValue := StrToInt(_propertyValue);
+    end
+    else if _propertyType = 'Double' then
+    begin
+      _propertyValue := StrToFloat(_propertyValue);
+    end
+    else if _propertyType = 'Char' then
+    begin
+      // already a string
+    end
+    else if _propertyType = 'Boolean' then
+    begin
+      _propertyValue := StrToBool(_propertyValue);
+    end;
 
-          if (not VarIsEmpty(_propertyValue)) then
-          begin
-            _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
-          end;
-          end;
+    if (not VarIsEmpty(_propertyValue)) then
+    begin
+      _rttiField.SetValue(@_record, TValue.FromVariant(_propertyValue));
+    end;
+  end;
 
-          //  except
-          //    { ... Do something here ... }
-          //  end;
+  //  except
+  //    { ... Do something here ... }
+  //  end;
 
-          _rttiContext.Free;
+  _rttiContext.Free;
 
-          Result := _record;
-          end;
+  Result := _record;
+end;
 
-          end.
+end.

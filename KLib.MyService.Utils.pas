@@ -118,7 +118,8 @@ end;
 
 procedure runService(serviceApp: IServiceAppPort; params: TRunServiceParams);
 begin
-  runService(serviceApp, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+  runService(serviceApp,
+    params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
 end;
 
 procedure runService(serviceApp: IServiceAppPort; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
@@ -139,7 +140,8 @@ end;
 
 procedure runService(executorMethod: TAnonymousMethod; params: TRunServiceParams);
 begin
-  runService(executorMethod, params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
+  runService(executorMethod,
+    params.eventLogDisabled, params.rejectCallback, params.applicationName, params.installParameterName);
 end;
 
 procedure runService(executorMethod: TAnonymousMethod; eventLogDisabled: boolean = false; rejectCallback: TCallBack = nil;
@@ -175,7 +177,7 @@ procedure installService(silent: boolean = false; serviceName: string = EMPTY_ST
   regkeyDescription: string = EMPTY_STRING; applicationName: string = EMPTY_STRING; installParameterName: string = EMPTY_STRING;
   defaults_file: string = EMPTY_STRING; customParameters: string = EMPTY_STRING);
 begin
-  installOrUninstallService(true, silent, serviceName, regkeyDescription, applicationName, installParameterName, customParameters);
+  installOrUninstallService(true, silent, serviceName, regkeyDescription, applicationName, installParameterName, defaults_file, customParameters);
 end;
 
 procedure uninstallService(params: TInstallServiceParams);
