@@ -109,6 +109,7 @@ function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
+function getStringWithFixedLength(value: string; fixedLength: integer): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -141,8 +142,9 @@ function getFloatToStrDecimalSeparator: char;
 function getValueOfParameter(parameterName: string): string;
 function checkIfParameterExists(parameterName: string): boolean;
 
+//TODO refactor
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
-function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal; //TODO refactor
+function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
 function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
 function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
 
@@ -887,6 +889,11 @@ begin
   stringWithoutLineBreaks := stringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
 
   Result := stringWithoutLineBreaks;
+end;
+
+function getStringWithFixedLength(value: string; fixedLength: integer): string;
+begin
+  Result := Copy(value, 1, fixedLength);
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;

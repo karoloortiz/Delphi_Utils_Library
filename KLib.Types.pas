@@ -41,7 +41,7 @@ interface
 uses
   Vcl.Graphics,
   IdFTPCommon,
-  System.Generics.Collections;
+  System.Generics.Collections, System.SysUtils;
 
 const
   ftASCII = TIdFTPTransferType(0);
@@ -160,6 +160,17 @@ type
 
   TArrayOfStrings = TArray<string>;
 
+  TArrayOfWord = array of Word;
+
+  EExit = class(EAbort);
+  //####--EXAMPLE USE
+  //    raise EExit.Create('force exit in reject procedure');
+  //            if (e.ClassType <> EExit) then
+  //            begin
+  //              reject(e.Message);
+  //            end;
+  //####---
+
 {$scopedenums ON}
   TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
 
@@ -172,11 +183,7 @@ type
 
 implementation
 
-uses
-  System.SysUtils;
-
 function TDateTimeRange.getAsString: string;
-
 var
   _startDataTimeAsString: string;
   _endDataTimeAsString: string;
@@ -187,7 +194,6 @@ begin
 end;
 
 procedure THostPort.clear;
-
 const
   EMPTY: THostPort = ();
 begin
@@ -195,7 +201,6 @@ begin
 end;
 
 procedure TCredentials.clear;
-
 const
   EMPTY: TCredentials = ();
 begin
@@ -203,7 +208,6 @@ begin
 end;
 
 procedure TFTPCredentials.clear;
-
 const
   EMPTY: TFTPCredentials = ();
 begin
@@ -211,7 +215,6 @@ begin
 end;
 
 procedure TDownloadInfo.clear;
-
 const
   EMPTY: TDownloadInfo = ();
 begin
@@ -219,7 +222,6 @@ begin
 end;
 
 procedure TPIDCredentials.clear;
-
 const
   EMPTY: TPIDCredentials = ();
 begin
@@ -227,7 +229,6 @@ begin
 end;
 
 procedure TColorButtom.clear;
-
 const
   EMPTY: TColorButtom = ();
 begin
@@ -235,7 +236,6 @@ begin
 end;
 
 procedure TPosition.clear;
-
 const
   EMPTY: TPosition = ();
 begin
@@ -243,7 +243,6 @@ begin
 end;
 
 procedure TSize.clear;
-
 const
   EMPTY: TSize = ();
 begin
@@ -251,7 +250,6 @@ begin
 end;
 
 procedure TDateTimeRange.clear;
-
 const
   EMPTY: TDateTimeRange = ();
 begin
@@ -259,7 +257,6 @@ begin
 end;
 
 procedure TResource.clear;
-
 const
   EMPTY: TResource = ();
 begin
@@ -267,7 +264,6 @@ begin
 end;
 
 procedure TCallBacks.clear;
-
 const
   EMPTY: TCallBacks = ();
 begin
@@ -275,7 +271,6 @@ begin
 end;
 
 procedure TAsyncifyMethodReply.clear;
-
 const
   EMPTY: TAsyncifyMethodReply = ();
 begin
