@@ -92,6 +92,7 @@ const
   NOT_FORCE_OVERWRITE = false;
   RAISE_EXCEPTION_DISABLED = false;
   NOT_IGNORE_EMPTY_STRINGS = false;
+  NOT_MODAL_MODE = false;
 
   FORCE = true;
   FORCE_OVERWRITE = true;
@@ -100,6 +101,7 @@ const
   FORCE_SUSPEND = true;
   RAISE_EXCEPTION = true;
   IGNORE_EMPTY_STRINGS = true;
+  MODAL_MODE = true;
 
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input

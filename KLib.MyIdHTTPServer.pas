@@ -86,6 +86,9 @@ type
     procedure Alisten(port: integer = 0);
     procedure listen(port: integer = 0);
     procedure stop(raiseExceptionEnabled: boolean = true);
+
+    procedure waitUntilIsRunning;
+
     property isRunning: boolean read _get_isRunning;
 
     destructor Destroy; override;
@@ -147,10 +150,7 @@ begin
 
   if not asyncMode then
   begin
-    while isRunning do
-    begin
-      _isRunningEvent.WaitFor();
-    end;
+    waitUntilIsRunning;
   end;
 end;
 
@@ -168,6 +168,14 @@ begin
   else if raiseExceptionEnabled then
   begin
     raise Exception.Create(ERR_MSG);
+  end;
+end;
+
+procedure TMyIdHTTPServer.waitUntilIsRunning;
+begin
+  while isRunning do
+  begin
+    _isRunningEvent.WaitFor();
   end;
 end;
 

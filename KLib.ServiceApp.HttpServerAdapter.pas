@@ -63,6 +63,9 @@ type
     procedure resume; virtual;
     procedure stop; virtual;
     procedure restart; virtual;
+
+    procedure waitUntilIsRunning; virtual;
+
     function getStatus: TStatus; virtual;
     function getHandle: integer; virtual;
     destructor Destroy; override;
@@ -106,6 +109,12 @@ procedure THttpServerAdapter.restart;
 begin
   _server.stop(RAISE_EXCEPTION_DISABLED);
   _server.Alisten;
+end;
+
+procedure THttpServerAdapter.waitUntilIsRunning;
+begin
+  Sleep(INFINITE); //better beacuse not use mainThread
+  //  _server.waitUntilIsRunning;
 end;
 
 function THttpServerAdapter.getStatus: TStatus;

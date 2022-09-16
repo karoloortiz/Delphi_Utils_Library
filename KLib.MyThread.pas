@@ -52,11 +52,13 @@ type
     _event: TMyEvent;
 
     procedure _set_status(value: TStatus);
+    function _get_IsRunning: boolean;
   protected
     _status: TStatus;
   public
     onChangeStatus: TCallBack;
     property status: TStatus read _status write _set_status;
+    property isRunning: boolean read _get_IsRunning;
 
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
       onChangeStatus: TCallBack = nil);
@@ -260,6 +262,11 @@ begin
   begin
     onChangeStatus(get_status_asString(_status));
   end;
+end;
+
+function TMyThread._get_IsRunning: boolean;
+begin
+  Result := status = TStatus.running;
 end;
 
 destructor TMyThread.Destroy;

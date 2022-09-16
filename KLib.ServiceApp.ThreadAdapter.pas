@@ -49,12 +49,15 @@ type
     _myThread: TMyThread;
 
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
-    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload; //if you use this constructor, define your subclass and override Run method
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
     procedure stop; virtual;
     procedure restart; virtual;
+
+    procedure waitUntilIsRunning; virtual;
+
     function getStatus: TStatus; virtual;
     function getHandle: integer; virtual;
     procedure Run; virtual; abstract;
@@ -64,7 +67,7 @@ type
 implementation
 
 uses
-  KLib.Constants, KLib.Utils,
+  KLib.Constants, KLib.Utils, KLib.Windows,
   System.SysUtils;
 
 constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
@@ -100,6 +103,15 @@ end;
 procedure TThreadAdapter.restart;
 begin
   restartMyThread(_myThread);
+end;
+
+procedure TThreadAdapter.waitUntilIsRunning;
+begin
+  Sleep(INFINITE); //better beacuse not use mainThread
+  //  while _myThread.isRunning do
+  //  begin
+  //    waitForMultiple(_myThread.Handle);
+  //  end;
 end;
 
 function TThreadAdapter.getStatus: TStatus;

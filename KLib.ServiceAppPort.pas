@@ -49,6 +49,8 @@ type
     procedure stop;
     procedure restart;
 
+    procedure waitUntilIsRunning;
+
     function getStatus: TStatus;
     function getHandle: integer;
   end;
