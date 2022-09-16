@@ -211,6 +211,7 @@ procedure TMyThread.stop(force: boolean = false);
     _event.enable;
     status := TStatus.stopped;
   end;
+
 begin
   case status of
     TStatus.created:
