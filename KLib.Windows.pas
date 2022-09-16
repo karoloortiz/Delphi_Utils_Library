@@ -177,7 +177,7 @@ function checkIfCurrentProcessIsAServiceProcess: boolean;
 function checkIfIsAServiceProcess(processHandle: THandle): boolean;
 //###########-----
 
-procedure myAttachConsole;
+procedure myAttachConsole(attachToParentIfExists: boolean = true);
 function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;
   wmiHost: string = '.'; root: string = 'root\CIMV2'): string;
 function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
@@ -1766,15 +1766,22 @@ begin
   Result := _isServiceProcess;
 end;
 
-procedure myAttachConsole;
+procedure myAttachConsole(attachToParentIfExists: boolean = true);
 const
   ATTACH_PARENT_PROCESS = DWORD(-1);
 begin
-  if not AttachConsole(ATTACH_PARENT_PROCESS) then
+  if attachToParentIfExists then
+  begin
+    if not AttachConsole(ATTACH_PARENT_PROCESS) then
+    begin
+      AllocConsole;
+    end;
+    AttachConsole(ATTACH_PARENT_PROCESS);
+  end
+  else
   begin
     AllocConsole;
   end;
-  AttachConsole(ATTACH_PARENT_PROCESS);
 end;
 
 function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;

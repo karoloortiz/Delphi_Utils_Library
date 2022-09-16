@@ -125,41 +125,16 @@ procedure TMyIdHTTPServer._listen(asyncMode: boolean; port: integer = 0);
 const
   ERR_MSG = 'Port not assigned.';
 begin
-  //  Self.DefaultPort := port;
-  //  _server.Active := True;
-
-  //  inherited;
-  //  if FPort <= 0 then
-  //    FPort := GetDefaultPort;
   if (Self.DefaultPort = 0) and (port = 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end
   else if (Self.DefaultPort = 0) then
   begin
-    Self.DefaultPort := port; //todo check if port is open
+    Self.DefaultPort := port;
   end;
 
   validateThatPortIsAvaliable(Self.DefaultPort);
-
-  //  if FHost.IsEmpty then
-  //    FHost := GetDefaultHost;
-
-  //  LIdHTTPWebBrokerBridge := GetDefaultHTTPWebBroker;
-  //  WebRequestHandler.WebModuleClass := WebModuleClass;
-  //  try
-  //    if FMaxConnections > 0 then
-  //    begin
-  //      WebRequestHandler.MaxConnections := FMaxConnections;
-  //      GetDefaultHTTPWebBroker.MaxConnections := FMaxConnections;
-  //    end;
-
-  //    if FListenQueue = 0 then
-  //      FListenQueue := IdListenQueueDefault;
-
-  //    if FHorseProviderIOHandleSSL <> nil then
-  //      InitServerIOHandlerSSLOpenSSL(LIdHTTPWebBrokerBridge, GetDefaultHorseProviderIOHandleSSL);
-  //    LIdHTTPWebBrokerBridge.ListenQueue := FListenQueue;
 
   Self.Bindings.Clear;
   Self.Bindings.Add;
@@ -169,23 +144,7 @@ begin
   Self.StartListening;
   _isRunningEvent.enable;
   Self.status := TStatus.running;
-  //  LIdHTTPWebBrokerBridge.Bindings.Clear;
-  //  if FHost <> GetDefaultHost then
-  //  begin
-  //    LIdHTTPWebBrokerBridge.Bindings.Add;
-  //    //      LIdHTTPWebBrokerBridge.Bindings.Items[0].IP := FHost;
-  //    LIdHTTPWebBrokerBridge.Bindings.Items[0].Port := FPort;
-  //  end;
 
-  //    LIdHTTPWebBrokerBridge.KeepAlive := FKeepConnectionAlive;
-  //    LIdHTTPWebBrokerBridge.DefaultPort := FPort;
-  //    LIdHTTPWebBrokerBridge.Active := True;
-  //    LIdHTTPWebBrokerBridge.StartListening;
-  //    FRunning := True;
-  //    DoOnListen;
-
-  //    if IsConsole then
-  //    begin
   if not asyncMode then
   begin
     while isRunning do
@@ -193,23 +152,6 @@ begin
       _isRunningEvent.WaitFor();
     end;
   end;
-  //    end
-  //  except
-  //    on E: Exception do
-  //    begin
-  //      if IsConsole then
-  //      begin
-  //        Writeln(E.ClassName, ': ', E.Message);
-  //        Read(LAttach);
-  //      end
-  //      else
-  //{$if CompilerVersion >= 32.0}
-  //        raise AcquireExceptionObject;
-  //{$else}
-  //        raise;
-  //{$endif}
-  //    end;
-  //  end;
 end;
 
 procedure TMyIdHTTPServer.stop(raiseExceptionEnabled: boolean = true);
