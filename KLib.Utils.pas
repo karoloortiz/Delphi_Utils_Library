@@ -94,10 +94,10 @@ function getDayOfWeekAsString(date: TDateTime): string;
 function getCurrentDateTimeAsString: string;
 function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
-function getDateAsString(date: TDateTime): string; //TODO REVIEW NAME?
+function getDateAsString(date: TDateTime): string;
 function getCurrentTimeStamp: string;
-function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORMAT): string;
-function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
 function getParsedXMLstring(mainString: string): string;
@@ -799,15 +799,15 @@ end;
 
 function getCurrentTimeStamp: string;
 begin
-  Result := getCurrentDateTimeAsStringWithFormatting(TIMESTAMP_FORMAT);
+  Result := getCurrentDateTimeWithFormattingAsString(TIMESTAMP_FORMAT);
 end;
 
-function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
 begin
-  Result := getDateTimeAsStringWithFormatting(Now, formatting);
+  Result := getDateTimeWithFormattingAsString(Now, formatting);
 end;
 
-function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 var
   dateTimeAsStringWithFormatting: string;
 begin

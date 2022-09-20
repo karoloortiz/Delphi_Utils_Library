@@ -56,6 +56,7 @@ interface
 
 uses
   KLib.MyEvent, KLib.Types,
+  KLib.Generics.JSON, KLib.Generics.Attributes,
   IdHTTPServer, IdContext, IdCustomHTTPServer;
 
 type
@@ -66,6 +67,15 @@ type
 
   TMyOnCommandGetAnonymousMethod =
     reference to procedure(var AContext: TIdContext; var ARequestInfo: TIdHTTPRequestInfo; var AResponseInfo: TIdHTTPResponseInfo);
+
+  TDefaultServerErrorResponse = record
+    timestamp: string;
+    status: integer;
+    error: string;
+    _message: string;
+    [IgnoreAttribute()]
+    path: string;
+  end;
 
   TMyIdHTTPServer = class(TIdHTTPServer)
   private
@@ -78,11 +88,13 @@ type
     procedure _listen(asyncMode: boolean; port: integer = 0);
     procedure myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
   public
+    rejectCallBack: TCallBack;
     onChangeStatus: TCallBack;
+    defaultServerErrorResponse: TDefaultServerErrorResponse;
     property status: TStatus read _status write _set_status;
 
     constructor create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
-      onChangeStatus: TCallBack = nil); overload;
+      rejectCallBack: TCallBack = nil; onChangeStatus: TCallBack = nil); overload;
     procedure Alisten(port: integer = 0);
     procedure listen(port: integer = 0);
     procedure stop(raiseExceptionEnabled: boolean = true);
@@ -97,21 +109,30 @@ type
 implementation
 
 uses
-  KLib.Validate, KLib.Utils,
+  KLib.Validate, KLib.Utils, KLib.Constants,
   System.SysUtils;
 
 constructor TMyIdHTTPServer.create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
-  onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack = nil; onChangeStatus: TCallBack = nil);
 begin
   inherited Create(nil);
   Self._myOnCommandGetAnonymousMethod := myOnCommandGetAnonymousMethod;
   Self.DefaultPort := port;
+  Self.rejectCallBack := rejectCallBack;
   Self.onChangeStatus := onChangeStatus;
 
   Self.OnCommandGet := Self.myOnCommandGet;
   Self._isRunningEvent := TMyEvent.Create;
 
   Self.status := TStatus.created;
+
+  with defaultServerErrorResponse do
+  begin
+    timestamp := '';
+    status := 500;
+    error := 'Internal Server Error';
+    _message := '';
+  end;
 end;
 
 procedure TMyIdHTTPServer.Alisten(port: integer = 0);
@@ -128,29 +149,43 @@ procedure TMyIdHTTPServer._listen(asyncMode: boolean; port: integer = 0);
 const
   ERR_MSG = 'Port not assigned.';
 begin
-  if (Self.DefaultPort = 0) and (port = 0) then
-  begin
-    raise Exception.Create(ERR_MSG);
-  end
-  else if (Self.DefaultPort = 0) then
-  begin
-    Self.DefaultPort := port;
-  end;
+  try
+    if (Self.DefaultPort = 0) and (port = 0) then
+    begin
+      raise Exception.Create(ERR_MSG);
+    end
+    else if (Self.DefaultPort = 0) then
+    begin
+      Self.DefaultPort := port;
+    end;
 
-  validateThatPortIsAvaliable(Self.DefaultPort);
+    validateThatPortIsAvaliable(Self.DefaultPort);
 
-  Self.Bindings.Clear;
-  Self.Bindings.Add;
-  Self.Bindings.Items[0].Port := Self.DefaultPort;
-  Self.KeepAlive := true;
-  Self.Active := true;
-  Self.StartListening;
-  _isRunningEvent.enable;
-  Self.status := TStatus.running;
+    Self.Bindings.Clear;
+    Self.Bindings.Add;
+    Self.Bindings.Items[0].Port := Self.DefaultPort;
+    Self.KeepAlive := true;
+    Self.Active := true;
+    Self.StartListening;
+    _isRunningEvent.enable;
+    Self.status := TStatus.running;
 
-  if not asyncMode then
-  begin
-    waitUntilIsRunning;
+    if not asyncMode then
+    begin
+      waitUntilIsRunning;
+    end;
+  except
+    on E: Exception do
+    begin
+      if Assigned(rejectCallBack) then
+      begin
+        rejectCallBack(E.Message);
+      end
+      else
+      begin
+        raise Exception.Create(E.Message);
+      end;
+    end;
   end;
 end;
 
@@ -180,10 +215,32 @@ begin
 end;
 
 procedure TMyIdHTTPServer.myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
+var
+  _defaultError: TDefaultServerErrorResponse;
 begin
   if Assigned(_myOnCommandGetAnonymousMethod) then
   begin
-    _myOnCommandGetAnonymousMethod(AContext, ARequestInfo, AResponseInfo);
+    try
+      _myOnCommandGetAnonymousMethod(AContext, ARequestInfo, AResponseInfo);
+    except
+      on E: Exception do
+      begin
+        AResponseInfo.ResponseNo := 500;
+        AResponseInfo.ContentType := APPLICATION_JSON_CONTENT_TYPE;
+        defaultServerErrorResponse.timestamp := getCurrentDateTimeWithFormattingAsString(DATETIME_FORMAT);
+        AResponseInfo.ContentText :=
+          TJSONGenerics.getJSONAsString<TDefaultServerErrorResponse>(defaultServerErrorResponse, NOT_IGNORE_EMPTY_STRINGS);
+
+        if Assigned(rejectCallBack) then
+        begin
+          rejectCallBack(E.Message);
+        end
+        else
+        begin
+          raise Exception.Create(E.Message);
+        end;
+      end;
+    end;
   end;
 end;
 

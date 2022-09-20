@@ -44,7 +44,7 @@
 //  - ValidateFullPath
 //###########---EXAMPLE OF USE----##########################
 // uses
-//  KLib.Generic.Attributes; //always include
+//  KLib.Generics.Attributes; //always include
 //
 //type
 //
@@ -99,19 +99,19 @@
 //
 //initialization
 //
-//  ApplicationShellParams := TShellParamsGeneric.get<TApplicationShellParams>();
+//  ApplicationShellParams := TShellParamsGenerics.get<TApplicationShellParams>();
 //
 //#####################################
-unit KLib.Generic.ShellParams;
+unit KLib.Generics.ShellParams;
 
 //        --defaults-file
 interface
 
 uses
-  KLib.Generic.Attributes, KLib.Constants, KLib.Types;
+  KLib.Generics.Attributes, KLib.Constants, KLib.Types;
 
 type
-  TShellParamsGeneric = class
+  TShellParamsGenerics = class
   public
     class function get<T>: T;
   end;
@@ -119,10 +119,10 @@ type
 implementation
 
 uses
-  KLib.Utils, KLib.Windows, KLib.Generic,
+  KLib.Utils, KLib.Windows, KLib.Generics,
   System.Rtti, System.SysUtils, System.Variants;
 
-class function TShellParamsGeneric.get<T>: T;
+class function TShellParamsGenerics.get<T>: T;
 var
   _record: T;
 
@@ -148,7 +148,7 @@ var
 
   _parentDir: string;
 begin
-  _record := TGeneric.getDefault<T>;
+  _record := TGenerics.getDefault<T>;
 
   _rttiContext := TRttiContext.Create;
   _rttiType := _rttiContext.GetType(TypeInfo(T));
@@ -211,7 +211,7 @@ begin
     begin
       _propertyValue := getValueOfParameter(_paramNames, _valuesExcluded);
 
-      if _propertyType = 'string' then
+      if (_propertyType = 'string') or (_propertyType = 'Char') then
       begin
         if _settingStringDequoteAttribute then
         begin
@@ -240,10 +240,6 @@ begin
       else if _propertyType = 'Double' then
       begin
         _propertyValue := StrToFloat(_propertyValue);
-      end
-      else if _propertyType = 'Char' then
-      begin
-        //
       end
       else if _propertyType = 'Boolean' then
       begin

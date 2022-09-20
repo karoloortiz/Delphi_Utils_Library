@@ -80,6 +80,8 @@ const
 
   C_DRIVE = 'C';
 
+  APPLICATION_JSON_CONTENT_TYPE = 'application/json';
+
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
   SPACE_STRING = ' ';
   EMPTY_STRING = '';

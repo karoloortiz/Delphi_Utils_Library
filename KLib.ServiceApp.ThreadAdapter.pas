@@ -45,6 +45,8 @@ uses
 type
   TThreadAdapter = class(TInterfacedObject, IServiceAppPort)
   private
+  protected
+    rejectCallBack: TCallBack;
   public
     _myThread: TMyThread;
 
@@ -72,11 +74,13 @@ uses
 
 constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
+  Self.rejectCallBack := rejectCallBack;
   _myThread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
 constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
+  Self.rejectCallBack := rejectCallBack;
   _myThread := TMyThread.Create(run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 

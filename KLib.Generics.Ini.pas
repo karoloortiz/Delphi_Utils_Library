@@ -42,7 +42,7 @@
 //  - DefaultValueAttribute
 //###########---EXAMPLE OF USE----##########################
 // uses
-//  KLib.Generic.Ini, KLib.Generic.Attributes; //always include
+//  KLib.Generics.Ini, KLib.Generics.Attributes; //always include
 //
 // type
 //  [
@@ -78,10 +78,10 @@
 //  ...
 //  end;
 //
-//  TIniGeneric.saveTofile<TSettingsIni>(settings);
-//  settings:= TIniGeneric.tryGetFromFile<TSettingsIni>();
+//  TIniGenerics.saveTofile<TSettingsIni>(settings);
+//  settings:= TIniGenerics.tryGetFromFile<TSettingsIni>();
 //#####################################
-unit KLib.Generic.Ini;
+unit KLib.Generics.Ini;
 
 interface
 
@@ -89,7 +89,7 @@ uses
   KLib.Constants;
 
 type
-  TIniGeneric = class
+  TIniGenerics = class
   public
     class procedure saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
     class function tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
@@ -100,10 +100,10 @@ type
 implementation
 
 uses
-  KLib.Generic.Attributes, KLib.Generic, KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
+  KLib.Generics.Attributes, KLib.Generics, KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
   System.Rtti, System.SysUtils, System.Variants;
 
-class procedure TIniGeneric.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
+class procedure TIniGenerics.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
 var
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
@@ -156,7 +156,7 @@ begin
       end;
     end;
 
-    if _propertyType = 'string' then
+    if (_propertyType = 'string') or (_propertyType = 'Char') then
     begin
       _propertyValue := _rttiField.GetValue(@iniRecord).AsString;
 
@@ -181,10 +181,6 @@ begin
     begin
       _propertyValue := _rttiField.GetValue(@iniRecord).AsExtended;
     end
-    else if _propertyType = 'Char' then
-    begin
-      _propertyValue := _rttiField.GetValue(@iniRecord).AsString;
-    end
     else if _propertyType = 'Boolean' then
     begin
       _propertyValue := _rttiField.GetValue(@iniRecord).AsBoolean;
@@ -200,12 +196,12 @@ begin
   _rttiContext.Free;
 end;
 
-class function TIniGeneric.tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
+class function TIniGenerics.tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
 begin
   Result := getFromFile<T>(fileName, sectionName, RAISE_EXCEPTION_DISABLED);
 end;
 
-class function TIniGeneric.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
+class function TIniGenerics.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
   raiseException: boolean = RAISE_EXCEPTION): T;
 var
   _record: T;
@@ -224,7 +220,7 @@ var
   _customAttribute: TCustomAttribute;
   _rttiField: TRttiField;
 begin
-  _record := TGeneric.getDefault<T>;
+  _record := TGenerics.getDefault<T>;
 
   _fileName := fileName;
   _settingStringsAttribute := _null;
@@ -269,7 +265,7 @@ begin
       try
         _propertyValue := getStringValueFromIniFile(_fileName, _sectionName, _propertyName);
 
-        if _propertyType = 'string' then
+        if (_propertyType = 'string') or (_propertyType = 'Char') then
         begin
           case _settingStringsAttribute of
             _null:
@@ -291,10 +287,6 @@ begin
         else if _propertyType = 'Double' then
         begin
           _propertyValue := StrToFloat(_propertyValue);
-        end
-        else if _propertyType = 'Char' then
-        begin
-          //
         end
         else if _propertyType = 'Boolean' then
         begin

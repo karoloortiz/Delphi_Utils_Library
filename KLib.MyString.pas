@@ -110,7 +110,7 @@ procedure TMyStringHelper.setParamAsDoubleQuotedDateTimeWithFormatting(paramName
 var
   _dateTimeAsStringWithFormatting: string;
 begin
-  _dateTimeAsStringWithFormatting := getDateTimeAsStringWithFormatting(value, formatting);
+  _dateTimeAsStringWithFormatting := getDateTimeWithFormattingAsString(value, formatting);
   setParamAsDoubleQuotedString(paramName, _dateTimeAsStringWithFormatting, caseSensitive);
 end;
 
@@ -149,7 +149,7 @@ procedure TMyStringHelper.setParamAsSingleQuotedDateTimeWithFormatting(paramName
 var
   _dateTimeAsStringWithFormatting: string;
 begin
-  _dateTimeAsStringWithFormatting := getDateTimeAsStringWithFormatting(value, formatting);
+  _dateTimeAsStringWithFormatting := getDateTimeWithFormattingAsString(value, formatting);
   setParamAsSingleQuotedString(paramName, _dateTimeAsStringWithFormatting, caseSensitive);
 end;
 
@@ -188,7 +188,7 @@ procedure TMyStringHelper.setParamAsDateTimeWithFormatting(paramName: string; va
 var
   _dateTimeAsStringWithFormatting: string;
 begin
-  _dateTimeAsStringWithFormatting := getDateTimeAsStringWithFormatting(value, formatting);
+  _dateTimeAsStringWithFormatting := getDateTimeWithFormattingAsString(value, formatting);
   setParamAsString(paramName, _dateTimeAsStringWithFormatting, caseSensitive);
 end;
 

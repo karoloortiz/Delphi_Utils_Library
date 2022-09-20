@@ -53,11 +53,13 @@ type
   private
     _handle: THandle;
     procedure WndMethod(var Msg: TMessage);
+  protected
+    rejectCallBack: TCallBack;
   public
     _server: TMyIdHTTPServer;
 
     constructor Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-      onChangeStatus: TCallBack = nil); overload;
+      rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -79,9 +81,10 @@ uses
   System.SysUtils;
 
 constructor THttpServerAdapter.Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-  onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
 begin
-  _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, onChangeStatus);
+  Self.rejectCallBack := rejectCallBack;
+  _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, rejectCallBack, onChangeStatus);
   _handle := AllocateHWnd(WndMethod);
 end;
 

@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Generic.Attributes;
+unit KLib.Generics.Attributes;
 
 interface
 
@@ -96,6 +96,11 @@ type
     constructor Create;
   end;
 
+  IgnoreAttribute = class(TCustomAttribute)
+  public
+    constructor Create;
+  end;
+
 implementation
 
 uses
@@ -131,6 +136,10 @@ begin
 end;
 
 constructor ValidateFullPathAttribute.Create;
+begin
+end;
+
+constructor IgnoreAttribute.Create;
 begin
 end;
 
