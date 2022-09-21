@@ -62,6 +62,7 @@ function getPathInLinuxStyle(path: string): string;
 
 function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 function getValidFullPath(fileName: string): string;
+function checkIfIsAPath(path: string): boolean;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 
@@ -420,6 +421,11 @@ begin
   path := ExcludeTrailingPathDelimiter(path);
 
   Result := path;
+end;
+
+function checkIfIsAPath(path: string): boolean;
+begin
+  Result := ExtractFilePath(path) <> EMPTY_STRING;
 end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;

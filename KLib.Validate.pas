@@ -84,6 +84,8 @@ procedure validateThatIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName
 procedure validateIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string; errMsg: string = 'Node not expected.');
 procedure validateThatAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string; errMsg: string = 'Attribute not exists in node.');
 
+procedure validateThatIsAPath(path: string; errMsg: string = 'Path is not valid.');
+
 procedure validateMD5File(fileName: string; MD5: string; errMsg: string = 'MD5 check failed.');
 
 procedure validateThatRunUnderWine(errMsg: string = 'Program is not running under Wine.');
@@ -374,6 +376,17 @@ begin
   if not checkIfAttributeExistsInIXMLNode(mainNode, attributeName) then
   begin
     _errMsg := getDoubleQuotedString(attributeName) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatIsAPath(path: string; errMsg: string = 'Path is not valid.');
+var
+  _errMsg: string;
+begin
+  if not checkIfIsAPath(path) then
+  begin
+    _errMsg := getDoubleQuotedString(path) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
   end;
 end;
