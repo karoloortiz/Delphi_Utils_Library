@@ -215,8 +215,6 @@ begin
 end;
 
 procedure TMyIdHTTPServer.myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
-var
-  _defaultError: TDefaultServerErrorResponse;
 begin
   if Assigned(_myOnCommandGetAnonymousMethod) then
   begin
