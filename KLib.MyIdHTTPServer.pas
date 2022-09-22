@@ -164,7 +164,8 @@ begin
     Self.Bindings.Clear;
     Self.Bindings.Add;
     Self.Bindings.Items[0].Port := Self.DefaultPort;
-    Self.KeepAlive := true;
+    // don't enabled by default
+    //    Self.KeepAlive := true;
     Self.Active := true;
     Self.StartListening;
     _isRunningEvent.enable;
