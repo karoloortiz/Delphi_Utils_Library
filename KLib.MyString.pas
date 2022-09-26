@@ -80,6 +80,15 @@ type
 
     procedure doubleQuoted;
     procedure singleQuoted;
+    procedure XMLParsed;
+    procedure removeLineBreaks(substituteString: string = SPACE_STRING);
+    procedure fixedWordWrap(fixedLen: Integer);
+    procedure insertSubString(subString: string; index: integer);
+
+    function getNumberOfLines: integer;
+    function checkIfContainsSubStringNoCaseSensitive(subString: string): boolean;
+    function checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
+
   end;
 
 implementation
@@ -225,6 +234,41 @@ end;
 procedure TMyStringHelper.singleQuoted;
 begin
   Self := getSingleQuotedString(Self);
+end;
+
+procedure TMyStringHelper.XMLParsed;
+begin
+  Self := getParsedXMLstring(Self);
+end;
+
+procedure TMyStringHelper.removeLineBreaks(substituteString: string = SPACE_STRING);
+begin
+  Self := getStringWithoutLineBreaks(Self, substituteString);
+end;
+
+procedure TMyStringHelper.fixedWordWrap(fixedLen: Integer);
+begin
+  Self := stringToStrFixedWordWrap(Self, fixedLen);
+end;
+
+procedure TMyStringHelper.insertSubString(subString: string; index: integer);
+begin
+  Self := getMainStringWithSubStringInserted(Self, subString, index);
+end;
+
+function TMyStringHelper.getNumberOfLines: integer;
+begin
+  Result := getNumberOfLinesInStrFixedWordWrap(Self);
+end;
+
+function TMyStringHelper.checkIfContainsSubStringNoCaseSensitive(subString: string): boolean;
+begin
+  Result := checkIfMainStringContainsSubStringNoCaseSensitive(Self, subString);
+end;
+
+function TMyStringHelper.checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
+begin
+  Result := checkIfMainStringContainsSubString(Self, subString, caseSensitiveSearch);
 end;
 
 end.

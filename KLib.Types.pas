@@ -149,6 +149,8 @@ type
     procedure clear;
   end;
 
+  TExecutorFunction = reference to procedure(resolve: TCallBack; reject: TCallback);
+
   TAsyncifyMethodReply = record
     handle: THandle;
     msg_resolve: Cardinal;

@@ -78,10 +78,12 @@ const
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
 
-  RUN_AS_ADMIN = true;
-
-  NOT_FORCE = false;
+  DISABLE = false;
+  NOT_FORCE = DISABLE;
   NOT_FORCE_OVERWRITE = NOT_FORCE;
+
+  AUTO_CLEAN = true;
+  RUN_AS_ADMIN = true;
   FORCE = true;
   FORCE_OVERWRITE = FORCE;
   FORCE_DELETE = FORCE;

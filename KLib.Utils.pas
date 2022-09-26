@@ -101,10 +101,10 @@ function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORM
 function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
-function getParsedXMLstring(mainString: string): string; //todo add to myString
+function getParsedXMLstring(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
-function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
+function getMainStringWithSubStringInserted(mainString: string; subString: string; index: integer): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -808,7 +808,7 @@ begin
   Result := Now;
 end;
 
-function getParsedXMLstring(mainString: string): string; //todo add to myString
+function getParsedXMLstring(mainString: string): string;
 var
   parsedXMLstring: string;
 begin
@@ -832,7 +832,7 @@ begin
   Result := AnsiQuotedStr(mainString, '''');
 end;
 
-function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer): string;
+function getMainStringWithSubStringInserted(mainString: string; subString: string; index: integer): string;
 const
   ERR_MSG = 'Index out of range.';
 var
@@ -848,7 +848,7 @@ begin
   end;
   _firstStringPart := Copy(mainString, 0, index);
   _lastStringPart := Copy(mainString, index + 1, MaxInt);
-  _result := _firstStringPart + insertedString + _lastStringPart;
+  _result := _firstStringPart + subString + _lastStringPart;
 
   Result := _result;
 end;

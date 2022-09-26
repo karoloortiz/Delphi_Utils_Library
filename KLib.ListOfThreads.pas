@@ -34,36 +34,42 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyStringList;
+unit KLib.ListOfThreads;
 
 interface
 
 uses
-  System.Classes;
+  System.Classes, System.Generics.Collections;
 
 type
-  TMyStringListHelper = class helper for TStringList
-    procedure addStrings(strings: array of string); overload;
+  TListOfThreads = class(TList<TThread>)
+  public
+    procedure WaitFor;
+    destructor Destroy; override;
   end;
 
 implementation
 
-uses
-  Klib.Utils,
-  System.SysUtils;
-
-procedure TMyStringListHelper.addStrings(strings: array of string);
+procedure TListOfThreads.WaitFor;
 var
-  _stringList: TStringList;
+  _thread: TThread;
 begin
-  _stringList := arrayOfStringToTStringList(strings);
-  try
-    AddStrings(_stringList);
-  finally
-    begin
-      FreeAndNil(_stringList);
-    end;
+  for _thread in Self do
+  begin
+    _thread.WaitFor;
   end;
+end;
+
+Destructor TListOfThreads.Destroy;
+var
+  _thread: TThread;
+begin
+  for _thread in Self do
+  begin
+    _thread.Free;
+  end;
+
+  inherited;
 end;
 
 end.

@@ -1467,7 +1467,7 @@ begin
       processHandle,
       False, { wake on any event }
       timeout,
-      QS_PAINT or QS_SENDMESSAGE or QS_POSTMESSAGE //todo check
+      QS_PAINT or QS_SENDMESSAGE or QS_POSTMESSAGE
       //      QS_PAINT or QS_POSTMESSAGE or QS_SENDMESSAGE or QS_ALLPOSTMESSAGE { wake on paint messages or messages from other threads }
       );
     case _return of
