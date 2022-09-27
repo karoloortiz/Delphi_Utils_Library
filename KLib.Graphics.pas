@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -123,7 +123,7 @@ function getHeightOfSingleCharacter(myFont: TFont): integer;
 implementation
 
 uses
-  KLib.Utils, KLib.Generic,
+  KLib.Utils, KLib.Generics,
   Winapi.Windows,
   System.SysUtils, System.Types;
 
@@ -482,7 +482,7 @@ begin
   _countButtons := Length(buttons);
   Assert(_countButtons <= MAX_NUMBER_BUTTONS, ERR_MSG);
 
-  _indexOfDefaultButton := TGeneric.getElementIndexFromArray<string>(buttons, defaultButton);
+  _indexOfDefaultButton := TGenerics.getElementIndexFromArray<string>(buttons, defaultButton);
   if _indexOfDefaultButton = -1 then
   begin
     _indexOfDefaultButton := 0;
@@ -519,7 +519,7 @@ begin
 
   if (_messageDialogResult <> mrNo) and (_messageDialogResult <> mrOk) and (_messageDialogResult <> mrCancel) then
   begin
-    _RESULTS_BUTTONS_index := TGeneric.getElementIndexFromArray<integer>(RESULTS_BUTTONS, _messageDialogResult);
+    _RESULTS_BUTTONS_index := TGenerics.getElementIndexFromArray<integer>(RESULTS_BUTTONS, _messageDialogResult);
     _result := buttons[_RESULTS_BUTTONS_index];
   end
   else

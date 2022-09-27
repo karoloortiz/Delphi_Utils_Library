@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -39,14 +39,15 @@ unit KLib.Utils;
 interface
 
 uses
-  KLib.Types, KLib.Constants,
+  KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
   System.SysUtils, System.Classes;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
 procedure deleteFileIfExists(fileName: string);
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
+function checkIfFileExists(fileName: string): boolean;
 function getTextFromFile(fileName: string): string;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
@@ -54,8 +55,6 @@ function getFreeSpaceOnDrive(drive: char): int64;
 function getIndexOfDrive(drive: char): integer;
 function getDriveExe: char;
 function getDirSize(path: string): int64;
-function getCombinedPathWithCurrentDir(pathToCombine: string): string;
-function getDirExe: string;
 procedure createDirIfNotExists(dirName: string);
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
@@ -63,6 +62,7 @@ function getPathInLinuxStyle(path: string): string;
 
 function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 function getValidFullPath(fileName: string): string;
+function checkIfIsAPath(path: string): boolean;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 
@@ -95,17 +95,25 @@ function getDayOfWeekAsString(date: TDateTime): string;
 function getCurrentDateTimeAsString: string;
 function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
-function getDateAsString(date: TDateTime): string; //TODO REVIEW NAME?
+function getDateAsString(date: TDateTime): string;
 function getCurrentTimeStamp: string;
-function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORMAT): string;
-function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
 function getParsedXMLstring(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
-function getMainStringWithSubStringInserted(mainString: string; subString: string; index: integer): string;
+function getQuotedString(mainString: string; quoteCharacter: Char): string;
+function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getDequotedString(mainString: string): string;
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
+  forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
+function getStringWithFixedLength(value: string; fixedLength: integer): string;
+function getStringFromStream(stream: TStream): string;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -119,6 +127,7 @@ function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 function stringToStringListWithFixedLen(source: string; fixedLen: Integer): TStringList;
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 function stringToTStringList(source: string): TStringList;
+function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
 
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 
@@ -127,6 +136,7 @@ procedure splitStrings(source: string; delimiterPosition: integer; var destFirst
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
 function checkIfEmailIsValid(email: string): boolean;
+function checkIfRegexIsValid(text: string; regex: string): boolean;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = true): boolean;
@@ -134,11 +144,27 @@ function checkIfMainStringContainsSubString(mainString: string; subString: strin
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
 
+function get_status_asString(status: TStatus): string;
+
+procedure restartMyThread(var myThread: TMyThread);
+
+//TODO refactor
+function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
+function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
+function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
+function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
+
+function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;
+function getAnonymousMethodsFromMethod(_method: KLib.Types.TMethod): KLib.Types.TAnonymousMethod;
+
 procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false); overload;
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false); overload;
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
+
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+function myDefault(typeAsString: string): Variant;
 
 implementation
 
@@ -191,36 +217,42 @@ begin
   FreeAndNil(_files);
 end;
 
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
-var
-  _file: file of Byte;
-  _size: integer;
-  _result: boolean;
-begin
-  _result := false;
-  if fileexists(fileName) then
-  begin
-    AssignFile(_file, fileName);
-    Reset(_file);
-    _size := FileSize(_file);
-    _result := _size = 0;
-    CloseFile(_file);
-  end;
-
-  Result := _result;
-end;
-
 procedure deleteFileIfExists(fileName: string);
 const
   ERR_MSG = 'Error deleting file.';
 begin
-  if FileExists(fileName) then
+  if checkIfFileExists(fileName) then
   begin
     if not DeleteFile(pchar(fileName)) then
     begin
       raise Exception.Create(ERR_MSG);
     end;
   end;
+end;
+
+function checkIfFileExistsAndEmpty(fileName: string): boolean;
+var
+  _fileExists: boolean;
+
+  _file: file of Byte;
+  _size: integer;
+begin
+  _fileExists := false;
+  if checkIfFileExists(fileName) then
+  begin
+    AssignFile(_file, fileName);
+    Reset(_file);
+    _size := FileSize(_file);
+    _fileExists := _size = 0;
+    CloseFile(_file);
+  end;
+
+  Result := _fileExists;
+end;
+
+function checkIfFileExists(fileName: string): boolean;
+begin
+  Result := FileExists(fileName);
 end;
 
 function getTextFromFile(fileName: string): string;
@@ -325,21 +357,6 @@ begin
   Result := totalSize;
 end;
 
-function getCombinedPathWithCurrentDir(pathToCombine: string): string;
-var
-  _result: string;
-  _currentDir: string;
-begin
-  _currentDir := getDirExe;
-  _result := getCombinedPath(_currentDir, pathToCombine);
-  Result := _result;
-end;
-
-function getDirExe: string;
-begin
-  result := ExtractFileDir(ParamStr(0));
-end;
-
 procedure createDirIfNotExists(dirName: string);
 const
   ERR_MSG = 'Error creating dir.';
@@ -407,6 +424,11 @@ begin
   path := ExcludeTrailingPathDelimiter(path);
 
   Result := path;
+end;
+
+function checkIfIsAPath(path: string): boolean;
+begin
+  Result := ExtractFilePath(path) <> EMPTY_STRING;
 end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
@@ -786,15 +808,15 @@ end;
 
 function getCurrentTimeStamp: string;
 begin
-  Result := getCurrentDateTimeAsStringWithFormatting(TIMESTAMP_FORMAT);
+  Result := getCurrentDateTimeWithFormattingAsString(TIMESTAMP_FORMAT);
 end;
 
-function getCurrentDateTimeAsStringWithFormatting(formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
 begin
-  Result := getDateTimeAsStringWithFormatting(Now, formatting);
+  Result := getDateTimeWithFormattingAsString(Now, formatting);
 end;
 
-function getDateTimeAsStringWithFormatting(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 var
   dateTimeAsStringWithFormatting: string;
 begin
@@ -824,19 +846,86 @@ end;
 
 function getDoubleQuotedString(mainString: string): string;
 begin
-  Result := AnsiQuotedStr(mainString, '"');
+  Result := getQuotedString(mainString, '"');
 end;
 
 function getSingleQuotedString(mainString: string): string;
 begin
-  Result := AnsiQuotedStr(mainString, '''');
+  Result := getQuotedString(mainString, '''');
 end;
 
-function getMainStringWithSubStringInserted(mainString: string; subString: string; index: integer): string;
+function getQuotedString(mainString: string; quoteCharacter: Char): string;
+begin
+  Result := AnsiQuotedStr(mainString, quoteCharacter);
+end;
+
+function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+begin
+  Result := getExtractedString(mainString, '"', raiseExceptionEnabled);
+end;
+
+function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+begin
+  Result := getExtractedString(mainString, '''', raiseExceptionEnabled);
+end;
+
+function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+const
+  ERR_MSG = 'String not found.';
+var
+  _result: string;
+
+  _lenghtQuotedString: integer;
+  _lenghtMainString: integer;
+  _firstIndex: integer;
+  _lastIndex: integer;
+begin
+  _result := EMPTY_STRING;
+
+  _lenghtQuotedString := quoteString.Length;
+  _firstIndex := mainString.IndexOf(quoteString);
+  if _firstIndex > -1 then
+  begin
+    _firstIndex := _firstIndex + _lenghtQuotedString;
+
+    _lenghtMainString := Length(mainString);
+    _lastIndex := mainString.LastIndexOf(quoteString, _lenghtMainString, _lenghtMainString - _firstIndex); //IGNORE FIRST OCCURENCE
+    if _lastIndex > -1 then
+    begin
+      _lastIndex := _lastIndex - _lenghtQuotedString;
+      _result := mainString.Substring(_lenghtQuotedString, _lastIndex);
+    end;
+  end;
+
+  if (raiseExceptionEnabled) and (_result = EMPTY_STRING) then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+
+  Result := _result;
+end;
+
+function getDequotedString(mainString: string): string;
+var
+  value: string;
+begin
+  value := mainString;
+  if ((mainString.Chars[0] = '"') and (mainString.Chars[value.Length - 1] = '"'))
+    or ((mainString.Chars[0] = '''') and (mainString.Chars[value.Length - 1] = '''')) then
+  begin
+    value := mainString.Substring(1, mainString.Length - 2);
+  end;
+
+  Result := value;
+end;
+
+function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
+  forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 const
   ERR_MSG = 'Index out of range.';
 var
   _result: string;
+
   _lenght: integer;
   _firstStringPart: string;
   _lastStringPart: string;
@@ -846,9 +935,13 @@ begin
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  _firstStringPart := Copy(mainString, 0, index);
+  _firstStringPart := getStringWithFixedLength(mainString, index);
+  if forceOverwriteIndexCharacter then
+  begin
+    Inc(index);
+  end;
   _lastStringPart := Copy(mainString, index + 1, MaxInt);
-  _result := _firstStringPart + subString + _lastStringPart;
+  _result := getMergedStrings(_firstStringPart, _lastStringPart, insertedString);
 
   Result := _result;
 end;
@@ -861,6 +954,33 @@ begin
   stringWithoutLineBreaks := stringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
 
   Result := stringWithoutLineBreaks;
+end;
+
+function getStringWithFixedLength(value: string; fixedLength: integer): string;
+begin
+  Result := Copy(value, 1, fixedLength);
+end;
+
+function getStringFromStream(stream: TStream): string;
+var
+  _string: string;
+
+  _stringStream: TStringStream;
+begin
+  _string := '';
+
+  if Assigned(stream) then
+  begin
+    _stringStream := TStringStream.Create('');
+    try
+      _stringStream.CopyFrom(stream, 0);
+      _string := _stringStream.DataString;
+    finally
+      _stringStream.Free;
+    end;
+  end;
+
+  Result := _string
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
@@ -1014,6 +1134,34 @@ begin
   Result := _stringList;
 end;
 
+function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
+var
+  value: Variant;
+begin
+  if destinationTypeAsString = 'string' then //TODO CREATE TTYPE ENUM
+  begin
+    value := stringValue;
+  end
+  else if destinationTypeAsString = 'Integer' then
+  begin
+    value := StrToInt(stringValue);
+  end
+  else if destinationTypeAsString = 'Double' then
+  begin
+    value := StrToFloat(stringValue);
+  end
+  else if destinationTypeAsString = 'Char' then
+  begin
+    value := stringValue.Chars[0];
+  end
+  else if destinationTypeAsString = 'Boolean' then
+  begin
+    value := StrToBool(stringValue);
+  end;
+
+  Result := value;
+end;
+
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 var
   stringList: TStringList;
@@ -1030,25 +1178,10 @@ end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 var
-  _startIndexDelimiter: integer;
-  _endIndexDelimiter: integer;
-  _lengthDestFirstString: integer;
-  _lengthDestSecondString: integer;
+  _delimiterPosition: integer;
 begin
-  _startIndexDelimiter := AnsiPos(delimiter, source);
-  if _startIndexDelimiter > 0 then
-  begin
-    _endIndexDelimiter := _startIndexDelimiter + Length(delimiter);
-    _lengthDestFirstString := _startIndexDelimiter - 1;
-    _lengthDestSecondString := Length(source) - _endIndexDelimiter + 1;
-    destFirstString := Copy(source, 0, _lengthDestFirstString);
-    destSecondString := Copy(source, _endIndexDelimiter, _lengthDestSecondString);
-  end
-  else
-  begin
-    destFirstString := source;
-    destSecondString := '';
-  end;
+  _delimiterPosition := AnsiPos(delimiter, source);
+  splitStrings(source, _delimiterPosition, destFirstString, destSecondString);
 end;
 
 procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string);
@@ -1060,7 +1193,7 @@ begin
   if _lenghtSource > delimiterPosition then
   begin
     _lengthDestSecondString := _lenghtSource - delimiterPosition;
-    destFirstString := Copy(source, 0, delimiterPosition);
+    destFirstString := Copy(source, 0, delimiterPosition - 1);
     destSecondString := Copy(source, delimiterPosition + 1, _lengthDestSecondString);
   end
   else
@@ -1082,6 +1215,11 @@ begin
   _result := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
 
   Result := _result;
+end;
+
+function checkIfRegexIsValid(text: string; regex: string): boolean;
+begin
+  Result := TRegEx.IsMatch(text, regex);
 end;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
@@ -1127,6 +1265,85 @@ var
 begin
   _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
   Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
+end;
+
+function get_status_asString(status: TStatus): string;
+var
+  status_asString: string;
+begin
+  case status of
+    TStatus._null:
+      status_asString := '_null';
+    TStatus.created:
+      status_asString := 'created';
+    TStatus.stopped:
+      status_asString := 'stopped';
+    TStatus.paused:
+      status_asString := 'paused';
+    TStatus.running:
+      status_asString := 'running';
+  end;
+
+  Result := status_asString;
+end;
+
+procedure restartMyThread(var myThread: TMyThread);
+var
+  _tempThread: TMyThread;
+begin
+  _tempThread := myThread.getACopyMyThread;
+  FreeAndNil(myThread);
+  myThread := _tempThread;
+  myThread.myStart(RAISE_EXCEPTION_DISABLED);
+end;
+
+//get a particular bit value
+function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
+begin
+  Result := (sourceValue and (1 shl bitIndex)) <> 0;
+end;
+
+//set a particular bit as 1
+function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal; //TODO refactor
+begin
+  Result := getWordWithBitSetted(sourceValue, bitIndex, true);
+end;
+
+//set a particular bit as 0
+function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
+begin
+  Result := getWordWithBitSetted(sourceValue, bitIndex, false);
+end;
+
+//enable o disable a bit
+function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
+begin
+  Result := (sourceValue or (1 shl bitIndex)) xor (Integer(not bitValue) shl bitIndex);
+end;
+
+function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;
+var
+  arrayOfAnonymousMethods: TArrayOfAnonymousMethods;
+  _lengthOfMethods: integer;
+  i: integer;
+begin
+  _lengthOfMethods := Length(_methods);
+  SetLength(arrayOfAnonymousMethods, _lengthOfMethods);
+
+  for i := 0 to _lengthOfMethods - 1 do
+  begin
+    arrayOfAnonymousMethods[i] := getAnonymousMethodsFromMethod(_methods[i]);
+  end;
+
+  Result := arrayOfAnonymousMethods;
+end;
+
+function getAnonymousMethodsFromMethod(_method: KLib.Types.TMethod): KLib.Types.TAnonymousMethod;
+begin
+  Result := procedure
+    begin
+      _method;
+    end;
 end;
 
 procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false);
@@ -1182,6 +1399,45 @@ end;
 procedure executeProcedure(myProcedure: TCallBack);
 begin
   myProcedure('');
+end;
+
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+var
+  isEmpty: boolean;
+  _emptyValue: variant;
+begin
+  _emptyValue := myDefault(typeAsString);
+  isEmpty := value = _emptyValue;
+
+  Result := isEmpty;
+end;
+
+function myDefault(typeAsString: string): Variant;
+var
+  value: Variant;
+begin
+  if typeAsString = 'string' then
+  begin
+    value := Default (string);
+  end
+  else if typeAsString = 'Integer' then
+  begin
+    value := Default (Integer);
+  end
+  else if typeAsString = 'Double' then
+  begin
+    value := Default (Double);
+  end
+  else if typeAsString = 'Char' then
+  begin
+    value := Default (Char);
+  end
+  else if typeAsString = 'Boolean' then
+  begin
+    value := Default (Boolean);
+  end;
+
+  Result := value;
 end;
 
 end.

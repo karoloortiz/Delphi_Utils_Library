@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -34,55 +34,86 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Generic;
+unit KLib.MyEvent;
 
 interface
 
+uses
+  System.SyncObjs;
+
 type
-  TGeneric = class
+  TMyEvent = class(TEvent)
+  private
+    _value: boolean;
+  protected
+    procedure _set_value(myValue: boolean);
+    function _get_value: boolean;
   public
-    class function getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer; overload;
-    class function getElementIndexFromArray<T>(myArray: array of T; element: T): integer; overload;
+    property value: boolean read _get_value write _set_value;
+    constructor Create(initialValue: boolean = false); overload;
+    procedure enable;
+    procedure disable;
+    procedure SetEvent;
+    procedure ResetEvent;
+    procedure waitForInfinite;
+    destructor Destroy; override;
   end;
 
 implementation
 
-uses
-  System.Generics.Collections, System.SysUtils;
-
-class function TGeneric.getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer;
-var
-  _list: TList<T>;
-  _element: T;
-  elementIndex: integer;
+constructor TMyEvent.Create(initialValue: boolean = false);
 begin
-  _list := TList<T>.Create;
-  for _element in myArray do
-  begin
-    _list.Add(_element);
-  end;
-  elementIndex := _list.IndexOf(element);
-  FreeAndNil(_list);
-
-  Result := elementIndex;
+  inherited Create(nil, true, initialValue, '');
+  _value := initialValue;
 end;
 
-class function TGeneric.getElementIndexFromArray<T>(myArray: array of T; element: T): integer;
-var
-  _list: TList<T>;
-  _element: T;
-
-  elementIndex: integer;
+procedure TMyEvent._set_value(myValue: boolean);
 begin
-  _list := TList<T>.Create;
-  for _element in myArray do
+  if myValue then
   begin
-    _list.Add(_element);
+    SetEvent;
+  end
+  else
+  begin
+    ResetEvent;
   end;
-  elementIndex := _list.IndexOf(element);
-  FreeAndNil(_list);
+end;
 
-  Result := elementIndex;
+function TMyEvent._get_value: boolean;
+begin
+  Result := Self._value;
+end;
+
+procedure TMyEvent.enable;
+begin
+  SetEvent;
+end;
+
+procedure TMyEvent.disable;
+begin
+  ResetEvent;
+end;
+
+procedure TMyEvent.SetEvent;
+begin
+  inherited;
+  _value := true;
+end;
+
+procedure TMyEvent.ResetEvent;
+begin
+  inherited;
+  _value := false;
+end;
+
+procedure TMyEvent.waitForInfinite;
+begin
+  WaitFor(INFINITE);
+end;
+
+destructor TMyEvent.destroy;
+begin
+  inherited;
 end;
 
 end.

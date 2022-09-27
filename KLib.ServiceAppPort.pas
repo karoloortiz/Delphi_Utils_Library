@@ -34,46 +34,27 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Math;
+unit KLib.ServiceAppPort;
 
 interface
 
 uses
-  System.Types;
+  KLib.Types;
 
-function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
-function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
-function megabyteToByte(MB: int64): int64;
+type
+  IServiceAppPort = interface(IInterface)
+    procedure start;
+    procedure pause;
+    procedure resume;
+    procedure stop;
+    procedure restart;
+
+    procedure waitUntilIsRunning;
+
+    function getStatus: TStatus;
+    function getHandle: integer;
+  end;
 
 implementation
-
-uses
-  KLib.Constants,
-  System.Math;
-
-function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
-var
-  Xa, Ya, Xb, Yb: integer;
-begin
-  Xa := a.X;
-  Ya := a.Y;
-  Xb := b.X;
-  Yb := b.Y;
-
-  Result := distanceBetweenPoints(Xa, Ya, Xb, Yb);
-end;
-
-function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
-begin
-  Result := sqrt(Power(Xa - Xb, 2) + Power(Ya - Yb, 2));
-end;
-
-function megabyteToByte(MB: int64): int64;
-var
-  bytes: int64;
-begin
-  bytes := MB * _1_MB_IN_BYTES;
-  Result := bytes;
-end;
 
 end.

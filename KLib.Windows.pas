@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -45,7 +45,7 @@ uses
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
 function getFirstPortAvaliable(defaultPort: integer; host: string = LOCALHOST_IP_ADDRESS): integer;
-function checkIfPortIsAvaliable(host: string; port: Word): boolean;
+function checkIfPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS): boolean;
 function checkIfAddressIsLocalhost(address: string): boolean;
 function getIPFromHostName(hostName: string): string; //if hostname is alredy an ip address, returns hostname
 function getIP: string;
@@ -57,7 +57,6 @@ type
   TWindowsArchitecture = (WindowsX86, WindowsX64);
 function getWindowsArchitecture: TWindowsArchitecture;
 function checkIfUserIsAdmin: boolean;
-function IsUserAnAdmin: boolean; external shell32; //KEPT THE SIGNATURE, NOT RENAME!!!
 
 type
   TShowWindowType = (
@@ -129,6 +128,7 @@ procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
 
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
 
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
 
@@ -156,7 +156,10 @@ procedure mySetForegroundWindow(handle: THandle);
 function checkIfWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): boolean;
 function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
 
+procedure writeIn_HKEY_LOCAL_MACHINE(key: string; name: string; value: Variant; forceCreationKey: boolean = NOT_FORCE);
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
+procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
 
 procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
 procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
@@ -169,11 +172,52 @@ function getLocaleDecimalSeparator: char;
 procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
 
-//################################################################################à
+//###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
+function checkIfCurrentProcessIsAServiceProcess: boolean;
+function checkIfIsAServiceProcess(processHandle: THandle): boolean;
+//###########-----
+
+procedure myAttachConsole(attachToParentIfExists: boolean = true);
+function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;
+  wmiHost: string = '.'; root: string = 'root\CIMV2'): string;
+function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
+//################################################################################
+function getCurrentPidAsString: string;
+function getCurrentPid: integer;
+function GetCurrentProcessId: DWORD;
+//################################################################################
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+function DirExe: string;
+function getDirExe: string;
+function exeFileName: string;
+function getExeFileName: string;
+
+function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterName: string): string; overload;
+function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string; overload;
+function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean; overload;
+function checkIfParameterExists(parameterName: string): boolean; overload;
+
+function myParamCount: integer;
+function myParamStr(index: integer): string;
+function getShellParamsAsString: string;
+function getShellParams: TArrayOfStrings;
+//################################################################################
+//KEPT THE SIGNATURES, NOT RENAME!!!
+function IsUserAnAdmin: boolean; external shell32;
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
   SecurityInfo: SECURITY_INFORMATION; ppsidOwner, ppsidGroup: PPSID; ppDacl, ppSacl: PPACL;
   var ppSecurityDescriptor: PSECURITY_DESCRIPTOR): DWORD; stdcall;
   external 'ADVAPI32.DLL' name 'GetNamedSecurityInfoW';
+
+function GetConsoleWindow: HWnd; stdcall;
+  external 'kernel32.dll' name 'GetConsoleWindow';
+function AttachConsole(ProcessId: DWORD): BOOL; stdcall;
+  external 'kernel32.dll' name 'AttachConsole';
+
+var
+  shellParams: TArrayOfStrings;
 
 implementation
 
@@ -181,7 +225,7 @@ uses
   KLib.Utils, KLib.Validate, KLib.MyStringList,
   Vcl.Forms,
   Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
-  System.SysUtils, System.Win.ComObj, System.Win.Registry,
+  System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants, System.StrUtils,
   IdTCPClient;
 
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
@@ -227,7 +271,7 @@ var
   port: integer;
 begin
   port := defaultPort;
-  while not checkIfPortIsAvaliable(host, port) do
+  while not checkIfPortIsAvaliable(port, host) do
   begin
     inc(port);
   end;
@@ -235,7 +279,7 @@ begin
   Result := port;
 end;
 
-function checkIfPortIsAvaliable(host: string; port: Word): boolean;
+function checkIfPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS): boolean;
 var
   isPortAvaliable: boolean;
 
@@ -1019,9 +1063,23 @@ begin
   end;
 end;
 
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+var
+  _file: TextFile;
+begin
+  if forceCreationFile then
+  begin
+    createEmptyFileIfNotExists(filename);
+  end;
+  AssignFile(_file, filename);
+  Append(_file);
+  Writeln(_file, text);
+  CloseFile(_file);
+end;
+
 procedure createEmptyFileIfNotExists(filename: string);
 begin
-  if not FileExists(filename) then
+  if not checkIfFileExists(filename) then
   begin
     createEmptyFile(filename);
   end;
@@ -1434,6 +1492,73 @@ begin
   Result := FindWindow(pchar(className), pchar(captionForm));
 end;
 
+procedure writeIn_HKEY_LOCAL_MACHINE(key: string; name: string; value: Variant; forceCreationKey: boolean = NOT_FORCE);
+const
+  ERR_MSG = 'Unsupported variant type.';
+var
+  _registry: TRegistry;
+  _isOpenKey: boolean;
+begin
+  _registry := TRegistry.Create(KEY_READ or KEY_WRITE);
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    _isOpenKey := _registry.OpenKey(key, forceCreationKey);
+    if _isOpenKey then
+    begin
+
+      if (VarIsEmpty(value) or VarIsNull(value)) then
+      begin
+        _registry.WriteString(name, EMPTY_STRING);
+      end
+      else if (VarIsStr(value)) then
+      begin
+        _registry.WriteString(name, value);
+      end
+      else if (VarIsNumeric(value)) then
+      begin
+        _registry.WriteInteger(name, value);
+      end
+      else if (VarIsFloat(value)) then
+      begin
+        _registry.WriteInteger(name, value);
+      end
+      else
+      begin
+        raise Exception.Create(ERR_MSG);
+      end;
+
+      _registry.CloseKey;
+    end
+    else
+    begin
+      raise Exception.Create(key + ': Key not opened.');
+    end;
+  finally
+    _registry.Free;
+  end;
+end;
+
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
+var
+  value: string;
+
+  _registry: TRegistry;
+begin
+  validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key);
+
+  _registry := TRegistry.Create(KEY_READ or KEY_WRITE);
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    validateThatExistsKeyIn_HKEY_LOCAL_MACHINE(key);
+    _registry.OpenKeyReadOnly(key);
+    value := _registry.ReadString(name);
+  finally
+    _registry.Free;
+  end;
+
+  Result := value;
+end;
+
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 var
   isOpenKey: boolean;
@@ -1449,6 +1574,19 @@ begin
   end;
 
   Result := isOpenKey;
+end;
+
+procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
+var
+  _registry: TRegistry;
+begin
+  _registry := TRegistry.Create;
+  try
+    _registry.RootKey := HKEY_LOCAL_MACHINE;
+    _registry.DeleteKey(key);
+  finally
+    _registry.Free;
+  end;
 end;
 
 procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
@@ -1587,5 +1725,454 @@ begin
     raiseLastSysErrorMessage;
   end;
 end;
+
+function checkIfCurrentProcessIsAServiceProcess: boolean;
+var
+  _currentProcess: THandle;
+begin
+  _currentProcess := GetCurrentProcess;
+
+  Result := checkIfIsAServiceProcess(_currentProcess);
+end;
+
+function checkIfIsAServiceProcess(processHandle: THandle): boolean;
+var
+  _isServiceProcess: boolean;
+  _tokenInformation: Cardinal;
+  _length: Cardinal;
+  _tokenHandle: THandle;
+  _valid: boolean;
+begin
+  _isServiceProcess := false;
+
+  _length := 0;
+  _valid := OpenProcessToken(processHandle, TOKEN_QUERY, _tokenHandle);
+  if _valid then
+  begin
+    try
+      _valid := GetTokenInformation(_tokenHandle, TokenSessionId, @_tokenInformation, SizeOf(_tokenInformation), _length);
+      if _valid then
+      begin
+        if _length <> 0 then
+        begin
+          _isServiceProcess := _tokenInformation = 0;
+        end;
+      end;
+    finally
+      CloseHandle(_tokenHandle);
+    end;
+  end;
+
+  Result := _isServiceProcess;
+end;
+
+procedure myAttachConsole(attachToParentIfExists: boolean = true);
+const
+  ATTACH_PARENT_PROCESS = DWORD(-1);
+begin
+  if attachToParentIfExists then
+  begin
+    if not AttachConsole(ATTACH_PARENT_PROCESS) then
+    begin
+      AllocConsole;
+    end;
+    AttachConsole(ATTACH_PARENT_PROCESS);
+  end
+  else
+  begin
+    AllocConsole;
+  end;
+end;
+
+function getWMIAsString(wmiClass: string; wmiProperty: string; filter: string = EMPTY_STRING;
+  wmiHost: string = '.'; root: string = 'root\CIMV2'): string;
+var
+  objWMIService: OLEVariant;
+  colItems: OLEVariant;
+  colItem: OLEVariant;
+  oEnum: IEnumvariant;
+  iValue: LongWord;
+
+  function GetWMIObject(const objectName: String): IDispatch;
+  var
+    chEaten: Integer;
+    BindCtx: IBindCtx; //for access to a bind context
+    Moniker: IMoniker; //Enables you to use a moniker object
+  begin
+    OleCheck(CreateBindCtx(0, bindCtx));
+    OleCheck(MkParseDisplayName(BindCtx, StringToOleStr(objectName), chEaten, Moniker)); //Converts a string into a moniker that identifies the object named by the string
+    OleCheck(Moniker.BindToObject(BindCtx, nil, IDispatch, Result)); //Binds to the specified object
+  end;
+
+var
+  _query: string;
+begin
+  try
+    CoInitialize(nil);
+    try
+      objWMIService := GetWMIObject(Format('winmgmts:\\%s\%s', [wmiHost, root]));
+      _query := Format('SELECT * FROM %s', [wmiClass]);
+      if filter <> EMPTY_STRING then
+      begin
+        _query := _query + ' WHERE ' + filter;
+      end;
+      colItems := objWMIService.ExecQuery(_query, 'WQL', 0);
+      oEnum := IUnknown(colItems._NewEnum) as IEnumVariant;
+      while oEnum.Next(1, colItem, iValue) = 0 do
+      begin
+        Result := colItem.Properties_.Item(wmiProperty, 0); //you can improve this code  ;) , storing the results in an TString.
+      end;
+
+    finally
+      CoUninitialize;
+    end;
+  except
+    on E: Exception do
+    Begin
+      raise Exception.Create(E.Message);
+    End;
+  end;
+end;
+
+function GetWMIstring(wmiHost, root, wmiClass, wmiProperty: string): string;
+var
+  objWMIService: OLEVariant;
+  colItems: OLEVariant;
+  colItem: OLEVariant;
+  oEnum: IEnumvariant;
+  iValue: LongWord;
+
+  function GetWMIObject(const objectName: String): IDispatch;
+  var
+    chEaten: Integer;
+    BindCtx: IBindCtx; //for access to a bind context
+    Moniker: IMoniker; //Enables you to use a moniker object
+  begin
+    OleCheck(CreateBindCtx(0, bindCtx));
+    OleCheck(MkParseDisplayName(BindCtx, StringToOleStr(objectName), chEaten, Moniker)); //Converts a string into a moniker that identifies the object named by the string
+    OleCheck(Moniker.BindToObject(BindCtx, nil, IDispatch, Result)); //Binds to the specified object
+  end;
+
+begin
+  objWMIService := GetWMIObject(Format('winmgmts:\\%s\%s', [wmiHost, root]));
+  colItems := objWMIService.ExecQuery(Format('SELECT * FROM %s WHERE ProcessId = "840"', [wmiClass]), 'WQL', 0);
+  oEnum := IUnknown(colItems._NewEnum) as IEnumVariant;
+  while oEnum.Next(1, colItem, iValue) = 0 do
+  begin
+    Result := colItem.Properties_.Item(wmiProperty, 0); //you can improve this code  ;) , storing the results in an TString.
+  end;
+end;
+
+function getCurrentPidAsString: string;
+begin
+  Result := IntToStr(getCurrentPid);
+end;
+
+function getCurrentPid: integer;
+begin
+  Result := GetCurrentProcessId;
+end;
+
+function GetCurrentProcessId: DWORD;
+begin
+  Result := Winapi.Windows.GetCurrentProcessId;
+end;
+
+function getCombinedPathWithCurrentDir(pathToCombine: string): string;
+var
+  _result: string;
+begin
+  _result := getCombinedPath(DirExe, pathToCombine);
+
+  Result := _result;
+end;
+
+function DirExe: string;
+begin
+  Result := getDirExe;
+end;
+
+function getDirExe: string;
+begin
+  Result := ExtractFileDir(getExeFileName);
+end;
+
+function ExeFileName: string;
+begin
+  Result := getExeFileName;
+end;
+
+function getExeFileName: string;
+begin
+  Result := myParamStr(0);
+end;
+
+function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
+begin
+  Result := getValueOfParameter(parameterNames, EMPTY_ARRAY_OF_STRINGS);
+end;
+
+function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; //get first param value finded
+var
+  parameterValue: string;
+
+  _countParameterNames: integer;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterValue := EMPTY_STRING;
+
+  _countParameterNames := Length(parameterNames);
+  if _countParameterNames > 0 then
+  begin
+    i := 0;
+    _exit := false;
+    while not _exit do
+    begin
+      parameterValue := getValueOfParameter(parameterNames[i], valuesExcluded);
+
+      if (parameterValue <> EMPTY_STRING) or (i >= (_countParameterNames - 1)) then
+      begin
+        _exit := true;
+      end
+      else
+      begin
+        inc(i);
+      end;
+    end;
+  end;
+
+  Result := parameterValue;
+end;
+
+function getValueOfParameter(parameterName: string): string;
+begin
+  Result := getValueOfParameter(parameterName, EMPTY_ARRAY_OF_STRINGS);
+end;
+
+function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string;
+var
+  parameterValue: string;
+
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterValue := EMPTY_STRING;
+
+  if myParamCount > 0 then
+  begin
+    _exit := false;
+    i := 1;
+
+    while not _exit do
+    begin
+      _parameterName := myParamStr(i);
+      if (_parameterName = parameterName) then
+      begin
+        parameterValue := myParamStr(i + 1);
+
+        if not MatchStr(parameterValue, valuesExcluded) then
+        begin
+          _exit := true;
+        end
+        else
+        begin
+          parameterValue := EMPTY_STRING;
+        end;
+      end;
+
+      if i >= myParamCount then
+      begin
+        _exit := true;
+      end;
+
+      inc(i);
+    end;
+  end;
+
+  Result := parameterValue;
+end;
+
+function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean;
+var
+  parameterExists: boolean;
+
+  _countParameterNames: integer;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterExists := false;
+
+  _countParameterNames := Length(parameterNames);
+  if _countParameterNames > 0 then
+  begin
+    i := 0;
+    _exit := false;
+    while not _exit do
+    begin
+      parameterExists := checkIfParameterExists(parameterNames[i]);
+
+      if (parameterExists) or (i >= (_countParameterNames - 1)) then
+      begin
+        _exit := true;
+      end
+      else
+      begin
+        inc(i);
+      end;
+    end;
+  end;
+
+  Result := parameterExists;
+end;
+
+function checkIfParameterExists(parameterName: string): boolean;
+var
+  parameterExists: boolean;
+
+  _parameterName: string;
+  i: integer;
+  _exit: boolean;
+begin
+  parameterExists := false;
+
+  _exit := false;
+  i := 1;
+  while not _exit do
+  begin
+    _parameterName := myParamStr(i);
+    if (_parameterName = parameterName) then
+    begin
+      parameterExists := true;
+      _exit := true;
+    end;
+
+    if i >= myParamCount then
+    begin
+      _exit := true;
+    end;
+
+    inc(i);
+  end;
+
+  Result := parameterExists;
+end;
+
+function myParamCount: Integer;
+begin
+  Result := Length(shellParams) - 1;
+end;
+
+function myParamStr(index: integer): string;
+var
+  _result: string;
+begin
+  _result := EMPTY_STRING;
+  if index <= myParamCount then
+  begin
+    _result := shellParams[index];
+  end;
+
+  Result := _result;
+end;
+
+function getShellParamsAsString: string;
+var
+  shellParamsAsString: string;
+  i: integer;
+  _shellParamsLength: integer;
+begin
+  _shellParamsLength := Length(shellParams);
+
+  for i := 0 to _shellParamsLength - 1 do
+  begin
+    shellParamsAsString := shellParamsAsString + SPACE_STRING + shellParams[i];
+  end;
+
+  Result := shellParamsAsString;
+end;
+
+function getShellParams: TArrayOfStrings;
+var
+  _result: TArrayOfStrings;
+
+  _applicationPath: string;
+  _commandLine: string;
+  _params: string;
+  _paramValue: string;
+  _exit: boolean;
+
+  _indexStartSubstring: integer;
+  _indexEndSubstring: integer;
+  _subString: string;
+
+  _buffer: array [0 .. 260] of Char;
+begin
+  _result := [];
+
+  SetString(_applicationPath, _buffer, GetModuleFileName(0, _buffer, Length(_buffer)));
+
+  _result := _result + [_applicationPath];
+
+  _applicationPath := getDoubleQuotedString(_applicationPath) + ' ';
+  _commandLine := GetCommandLine;
+
+  _params := _commandLine.Replace(_applicationPath, EMPTY_STRING);
+  _params := Trim(_params);
+
+  if _params.Length > 0 then
+  begin
+    _indexStartSubstring := 0;
+    _subString := _params;
+    _exit := false;
+    while not _exit do
+    begin
+      _indexEndSubstring := -1;
+
+      if (_subString.Chars[0] <> SPACE_STRING) then
+      begin
+        if (_subString.Chars[0] = '"') then
+        begin
+          _indexEndSubstring := _subString.Remove(0, 1).IndexOf('"') + 2;
+        end
+        else if (_subString.Chars[0] = '''') then
+        begin
+          _indexEndSubstring := _subString.Remove(0, 1).IndexOf('''') + 2;
+        end;
+
+        if (_indexEndSubstring = -1) then
+        begin
+          _indexEndSubstring := _subString.IndexOf(' ');
+        end;
+
+        if (_indexEndSubstring = -1) then
+        begin
+          _indexEndSubstring := _subString.Length;
+        end;
+
+        _paramValue := _subString.Substring(_indexStartSubstring, _indexEndSubstring);
+        _result := _result + [_paramValue];
+
+        _subString := _subString.Remove(_indexStartSubstring, _indexEndSubstring);
+
+        if _subString.Length = 0 then
+        begin
+          _exit := true;
+        end;
+      end
+      else
+      begin
+        _subString := Trim(_subString);
+      end;
+    end;
+  end;
+
+  Result := _result;
+end;
+
+initialization
+
+shellParams := getShellParams;
 
 end.

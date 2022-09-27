@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -56,6 +56,11 @@ procedure validateThatVC_Redist2019X64IsInstalled(errMsg: string = 'Microsoft Vi
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
 
+procedure validateThatPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is not avaliable.');
+procedure validateThatPortIsNotAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is avaliable.');
+
 procedure validateThatAddressIsLocalhost(address: string; errMsg: string = 'The address does not match with the localhost ip.');
 procedure validateThatAddressIsNotLocalhost(address: string; errMsg: string = 'The address match with the localhost ip.');
 
@@ -78,6 +83,8 @@ procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn'
 procedure validateThatIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName: string; errMsg: string = 'Node not exists.');
 procedure validateIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string; errMsg: string = 'Node not expected.');
 procedure validateThatAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string; errMsg: string = 'Attribute not exists in node.');
+
+procedure validateThatIsAPath(path: string; errMsg: string = 'Path is not valid.');
 
 procedure validateMD5File(fileName: string; MD5: string; errMsg: string = 'MD5 check failed.');
 
@@ -190,6 +197,30 @@ begin
   end;
 end;
 
+procedure validateThatPortIsAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is not avaliable.');
+var
+  _errMsg: string;
+begin
+  if not checkIfPortIsAvaliable(port, host) then
+  begin
+    _errMsg := getDoubleQuotedString(host + ':' + IntToStr(port)) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatPortIsNotAvaliable(port: Word; host: string = LOCALHOST_IP_ADDRESS;
+  errMsg: string = 'Port is avaliable.');
+var
+  _errMsg: string;
+begin
+  if checkIfPortIsAvaliable(port, host) then
+  begin
+    _errMsg := getDoubleQuotedString(host + ':' + IntToStr(port)) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
 procedure validateThatAddressIsLocalhost(address: string; errMsg: string = 'The address does not match with the localhost ip.');
 var
   _errMsg: string;
@@ -298,7 +329,7 @@ procedure validateThatFileNotExists(fileName: string; errMsg: string = 'File alr
 var
   _errMsg: string;
 begin
-  if FileExists(fileName) then
+  if checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -309,7 +340,7 @@ procedure validateThatFileExists(fileName: string; errMsg: string = 'File doesn'
 var
   _errMsg: string;
 begin
-  if not FileExists(fileName) then
+  if not checkIfFileExists(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -345,6 +376,17 @@ begin
   if not checkIfAttributeExistsInIXMLNode(mainNode, attributeName) then
   begin
     _errMsg := getDoubleQuotedString(attributeName) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatIsAPath(path: string; errMsg: string = 'Path is not valid.');
+var
+  _errMsg: string;
+begin
+  if not checkIfIsAPath(path) then
+  begin
+    _errMsg := getDoubleQuotedString(path) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
   end;
 end;

@@ -1,5 +1,5 @@
 {
-  KLib Version = 2.0
+  KLib Version = 3.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -38,6 +38,9 @@ unit KLib.Constants;
 
 interface
 
+uses
+  KLib.Types;
+
 const
   DATE_FORMAT = 'yyyy-mm-dd';
   DATE_FORMAT_ITALIAN = 'dd/mm/yyyy';
@@ -72,23 +75,38 @@ const
   EVERYONE_GROUP = 'Everyone';
   USERS_GROUP = 'Users';
 
+  SERVICES_REGKEY = '\SYSTEM\CurrentControlSet\Services';
+  EVENTLOG_APPLICATION_REGKEY = SERVICES_REGKEY + '\EventLog\Application';
+
   C_DRIVE = 'C';
+
+  APPLICATION_JSON_CONTENT_TYPE = 'application/json';
 
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
 
-  DISABLE = false;
-  NOT_FORCE = DISABLE;
-  NOT_FORCE_OVERWRITE = NOT_FORCE;
+  EMPTY_ARRAY_OF_STRINGS: TArrayOfStrings = [];
 
   AUTO_CLEAN = true;
   RUN_AS_ADMIN = true;
   FORCE = true;
-  FORCE_OVERWRITE = FORCE;
-  FORCE_DELETE = FORCE;
-
+  FORCE_OVERWRITE = true;
+  FORCE_DELETE = true;
+  FORCE_CREATION = true;
+  FORCE_SUSPEND = true;
   RAISE_EXCEPTION = true;
+  IGNORE_EMPTY_STRINGS = true;
+  MODAL_MODE = true;
+
+  NOT_AUTO_CLEAN = false;
+  DISABLE = false;
+  NOT_FORCE = false;
+  NOT_FORCE_OVERWRITE = false;
+  RAISE_EXCEPTION_DISABLED = false;
+  NOT_IGNORE_EMPTY_STRINGS = false;
+  NOT_MODAL_MODE = false;
+
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input
   //https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
@@ -127,6 +145,8 @@ const
     + 'f][0-9A-Fa-f]{0,3}))?::(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3})|(((0|[1-9A-Fa-f][0-9A-Fa-f]{0,3'
     + '}):){0,6}(0|[1-9A-Fa-f][0-9A-Fa-f]{0,3}))?::)|(?!IPv6:)[0-9A-Za-z-]*[0-9A-Za-z]:[!-Z^-'
     + '~]+)])';
+
+  REGEX_ONLY_LETTERS_NUMBERS_AND__ = '^[a-zA-Z0-9_.]*$';
 
 implementation
 

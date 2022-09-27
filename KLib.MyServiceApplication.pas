@@ -34,46 +34,56 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.Math;
+//#########################################################################
+//TMyServiceApplication used to bypass RegisterServices not virtual method
+
+unit KLib.MyServiceApplication;
 
 interface
 
 uses
-  System.Types;
+  Vcl.SvcMgr;
 
-function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
-function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
-function megabyteToByte(MB: int64): int64;
+type
+  TMyServiceApplication = class(TServiceApplication)
+  public
+    procedure myRegisterServices(Install, Silent: Boolean);
+  end;
+
+procedure DoneServiceApplication;
 
 implementation
 
 uses
-  KLib.Constants,
-  System.Math;
+  Vcl.Forms,
+{$if NOT DEFINED(CLR)}
+  Winapi.Windows,
+{$endif}
+  System.SysUtils;
 
-function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
-var
-  Xa, Ya, Xb, Yb: integer;
+procedure TMyServiceApplication.myRegisterServices(Install, Silent: Boolean);
 begin
-  Xa := a.X;
-  Ya := a.Y;
-  Xb := b.X;
-  Yb := b.Y;
-
-  Result := distanceBetweenPoints(Xa, Ya, Xb, Yb);
+{$if NOT DEFINED(CLR)}
+  AddExitProc(DoneServiceApplication);
+{$endif}
+  RegisterServices(Install, Silent);
 end;
 
-function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
+procedure DoneServiceApplication;
 begin
-  Result := sqrt(Power(Xa - Xb, 2) + Power(Ya - Yb, 2));
-end;
-
-function megabyteToByte(MB: int64): int64;
-var
-  bytes: int64;
-begin
-  bytes := MB * _1_MB_IN_BYTES;
-  Result := bytes;
+  with Vcl.Forms.Application do
+  begin
+    if Handle <> 0 then
+      ShowOwnedPopups(Handle, False);
+    ShowHint := False;
+    Destroying;
+    DestroyComponents;
+  end;
+  with Application do
+  begin
+    Destroying;
+    DestroyComponents;
+  end;
 end;
 
 end.
