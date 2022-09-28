@@ -1,4 +1,5 @@
 object MyService: TMyService
+  OldCreateOrder = True
   OnCreate = ServiceCreate
   OnDestroy = ServiceDestroy
   DisplayName = 'MyService'
@@ -11,5 +12,4 @@ object MyService: TMyService
   OnStop = ServiceStop
   Height = 225
   Width = 323
-  PixelsPerInch = 144
 end

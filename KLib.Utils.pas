@@ -1315,10 +1315,10 @@ begin
   Result := getWordWithBitSetted(sourceValue, bitIndex, false);
 end;
 
-//enable o disable a bit
+//enable or disable a bit
 function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
 begin
-  Result := (sourceValue or (1 shl bitIndex)) xor (Integer(not bitValue) shl bitIndex);
+  Result := (sourceValue or (1 shl bitIndex)) xor (Cardinal(not bitValue) shl bitIndex);
 end;
 
 function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;

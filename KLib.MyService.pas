@@ -60,7 +60,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.SvcMgr, Vcl.Dialogs,
-  KLib.MyThread, KLib.Windows.EventLog, KLib.Types, KLib.ServiceAppPort;
+  KLib.MyThread, KLib.Windows.EventLog, KLib.Types, KLib.ServiceAppPort, KLib.ServiceApp.ThreadAdapter;
 
 const
   DEFAULT_INSTALL_PARAMETER_NAME = '--install';
@@ -110,6 +110,11 @@ type
     property rejectCallback: TCallBack read _get_rejectCallback write _set_rejectCallback;
   end;
 
+  TServiceApp = class(TThreadAdapter)
+  public
+    procedure Run; override;
+  end;
+
 var
   MyService: TMyService;
 
@@ -119,8 +124,13 @@ implementation
 
 
 uses
-  KLib.Windows, KLib.Utils, KLib.Constants, KLib.MyString, KLib.ServiceApp.ThreadAdapter,
+  KLib.Windows, KLib.Utils, KLib.Constants, KLib.MyString,
   System.Win.Registry;
+
+procedure TServiceApp.Run;
+begin
+
+end;
 
 procedure TMyService.ServiceCreate(Sender: TObject);
 begin
@@ -141,7 +151,7 @@ begin
       begin
         raise Exception.Create('executorMethod not assigned. Set executorMethod before create TMyService.');
       end;
-      serviceApp := TThreadAdapter.Create(executorMethod, rejectCallback);
+      serviceApp := TServiceApp.Create(executorMethod, rejectCallback);
     end;
 
     serviceApp.start;

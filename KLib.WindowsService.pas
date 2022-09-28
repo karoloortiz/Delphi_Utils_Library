@@ -359,7 +359,7 @@ var
 begin
 {$hints OFF}
   _handleServiceControlManager := 0;
-  _handleService := 0;
+  //  _handleService := 0;
 {$hints ON}
   try
     _handleServiceControlManager := OpenSCManager(PChar(nameMachine), nil, SC_MANAGER_CONNECT);
