@@ -69,12 +69,14 @@ begin
   begin
     childnode.Text := childNodeText;
   end;
+
   Result := childnode;
 end;
 
 function getValidIXMLNodeFromIXMLDocument(XMLDocument: IXMLDocument; nodeName: string): IXMLNode;
 var
   XMLNode: IXMLNode;
+
   _documentNode: IXMLNode;
 begin
   _documentNode := XMLDocument.DocumentElement;
@@ -89,43 +91,50 @@ var
 begin
   validateThatIXMLNodeExistsInIXMLNode(mainNode, childNodeName);
   childNode := getIXMLNodeFromIXMLNode(mainNode, childNodeName);
+
   Result := childNode;
 end;
 
 function getIXMLNodeFromIXMLNode(mainNode: IXMLNode; childNodeName: string): IXMLNode;
 var
-  _result: IXMLNode;
+  XMLNode: IXMLNode;
 begin
-  _result := mainNode.ChildNodes.FindNode(childNodeName);
-  Result := _result;
+  XMLNode := mainNode.ChildNodes.FindNode(childNodeName);
+
+  Result := XMLNode;
 end;
 
 function checkIfIXMLNodeExistsInIXMLNode(mainNode: IXMLNode; childNodeName: string): boolean;
 var
+  nodeExists: boolean;
+
   _node: IXMLNode;
-  _result: boolean;
 begin
   _node := getIXMLNodeFromIXMLNode(mainNode, childNodeName);
-  _result := Assigned(_node);
-  Result := _result;
+  nodeExists := Assigned(_node);
+
+  Result := nodeExists;
 end;
 
 function checkIXMLDocumentNodeName(XMLDocument: IXMLDocument; expectedNodeName: string): boolean;
 var
-  _result: boolean;
+  nodeHasSameName: boolean;
+
   _documentNode: IXMLNode;
 begin
   _documentNode := XMLDocument.DocumentElement;
-  _result := checkIXMLNodeName(_documentNode, expectedNodeName);
-  Result := _result;
+  nodeHasSameName := checkIXMLNodeName(_documentNode, expectedNodeName);
+
+  Result := nodeHasSameName;
 end;
 
 function checkIXMLNodeName(mainNode: IXMLNode; expectedNodeName: string): boolean;
 var
-  _result: boolean;
+  nodeHasSameName: boolean;
 begin
-  _result := mainNode.LocalName = expectedNodeName;
-  Result := _result;
+  nodeHasSameName := mainNode.LocalName = expectedNodeName;
+
+  Result := nodeHasSameName;
 end;
 
 function getValidAttributeValueFromIXMLNode(mainNode: IXMLNode; attributeName: string): Variant;
@@ -134,15 +143,17 @@ var
 begin
   validateThatAttributeExistsInIXMLNode(mainNode, attributeName);
   attributeValue := getAttributeValueFromIXMLNode(mainNode, attributeName);
+
   Result := attributeValue;
 end;
 
 function checkIfAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string): boolean;
 var
-  _result: boolean;
+  attributeExists: boolean;
 begin
-  _result := mainNode.HasAttribute(attributeName);
-  Result := _result;
+  attributeExists := mainNode.HasAttribute(attributeName);
+
+  Result := attributeExists;
 end;
 
 function getAttributeValueFromIXMLNode(mainNode: IXMLNode; attributeName: string): Variant;
@@ -150,14 +161,16 @@ var
   attributeValue: Variant;
 begin
   attributeValue := mainNode.Attributes[attributeName];
+
   Result := attributeValue;
 end;
 
 function getResourceAsXSL(nameResource: string): IXMLDocument;
 var
+  xls: IXMLDocument;
+
   _resource: TResource;
   _resourceAsString: string;
-  xls: IXMLDocument;
 begin
   with _resource do
   begin
@@ -166,6 +179,7 @@ begin
   end;
   _resourceAsString := getResourceAsString(_resource);
   xls := LoadXMLData(_resourceAsString);
+
   Result := xls;
 end;
 
