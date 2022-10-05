@@ -702,10 +702,13 @@ end;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 var
   fileNamesList: TStringList;
+
   _searchRec: TSearchRec;
   _mask: string;
   _fileExists: boolean;
   _fileName: string;
+  _returnCode: integer;
+  _errorMsg: string;
 begin
   fileNamesList := TStringList.Create;
   _mask := getCombinedPath(dirName, '*');
@@ -713,7 +716,13 @@ begin
   begin
     _mask := _mask + '.' + fileType;
   end;
-  _fileExists := FindFirst(_mask, faAnyFile - faDirectory, _searchRec) = 0;
+  _returnCode := FindFirst(_mask, faAnyFile - faDirectory, _searchRec);
+  if (_returnCode <> 0) and (_returnCode <> 2) then
+  begin
+    _errorMsg := dirName + ' : ' + SysErrorMessage(_returnCode);
+    raise Exception.Create(_errorMsg);
+  end;
+  _fileExists := _returnCode = 0;
   while _fileExists do
   begin
     _fileName := _searchRec.Name;

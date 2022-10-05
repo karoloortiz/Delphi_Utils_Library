@@ -1060,9 +1060,18 @@ var
   _parentFolder: string;
   _targetFileName: string;
   _targetDir: string;
+  _tagetDirIsAPath: boolean;
 begin
-  _parentFolder := getParentDir(sourceFileName);
-  _targetDir := getCombinedPath(_parentFolder, targetDir);
+  _tagetDirIsAPath := checkIfIsAPath(targetDir);
+  if _tagetDirIsAPath then
+  begin
+    _targetDir := targetDir;
+  end
+  else
+  begin
+    _parentFolder := getParentDir(sourceFileName);
+    _targetDir := getCombinedPath(_parentFolder, targetDir);
+  end;
   createDirIfNotExists(_targetDir);
   _fileName := ExtractFileName(sourceFileName);
   _targetFileName := getCombinedPath(_targetDir, _fileName);
