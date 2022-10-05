@@ -98,6 +98,7 @@ const
   RAISE_EXCEPTION = true;
   IGNORE_EMPTY_STRINGS = true;
   MODAL_MODE = true;
+  CASE_SENSITIVE = true;
 
   NOT_AUTO_CLEAN = false;
   DISABLE = false;
@@ -106,6 +107,7 @@ const
   RAISE_EXCEPTION_DISABLED = false;
   NOT_IGNORE_EMPTY_STRINGS = false;
   NOT_MODAL_MODE = false;
+  NOT_CASE_SENSITIVE = false;
 
   //Keystroke Message Flag
   //https://docs.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input

@@ -132,14 +132,16 @@ function stringToVariantType(stringValue: string; destinationTypeAsString: strin
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
-procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string); overload;
+procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
 function checkIfEmailIsValid(email: string): boolean;
 function checkIfRegexIsValid(text: string; regex: string): boolean;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
-function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = true): boolean;
+function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
+
+function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): integer;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
@@ -1179,22 +1181,26 @@ end;
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 var
   _delimiterPosition: integer;
+  _delimiterLength: integer;
 begin
-  _delimiterPosition := AnsiPos(delimiter, source);
-  splitStrings(source, _delimiterPosition, destFirstString, destSecondString);
+  _delimiterPosition := myAnsiPos(delimiter, source);
+  _delimiterLength := Length(delimiter);
+  splitStrings(source, _delimiterPosition, _delimiterLength, destFirstString, destSecondString);
 end;
 
-procedure splitStrings(source: string; delimiterPosition: integer; var destFirstString: string; var destSecondString: string);
+procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string);
 var
   _lenghtSource: integer;
   _lengthDestSecondString: integer;
+  _lastPositionOfDelimiter: integer;
 begin
   _lenghtSource := Length(source);
-  if _lenghtSource > delimiterPosition then
+  _lastPositionOfDelimiter := delimiterPosition + delimiterLength;
+  if _lenghtSource > _lastPositionOfDelimiter then
   begin
-    _lengthDestSecondString := _lenghtSource - delimiterPosition;
+    _lengthDestSecondString := _lenghtSource - _lastPositionOfDelimiter;
     destFirstString := Copy(source, 0, delimiterPosition - 1);
-    destSecondString := Copy(source, delimiterPosition + 1, _lengthDestSecondString);
+    destSecondString := Copy(source, _lastPositionOfDelimiter + 1, _lengthDestSecondString);
   end
   else
   begin
@@ -1223,13 +1229,11 @@ begin
 end;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
-const
-  NO_CASE_SENSITIVE = false;
 begin
-  Result := checkIfMainStringContainsSubString(mainString, subString, NO_CASE_SENSITIVE);
+  Result := checkIfMainStringContainsSubString(mainString, subString, NOT_CASE_SENSITIVE);
 end;
 
-function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = true): boolean;
+function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 var
   _result: boolean;
 begin
@@ -1243,6 +1247,25 @@ begin
   end;
 
   Result := _result;
+end;
+
+function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): integer;
+var
+  _subString: string;
+  _mainString: string;
+begin
+  if caseSensitiveSearch then
+  begin
+    _subString := subString;
+    _mainString := mainString;
+  end
+  else
+  begin
+    _subString := UpperCase(subString);
+    _mainString := UpperCase(mainString);
+  end;
+
+  Result := AnsiPos(_subString, _mainString);
 end;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;

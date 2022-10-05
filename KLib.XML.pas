@@ -52,13 +52,16 @@ function getValidAttributeValueFromIXMLNode(mainNode: IXMLNode; attributeName: s
 function checkIfAttributeExistsInIXMLNode(mainNode: IXMLNode; attributeName: string): boolean;
 function getAttributeValueFromIXMLNode(mainNode: IXMLNode; attributeName: string): Variant;
 
+function getIXMLDocument(fileName: string): IXMLDocument;
+
 function getResourceAsXSL(nameResource: string): IXMLDocument;
 
 implementation
 
 uses
   KLib.Utils, KLib.Validate, KLib.Types, KLib.Constants,
-  Xml.XMLDoc;
+  Xml.XMLDoc,
+  Winapi.ActiveX;
 
 function getNewIXMLNode(mainNode: IXMLNode; childNodeName: string; childNodeText: string = ''): IXMLNode;
 var
@@ -165,9 +168,23 @@ begin
   Result := attributeValue;
 end;
 
+function getIXMLDocument(fileName: string): IXMLDocument;
+var
+  XML: IXMLDocument;
+begin
+  CoInitialize(nil);
+  try
+    XML := LoadXMLDocument(fileName);
+  finally
+    CoUninitialize;
+  end;
+
+  Result := XML;
+end;
+
 function getResourceAsXSL(nameResource: string): IXMLDocument;
 var
-  xls: IXMLDocument;
+  XLS: IXMLDocument;
 
   _resource: TResource;
   _resourceAsString: string;
@@ -178,9 +195,9 @@ begin
     _type := XSL_TYPE;
   end;
   _resourceAsString := getResourceAsString(_resource);
-  xls := LoadXMLData(_resourceAsString);
+  XLS := LoadXMLData(_resourceAsString);
 
-  Result := xls;
+  Result := XLS;
 end;
 
 end.

@@ -105,6 +105,8 @@ procedure setComponentInMiddlePosition(control: TControl);
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
 //!not include in realease!
 
+function getImageAsString(fileName: string): string;
+
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
@@ -123,7 +125,7 @@ function getHeightOfSingleCharacter(myFont: TFont): integer;
 implementation
 
 uses
-  KLib.Utils, KLib.Generics,
+  KLib.Utils, KLib.Generics, KLib.Validate,
   Winapi.Windows,
   System.SysUtils, System.Types;
 
@@ -447,6 +449,32 @@ end;
 //  _img.LoadFromFile(pathImgFile);
 //  img.Picture.Graphic := _img;
 //end;
+
+function getImageAsString(fileName: string): string;
+var
+  imageAsString: string;
+  _pic: TPicture;
+  _memoryStream: TMemoryStream;
+begin
+  validateThatFileExists(fileName);
+
+  _pic := TPicture.Create;
+  _memoryStream := TMemoryStream.Create;
+  try
+    _pic.LoadFromFile(fileName);
+
+    _pic.Graphic.SaveToStream(_memoryStream);
+    _memoryStream.Position := 0;
+    SetLength(imageAsString, _memoryStream.Size);
+    _memoryStream.ReadBuffer(imageAsString[1], _memoryStream.Size);
+
+  finally
+    _pic.Free;
+    _memoryStream.Free;
+  end;
+
+  Result := imageAsString;
+end;
 
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string;

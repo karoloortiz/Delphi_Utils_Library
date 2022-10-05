@@ -126,6 +126,8 @@ procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = t
 procedure createHideDir(dirName: string; forceDelete: boolean = false);
 procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
 
+procedure moveFileIntoTargetDir(sourceFileName: string; targetDir: string);
+
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
 
 procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
@@ -1050,6 +1052,22 @@ begin
       raise Exception.Create(errMsg);
     end;
   end;
+end;
+
+procedure moveFileIntoTargetDir(sourceFileName: string; targetDir: string);
+var
+  _fileName: string;
+  _parentFolder: string;
+  _targetFileName: string;
+  _targetDir: string;
+begin
+  _parentFolder := getParentDir(sourceFileName);
+  _targetDir := getCombinedPath(_parentFolder, targetDir);
+  createDirIfNotExists(_targetDir);
+  _fileName := ExtractFileName(sourceFileName);
+  _targetFileName := getCombinedPath(_targetDir, _fileName);
+  deleteFileIfExists(_targetFileName);
+  myMoveFile(sourceFileName, _targetFileName);
 end;
 
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
