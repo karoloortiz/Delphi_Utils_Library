@@ -130,6 +130,7 @@ function stringToTStringList(source: string): TStringList;
 function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
 
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
+function arrayOfVariantToTStringList(arrayOfVariant: Variant): TStringList;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
@@ -1176,6 +1177,7 @@ end;
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 var
   stringList: TStringList;
+
   _string: string;
 begin
   stringList := TStringList.Create;
@@ -1185,6 +1187,24 @@ begin
   end;
 
   Result := stringList;
+end;
+
+function arrayOfVariantToTStringList(arrayOfVariant: Variant): TStringList;
+var
+  fieldStringList: TStringList;
+
+  _highBound: integer;
+  i: integer;
+begin
+  fieldStringList := TStringList.Create;
+
+  _highBound := VarArrayHighBound(arrayOfVariant, 1);
+  for i := VarArrayLowBound(arrayOfVariant, 1) to _highBound do
+  begin
+    fieldStringList.Add(arrayOfVariant[i]);
+  end;
+
+  Result := fieldStringList;
 end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
