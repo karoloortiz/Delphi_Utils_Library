@@ -105,7 +105,7 @@ procedure setComponentInMiddlePosition(control: TControl);
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
 //!not include in realease!
 
-function getImageAsString(fileName: string): string;
+function getImageAsAnsiString(fileName: string): AnsiString;
 
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
@@ -450,9 +450,10 @@ end;
 //  img.Picture.Graphic := _img;
 //end;
 
-function getImageAsString(fileName: string): string;
+function getImageAsAnsiString(fileName: string): AnsiString;
 var
-  imageAsString: string;
+  imageAsString: AnsiString;
+
   _pic: TPicture;
   _memoryStream: TMemoryStream;
 begin
@@ -467,7 +468,6 @@ begin
     _memoryStream.Position := 0;
     SetLength(imageAsString, _memoryStream.Size);
     _memoryStream.ReadBuffer(imageAsString[1], _memoryStream.Size);
-
   finally
     _pic.Free;
     _memoryStream.Free;
