@@ -58,6 +58,8 @@ type
   TExecutionMode = (_null, gui, service, console);
 
   TType = (_null, _string, _integer, _double, _char, _boolean);
+
+  TFileSystemTimeType = (created, modified, accessed);
 {$scopedenums OFF}
 
   THostPort = record

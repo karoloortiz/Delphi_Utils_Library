@@ -206,6 +206,12 @@ function myParamStr(index: integer): string;
 function getShellParamsAsString: string;
 function getShellParams: TArrayOfStrings;
 //################################################################################
+function getFileCreationDateTime(fileName: string): TDateTime;
+function getFileModifiedDateTime(fileName: string): TDateTime;
+function getFileAccessedDateTime(fileName: string): TDateTime;
+function getFileTzSpecificLocalTime(fileName: string; fileSystemTimeType: TFileSystemTimeType): TSystemTime;
+function getFileSystemTime(fileName: string; fileSystemTimeType: TFileSystemTimeType): TSystemTime;
+//################################################################################
 //KEPT THE SIGNATURES, NOT RENAME!!!
 function IsUserAnAdmin: boolean; external shell32;
 function fixedGetNamedSecurityInfo(pObjectName: LPWSTR; ObjectType: SE_OBJECT_TYPE;
@@ -2196,6 +2202,87 @@ begin
   end;
 
   Result := _result;
+end;
+
+function getFileCreationDateTime(fileName: string): TDateTime;
+var
+  creationDateTimeOfFile: TDateTime;
+
+  _fileTzSpecificLocalTime: TSystemTime;
+begin
+  _fileTzSpecificLocalTime := getFileTzSpecificLocalTime(fileName, TFileSystemTimeType.created);
+  creationDateTimeOfFile := SystemTimeToDateTime(_fileTzSpecificLocalTime);
+
+  Result := creationDateTimeOfFile;
+end;
+
+function getFileModifiedDateTime(fileName: string): TDateTime;
+var
+  modifiedDateTimeOfFile: TDateTime;
+
+  _fileTzSpecificLocalTime: TSystemTime;
+begin
+  _fileTzSpecificLocalTime := getFileTzSpecificLocalTime(fileName, TFileSystemTimeType.modified);
+  modifiedDateTimeOfFile := SystemTimeToDateTime(_fileTzSpecificLocalTime);
+
+  Result := modifiedDateTimeOfFile;
+end;
+
+function getFileAccessedDateTime(fileName: string): TDateTime;
+var
+  accesedDateTimeOfFile: TDateTime;
+
+  _fileTzSpecificLocalTime: TSystemTime;
+begin
+  _fileTzSpecificLocalTime := getFileTzSpecificLocalTime(fileName, TFileSystemTimeType.accessed);
+  accesedDateTimeOfFile := SystemTimeToDateTime(_fileTzSpecificLocalTime);
+
+  Result := accesedDateTimeOfFile;
+end;
+
+function getFileTzSpecificLocalTime(fileName: string; fileSystemTimeType: TFileSystemTimeType): TSystemTime;
+var
+  FileTzSpecificLocalTime: TSystemTime;
+
+  _fileSystemTime: TSystemTime;
+begin
+  _fileSystemTime := getFileSystemTime(fileName, fileSystemTimeType);
+
+  if not SystemTimeToTzSpecificLocalTime(nil, _fileSystemTime, FileTzSpecificLocalTime) then
+  begin
+    RaiseLastOSError;
+  end;
+
+  Result := FileTzSpecificLocalTime;
+end;
+
+function getFileSystemTime(fileName: string; fileSystemTimeType: TFileSystemTimeType): TSystemTime;
+var
+  FileSystemTime: TSystemTime;
+
+  _fileAttributeData: TWin32FileAttributeData;
+  _FILETIME: TFileTime;
+begin
+  if not GetFileAttributesEx(PChar(fileName), GetFileExInfoStandard, @_fileAttributeData) then
+  begin
+    RaiseLastOSError;
+  end;
+
+  case fileSystemTimeType of
+    TFileSystemTimeType.created:
+      _FILETIME := _fileAttributeData.ftCreationTime;
+    TFileSystemTimeType.modified:
+      _FILETIME := _fileAttributeData.ftLastWriteTime;
+    TFileSystemTimeType.accessed:
+      _FILETIME := _fileAttributeData.ftLastAccessTime;
+  end;
+
+  if not FileTimeToSystemTime(_FILETIME, FileSystemTime) then
+  begin
+    RaiseLastOSError;
+  end;
+
+  Result := FileSystemTime;
 end;
 
 initialization
