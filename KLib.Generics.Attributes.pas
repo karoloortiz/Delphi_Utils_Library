@@ -72,6 +72,21 @@ type
     constructor Create(const value: string);
   end;
 
+  CustomNameAttribute = class(TCustomAttribute)
+  public
+    value: string;
+
+    constructor Create(const value: string);
+  end;
+
+  BooleanAsStringAttribute = class(TCustomAttribute)
+  public
+    true: string;
+    false: string;
+
+    constructor Create(const trueValue: string; const falseValue: string);
+  end;
+
   ParamNameAttribute = class(TCustomAttribute)
   public
     value: string;
@@ -119,6 +134,17 @@ end;
 constructor SectionNameAttribute.Create(const value: string);
 begin
   Self.value := value;
+end;
+
+constructor CustomNameAttribute.Create(const value: string);
+begin
+  Self.value := value;
+end;
+
+constructor BooleanAsStringAttribute.Create(const trueValue: string; const falseValue: string);
+begin
+  Self.true := trueValue;
+  Self.false := falseValue;
 end;
 
 constructor ParamNameAttribute.Create(const value: string);

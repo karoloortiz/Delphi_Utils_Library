@@ -39,6 +39,9 @@
 //  - SettingStringsAttribute
 //  - SettingDoubleAttribute      //TODO
 //  - SectionNameAttribute
+//
+//  - CustomNameAttribute
+//  - BooleanAsStringAttribute
 //  - DefaultValueAttribute
 //###########---EXAMPLE OF USE----##########################
 // uses
@@ -62,6 +65,11 @@
 //    string_value2: string;
 //    integer_value2: integer;
 //    double_value2: double;
+//    [
+//     CustomNameAttribute('my_custom_name'),
+//     BooleanAsStringAttribute('yes', 'no'),
+//     DefaultValueAttribute('true')
+//    ]
 //    boolean_value2: boolean;
 //    char_value2: char;
 //  end;
@@ -108,6 +116,9 @@ var
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
   _sectionName: string;
+  _customName: string;
+  _booleanAsString: boolean;
+  _booleanAsStringAttribute: TCustomAttribute;
 
   _propertyName: string;
   _propertyType: string;
@@ -148,11 +159,22 @@ begin
 
     VarClear(_propertyValue);
 
+    _customName := EMPTY_STRING;
+    _booleanAsString := false;
     for _customAttribute in _rttiField.GetAttributes do
     begin
       if _customAttribute is SectionNameAttribute then
       begin
         _sectionName := SectionNameAttribute(_customAttribute).value;
+      end;
+      if _customAttribute is CustomNameAttribute then
+      begin
+        _customName := CustomNameAttribute(_customAttribute).value;
+      end;
+      if _customAttribute is BooleanAsStringAttribute then
+      begin
+        _booleanAsString := true;
+        _booleanAsStringAttribute := _customAttribute;
       end;
     end;
 
@@ -184,6 +206,22 @@ begin
     else if _propertyType = 'Boolean' then
     begin
       _propertyValue := _rttiField.GetValue(@iniRecord).AsBoolean;
+      if _booleanAsString then
+      begin
+        if _propertyValue = true then
+        begin
+          _propertyValue := BooleanAsStringAttribute(_booleanAsStringAttribute).true;
+        end
+        else
+        begin
+          _propertyValue := BooleanAsStringAttribute(_booleanAsStringAttribute).false;
+        end;
+      end;
+    end;
+
+    if _customName <> EMPTY_STRING then
+    begin
+      _propertyName := _customName;
     end;
 
     setStringValueToIniFile(_fileName, _sectionName, _propertyName, _propertyValue);
@@ -208,8 +246,11 @@ var
 
   _fileName: string;
   _settingStringsAttribute: TSettingStringsAttributeType;
-  _sectionName: string;
   _fileExists: boolean;
+  _sectionName: string;
+  _customName: string;
+  _booleanAsString: boolean;
+  _booleanAsStringAttribute: TCustomAttribute;
 
   _propertyName: string;
   _propertyType: string;
@@ -254,12 +295,28 @@ begin
 
       VarClear(_propertyValue);
 
+      _customName := EMPTY_STRING;
+      _booleanAsString := false;
       for _customAttribute in _rttiField.GetAttributes do
       begin
         if _customAttribute is SectionNameAttribute then
         begin
           _sectionName := SectionNameAttribute(_customAttribute).value;
         end;
+        if _customAttribute is CustomNameAttribute then
+        begin
+          _customName := CustomNameAttribute(_customAttribute).value;
+        end;
+        if _customAttribute is BooleanAsStringAttribute then
+        begin
+          _booleanAsString := true;
+          _booleanAsStringAttribute := _customAttribute;
+        end;
+      end;
+
+      if _customName <> EMPTY_STRING then
+      begin
+        _propertyName := _customName;
       end;
 
       try
@@ -290,7 +347,31 @@ begin
         end
         else if _propertyType = 'Boolean' then
         begin
-          _propertyValue := StrToBool(_propertyValue);
+          if _booleanAsString then
+          begin
+            if _propertyValue = BooleanAsStringAttribute(_booleanAsStringAttribute).true then
+            begin
+              _propertyValue := true;
+            end
+            else if _propertyValue = BooleanAsStringAttribute(_booleanAsStringAttribute).false then
+            begin
+              _propertyValue := false;
+            end
+            else if raiseException then
+            begin
+              raise Exception.Create('Incorrect value -> filename: ' + _fileName + ' section name: ' + _sectionName +
+                ' property name: ' + _propertyName + ' property value: ' + _propertyValue);
+            end
+            else
+            begin
+              _propertyValue := false;
+            end;
+
+          end
+          else
+          begin
+            _propertyValue := StrToBool(_propertyValue);
+          end;
         end;
 
         if (not VarIsEmpty(_propertyValue)) then
