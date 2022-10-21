@@ -46,7 +46,9 @@ uses
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 procedure deleteFileIfExists(fileName: string);
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
+function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
+function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
+function checkIfFileIsEmpty(fileName: string): boolean;
 function checkIfFileExists(fileName: string): boolean;
 function getTextFromFile(fileName: string): string;
 
@@ -86,6 +88,8 @@ function getRandString(size: integer = 5): string;
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
+procedure appendToFileInNewLine(filename: string; text: string); overload;
+procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveToFile(source: string; fileName: string);
 
 function getCombinedPath(path1: string; path2: string): string;
@@ -233,24 +237,38 @@ begin
   end;
 end;
 
-function checkIfFileExistsAndEmpty(fileName: string): boolean;
+function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
 var
-  _fileExists: boolean;
+  fileExistsAndIsEmpty: boolean;
+begin
+  fileExistsAndIsEmpty := checkIfFileExists(fileName) and checkIfFileIsEmpty(fileName);
+
+  Result := fileExistsAndIsEmpty;
+end;
+
+function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
+var
+  fileExistsAndIsNotEmpty: boolean;
+begin
+  fileExistsAndIsNotEmpty := checkIfFileExists(fileName) and (not checkIfFileIsEmpty(fileName));
+
+  Result := fileExistsAndIsNotEmpty;
+end;
+
+function checkIfFileIsEmpty(fileName: string): boolean;
+var
+  fileIsEmpty: boolean;
 
   _file: file of Byte;
   _size: integer;
 begin
-  _fileExists := false;
-  if checkIfFileExists(fileName) then
-  begin
-    AssignFile(_file, fileName);
-    Reset(_file);
-    _size := FileSize(_file);
-    _fileExists := _size = 0;
-    CloseFile(_file);
-  end;
+  AssignFile(_file, fileName);
+  Reset(_file);
+  _size := FileSize(_file);
+  fileIsEmpty := _size = 0;
+  CloseFile(_file);
 
-  Result := _fileExists;
+  Result := fileIsEmpty;
 end;
 
 function checkIfFileExists(fileName: string): boolean;
@@ -736,6 +754,26 @@ begin
   end;
 
   Result := fileNamesList;
+end;
+
+procedure appendToFileInNewLine(filename: string; text: string);
+begin
+  appendToFile(fileName, text, FORCE);
+end;
+
+procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE);
+var
+  _text: string;
+begin
+  _text := text;
+  if (checkIfFileExistsAndIsNotEmpty(filename)) then
+  begin
+    if (forceAppendInNewLine) then
+    begin
+      _text := sLineBreak + _text;
+    end;
+  end;
+  TFile.AppendAllText(filename, _text);
 end;
 
 procedure saveToFile(source: string; fileName: string);
@@ -1392,7 +1430,8 @@ end;
 
 function getAnonymousMethodsFromMethod(_method: KLib.Types.TMethod): KLib.Types.TAnonymousMethod;
 begin
-  Result := procedure
+  Result :=
+      procedure
     begin
       _method;
     end;

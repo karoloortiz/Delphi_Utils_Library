@@ -130,7 +130,9 @@ procedure moveFileIntoTargetDir(sourceFileName: string; targetDir: string);
 
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
 
-procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+  forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure createEmptyFileIfNotExists(filename: string);
 procedure createEmptyFile(filename: string);
 
@@ -1096,17 +1098,33 @@ begin
   end;
 end;
 
-procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+begin
+  KLib.Windows.appendToFile(fileName, text, forceCreationFile, FORCE);
+end;
+
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+  forceAppendInNewLine: boolean = NOT_FORCE);
 var
   _file: TextFile;
+  _text: string;
 begin
   if forceCreationFile then
   begin
     createEmptyFileIfNotExists(filename);
   end;
+  _text := text;
+  if (checkIfFileExistsAndIsNotEmpty(filename)) then
+  begin
+    if (forceAppendInNewLine) then
+    begin
+      _text := sLineBreak + _text;
+    end;
+  end;
+
   AssignFile(_file, filename);
   Append(_file);
-  Writeln(_file, text);
+  Write(_file, _text);
   CloseFile(_file);
 end;
 

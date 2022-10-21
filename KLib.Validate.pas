@@ -318,7 +318,7 @@ procedure validateThatFileExistsAndEmpty(fileName: string; errMsg: string = 'Fil
 var
   _errMsg: string;
 begin
-  if not checkIfFileExistsAndEmpty(fileName) then
+  if not checkIfFileExistsAndIsEmpty(fileName) then
   begin
     _errMsg := getDoubleQuotedString(fileName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
