@@ -53,6 +53,8 @@ procedure validateThatVC_Redist2013X86IsInstalled(errMsg: string = 'Microsoft Vi
 procedure validateThatVC_Redist2013X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2013 x64 not correctly installed.');
 procedure validateThatVC_Redist2019X64IsInstalled(errMsg: string = 'Microsoft Visual C++ Redistributable 2019 x64 not correctly installed.');
 //-------------------
+procedure validateThatServiceIsRunning(nameService: string; errMsg: string = 'Service isn''t running.');
+procedure validateThatServiceIsNotRunning(nameService: string; errMsg: string = 'Service is running.');
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 procedure validateThatServiceExists(nameService: string; errMsg: string = 'Service doesn''t exists.');
 
@@ -174,7 +176,29 @@ begin
   end;
 end;
 
-//##################################################################à
+//##################################################################
+procedure validateThatServiceIsRunning(nameService: string; errMsg: string = 'Service isn''t running.');
+var
+  _errMsg: string;
+begin
+  if TWindowsService.checkIfIsRunning(nameService) then
+  begin
+    _errMsg := getDoubleQuotedString(nameService) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatServiceIsNotRunning(nameService: string; errMsg: string = 'Service is running.');
+var
+  _errMsg: string;
+begin
+  if not TWindowsService.checkIfIsRunning(nameService) then
+  begin
+    _errMsg := getDoubleQuotedString(nameService) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
 procedure validateThatServiceNotExists(nameService: string; errMsg: string = 'Service already exists.');
 var
   _errMsg: string;

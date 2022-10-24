@@ -50,6 +50,7 @@ function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
 function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
 function checkIfFileIsEmpty(fileName: string): boolean;
 function checkIfFileExists(fileName: string): boolean;
+procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING);
 function getTextFromFile(fileName: string): string;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
@@ -276,9 +277,38 @@ begin
   Result := FileExists(fileName);
 end;
 
+procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING);
+var
+  _file: TStringList;
+  _stringBuilder: TStringBuilder;
+  _filenameOutput: string;
+begin
+  validateThatFileExists(filename);
+  _filenameOutput := filenameOutput;
+
+  if _filenameOutput = '' then
+  begin
+    _filenameOutput := filename;
+  end;
+  _file := TStringList.Create;
+  _stringBuilder := TStringBuilder.Create;
+  try
+    _file.LoadFromFile(filename);
+    _stringBuilder.Append(_file.Text);
+    _stringBuilder.Replace(oldText, newText);
+    _file.Clear;
+    _file.Text := _stringBuilder.ToString;
+    _file.SaveToFile(_filenameOutput);
+  finally
+    FreeAndNil(_file);
+    FreeAndNil(_stringBuilder);
+  end;
+end;
+
 function getTextFromFile(fileName: string): string;
 var
   text: string;
+
   _stringList: TStringList;
 begin
   _stringList := TStringList.Create;
@@ -288,17 +318,20 @@ begin
   finally
     _stringList.Free;
   end;
+
   Result := text;
 end;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 var
+  isSpaceAvailableOnDrive: boolean;
+
   _freeSpaceDrive: int64;
-  _result: boolean;
 begin
   _freeSpaceDrive := getFreeSpaceOnDrive(drive);
-  _result := _freeSpaceDrive > requiredSpaceInBytes;
-  Result := _result;
+  isSpaceAvailableOnDrive := _freeSpaceDrive > requiredSpaceInBytes;
+
+  Result := isSpaceAvailableOnDrive;
 end;
 
 function getFreeSpaceOnDrive(drive: char): int64;
@@ -306,8 +339,9 @@ const
   ERR_MSG_INVALID_DRIVE = 'The drive is invalid.';
   ERR_MSG_DRIVE_READ_ONLY = 'The drive is read-only';
 var
-  _indexOfDrive: integer;
   freeSpaceOnDrive: int64;
+
+  _indexOfDrive: integer;
 begin
   _indexOfDrive := getIndexOfDrive(drive);
 
@@ -318,6 +352,7 @@ begin
     0:
       raise Exception.Create(ERR_MSG_DRIVE_READ_ONLY);
   end;
+
   Result := freeSpaceOnDrive;
 end;
 
@@ -328,6 +363,8 @@ const
 
   ERR_MSG = 'Invalid drive character.';
 var
+  indexOfDrive: integer;
+
   _drive: string;
   _asciiIndex: integer;
 begin
@@ -337,24 +374,31 @@ begin
   begin
     raise Exception.Create(ERR_MSG);
   end;
-  Result := (_asciiIndex - ASCII_FIRST_ALPHABET_CHARACTER) + 1;
+  indexOfDrive := (_asciiIndex - ASCII_FIRST_ALPHABET_CHARACTER) + 1;
+
+  Result := indexOfDrive;
 end;
 
 function getDriveExe: char;
 var
+  driveExe: char;
+
   _dirExe: string;
 begin
   _dirExe := getDriveExe;
-  Result := _dirExe[1];
+  driveExe := _dirExe[1];
+
+  Result := driveExe;
 end;
 
 function getDirSize(path: string): int64;
 var
+  dirSize: int64;
+
   _searchRec: TSearchRec;
-  totalSize: int64;
   _subDirSize: int64;
 begin
-  totalSize := 0;
+  dirSize := 0;
   path := getValidFullPath(path);
   path := IncludeTrailingPathDelimiter(path);
   if FindFirst(path + '*', faAnyFile, _searchRec) = 0 then
@@ -365,17 +409,18 @@ begin
         if (_searchRec.name <> '.') and (_searchRec.name <> '..') then
         begin
           _subDirSize := getDirSize(path + _searchRec.name);
-          inc(totalSize, _subDirSize);
+          inc(dirSize, _subDirSize);
         end;
       end
       else
       begin
-        inc(totalSize, _searchRec.size);
+        inc(dirSize, _searchRec.size);
       end;
     until FindNext(_searchRec) <> 0;
     System.SysUtils.FindClose(_searchRec);
   end;
-  Result := totalSize;
+
+  Result := dirSize;
 end;
 
 procedure createDirIfNotExists(dirName: string);
@@ -393,27 +438,31 @@ end;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 var
+  isSubDir: boolean;
+
   _subDir: string;
   _mainDir: string;
-  _isSubDir: Boolean;
 begin
   _subDir := getPathInLinuxStyle(subDir);
   _mainDir := getPathInLinuxStyle(mainDir);
-  _isSubDir := checkIfIsSubDir(_subDir, _mainDir, LINUX_PATH_DELIMITER);
-  result := _isSubDir
+  isSubDir := checkIfIsSubDir(_subDir, _mainDir, LINUX_PATH_DELIMITER);
+
+  Result := isSubDir
 end;
 
 function getPathInLinuxStyle(path: string): string;
 var
-  _path: string;
+  pathInLinuxStyle: string;
 begin
-  _path := stringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
-  result := _path;
+  pathInLinuxStyle := StringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+
+  Result := pathInLinuxStyle;
 end;
 
 function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 var
-  isSubDir: Boolean;
+  isSubDir: boolean;
+
   _subDir: string;
   _mainDir: string;
   _trailingPathDelimiter: char;
@@ -454,11 +503,14 @@ end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 var
+  MD5CheckedStatus: boolean;
+
   _MD5ChecksumFile: string;
 begin
   _MD5ChecksumFile := getMD5ChecksumFile(fileName);
+  MD5CheckedStatus := (UpperCase(_MD5ChecksumFile) = UpperCase(MD5));
 
-  Result := (UpperCase(_MD5ChecksumFile) = UpperCase(MD5));
+  Result := MD5CheckedStatus;
 end;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
@@ -476,18 +528,19 @@ end;
 function getPNGResource(nameResource: string): TPngImage;
 var
   resourceAsPNG: TPngImage;
+
   _resource: TResource;
-  resourceStream: TResourceStream;
+  _resourceStream: TResourceStream;
 begin
   with _resource do
   begin
     name := nameResource;
     _type := PNG_TYPE;
   end;
-  resourceStream := getResourceAsStream(_resource);
+  _resourceStream := getResourceAsStream(_resource);
   resourceAsPNG := TPngImage.Create;
-  resourceAsPNG.LoadFromStream(resourceStream);
-  resourceStream.Free;
+  resourceAsPNG.LoadFromStream(_resourceStream);
+  _resourceStream.Free;
 
   Result := resourceAsPNG;
 end;
@@ -534,15 +587,15 @@ end;
 function getResourceAsString(resource: TResource): string;
 var
   resourceAsString: string;
-  resourceStream: TResourceStream;
+  _resourceStream: TResourceStream;
   _stringList: TStringList;
 begin
   resourceAsString := '';
-  resourceStream := getResourceAsStream(resource);
+  _resourceStream := getResourceAsStream(resource);
   _stringList := TStringList.Create;
-  _stringList.LoadFromStream(resourceStream);
+  _stringList.LoadFromStream(_resourceStream);
   resourceAsString := _stringList.Text;
-  resourceStream.Free;
+  _resourceStream.Free;
 
   Result := resourceAsString;
 end;
@@ -550,6 +603,7 @@ end;
 function getResourceAsStream(resource: TResource): TResourceStream;
 var
   resourceStream: TResourceStream;
+
   _errMsg: string;
 begin
   with resource do
@@ -603,6 +657,7 @@ end;
 function getValidItalianTelephoneNumber(number: string): string;
 var
   telephoneNumber: string;
+
   _number: string;
   i: integer;
 begin
@@ -648,6 +703,7 @@ const
   ERR_MSG = 'Telephone number is empty.';
 var
   telephoneNumber: string;
+
   _number: string;
   i: integer;
 begin
@@ -676,6 +732,7 @@ const
   ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 var
   randString: string;
+
   _randCharacter: char;
   _randIndexOfAlphabet: integer;
   _lengthAlphabet: integer;
@@ -698,6 +755,7 @@ const
   ERR_MSG = 'No files found.';
 var
   fileName: string;
+
   _fileNamesList: TStringList;
 begin
   _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
@@ -795,10 +853,11 @@ end;
 
 function getCurrentDayOfWeekAsString: string;
 var
-  _nameDay: string;
+  dayAsString: string;
 begin
-  _nameDay := getDayOfWeekAsString(Now);
-  result := _nameDay;
+  dayAsString := getDayOfWeekAsString(Now);
+
+  Result := dayAsString;
 end;
 
 function getDayOfWeekAsString(date: TDateTime): string;
@@ -813,13 +872,13 @@ const
     'Saturday'
     ];
 var
+  dayAsString: string;
   _indexDayOfWeek: integer;
-  _nameDay: string;
 begin
   _indexDayOfWeek := DayOfWeek(date) - 1;
-  _nameDay := DAYS_OF_WEEK[_indexDayOfWeek];
+  dayAsString := DAYS_OF_WEEK[_indexDayOfWeek];
 
-  Result := _nameDay;
+  Result := dayAsString;
 end;
 
 function getCurrentDateTimeAsString: string;
@@ -830,6 +889,7 @@ end;
 function getDateTimeAsString(date: TDateTime): string;
 var
   dateTimeAsString: string;
+
   _date: string;
   _time: string;
 begin
@@ -923,14 +983,14 @@ function getExtractedString(mainString: string; quoteString: string; raiseExcept
 const
   ERR_MSG = 'String not found.';
 var
-  _result: string;
+  extractedString: string;
 
   _lenghtQuotedString: integer;
   _lenghtMainString: integer;
   _firstIndex: integer;
   _lastIndex: integer;
 begin
-  _result := EMPTY_STRING;
+  extractedString := EMPTY_STRING;
 
   _lenghtQuotedString := quoteString.Length;
   _firstIndex := mainString.IndexOf(quoteString);
@@ -943,30 +1003,30 @@ begin
     if _lastIndex > -1 then
     begin
       _lastIndex := _lastIndex - _lenghtQuotedString;
-      _result := mainString.Substring(_lenghtQuotedString, _lastIndex);
+      extractedString := mainString.Substring(_lenghtQuotedString, _lastIndex);
     end;
   end;
 
-  if (raiseExceptionEnabled) and (_result = EMPTY_STRING) then
+  if (raiseExceptionEnabled) and (extractedString = EMPTY_STRING) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
 
-  Result := _result;
+  Result := extractedString;
 end;
 
 function getDequotedString(mainString: string): string;
 var
-  value: string;
+  dequotedString: string;
 begin
-  value := mainString;
-  if ((mainString.Chars[0] = '"') and (mainString.Chars[value.Length - 1] = '"'))
-    or ((mainString.Chars[0] = '''') and (mainString.Chars[value.Length - 1] = '''')) then
+  dequotedString := mainString;
+  if ((mainString.Chars[0] = '"') and (mainString.Chars[dequotedString.Length - 1] = '"'))
+    or ((mainString.Chars[0] = '''') and (mainString.Chars[dequotedString.Length - 1] = '''')) then
   begin
-    value := mainString.Substring(1, mainString.Length - 2);
+    dequotedString := mainString.Substring(1, mainString.Length - 2);
   end;
 
-  Result := value;
+  Result := dequotedString;
 end;
 
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
@@ -974,7 +1034,7 @@ function getMainStringWithSubStringInserted(mainString: string; insertedString: 
 const
   ERR_MSG = 'Index out of range.';
 var
-  _result: string;
+  mainStringWithSubStringInserted: string;
 
   _lenght: integer;
   _firstStringPart: string;
@@ -991,9 +1051,9 @@ begin
     Inc(index);
   end;
   _lastStringPart := Copy(mainString, index + 1, MaxInt);
-  _result := getMergedStrings(_firstStringPart, _lastStringPart, insertedString);
+  mainStringWithSubStringInserted := getMergedStrings(_firstStringPart, _lastStringPart, insertedString);
 
-  Result := _result;
+  Result := mainStringWithSubStringInserted;
 end;
 
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
@@ -1038,14 +1098,16 @@ var
   _result: TDate;
 begin
   _result := getCSVFieldFromStringAsDate(mainString, index, FormatSettings, delimiter);
+
   Result := _result;
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings;
   delimiter: Char = SEMICOLON_DELIMITER): TDate;
 var
-  _fieldAsString: string;
   _result: TDate;
+
+  _fieldAsString: string;
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToDate(_fieldAsString, formatSettings);
@@ -1065,8 +1127,9 @@ end;
 function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings;
   delimiter: Char = SEMICOLON_DELIMITER): Double;
 var
-  _fieldAsString: string;
   _result: Double;
+
+  _fieldAsString: string;
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToFloat(_fieldAsString, formatSettings);
@@ -1076,8 +1139,9 @@ end;
 
 function getCSVFieldFromStringAsInteger(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): integer;
 var
-  _fieldAsString: string;
   _result: integer;
+
+  _fieldAsString: string;
 begin
   _fieldAsString := getCSVFieldFromString(mainString, index, delimiter);
   _result := StrToInt(_fieldAsString);
@@ -1089,8 +1153,9 @@ function getCSVFieldFromString(mainString: string; index: integer; delimiter: Ch
 const
   ERR_MSG = 'Field index out of range.';
 var
-  _stringList: TStringList;
   _result: string;
+
+  _stringList: TStringList;
 begin
   _stringList := stringToStringListWithDelimiter(mainString, delimiter);
   try
@@ -1111,8 +1176,9 @@ end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
 var
-  _stringList: TStringList;
   _result: integer;
+
+  _stringList: TStringList;
 begin
   _stringList := stringToTStringList(source);
   _result := _stringList.Count;
@@ -1123,9 +1189,10 @@ end;
 
 function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 var
+  _result: string;
+
   _stringList: TStringList;
   _text: string;
-  _result: string;
 begin
   _stringList := stringToStringListWithFixedLen(source, fixedLen);
   _text := _stringList.Text;
@@ -1139,8 +1206,9 @@ end;
 function stringToStringListWithFixedLen(source: string; fixedLen: integer): TStringList;
 var
   stringList: TStringList;
-  i: Integer;
-  _sourceLen: Integer;
+
+  i: integer;
+  _sourceLen: integer;
 begin
   stringList := TStringList.Create;
   stringList.LineBreak := #13;
@@ -1159,29 +1227,30 @@ begin
     Inc(i, fixedLen);
   end;
 
-  result := stringList;
+  Result := stringList;
 end;
 
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 var
-  _stringList: TStringList;
+  stringList: TStringList;
 begin
-  _stringList := TStringList.Create;
-  _stringList.Clear;
-  _stringList.Delimiter := delimiter;
-  _stringList.StrictDelimiter := True;
-  _stringList.DelimitedText := value;
+  stringList := TStringList.Create;
+  stringList.Clear;
+  stringList.Delimiter := delimiter;
+  stringList.StrictDelimiter := True;
+  stringList.DelimitedText := value;
 
-  Result := _stringList;
+  Result := stringList;
 end;
 
 function stringToTStringList(source: string): TStringList;
 var
-  _stringList: TStringList;
+  stringList: TStringList;
 begin
-  _stringList := TStringList.Create;
-  _stringList.Text := source;
-  Result := _stringList;
+  stringList := TStringList.Create;
+  stringList.Text := source;
+
+  Result := stringList;
 end;
 
 function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
@@ -1283,11 +1352,11 @@ end;
 
 function checkIfEmailIsValid(email: string): boolean;
 var
-  _result: boolean;
+  emailIsValid: boolean;
 begin
-  _result := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
+  emailIsValid := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
 
-  Result := _result;
+  Result := emailIsValid;
 end;
 
 function checkIfRegexIsValid(text: string; regex: string): boolean;
@@ -1337,13 +1406,14 @@ end;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 var
-  _doubleAsString: string;
+  doubleAsString: string;
   _FloatToStrDecimalSeparator: char;
 begin
-  _doubleAsString := FloatToStr(value);
+  doubleAsString := FloatToStr(value);
   _FloatToStrDecimalSeparator := getFloatToStrDecimalSeparator;
-  _doubleAsString := StringReplace(_doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
-  Result := _doubleAsString;
+  doubleAsString := StringReplace(doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
+
+  Result := doubleAsString;
 end;
 
 function getFloatToStrDecimalSeparator: char;
@@ -1351,10 +1421,11 @@ const
   VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
   DECIMAL_SEPARATOR_INDEX = 2;
 var
-  _doubleAsString: string;
+  doubleAsString: string;
 begin
-  _doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
-  Result := _doubleAsString[DECIMAL_SEPARATOR_INDEX];
+  doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
+
+  Result := doubleAsString[DECIMAL_SEPARATOR_INDEX];
 end;
 
 function get_status_asString(status: TStatus): string;
@@ -1414,6 +1485,7 @@ end;
 function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;
 var
   arrayOfAnonymousMethods: TArrayOfAnonymousMethods;
+
   _lengthOfMethods: integer;
   i: integer;
 begin
@@ -1495,6 +1567,7 @@ end;
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 var
   isEmpty: boolean;
+
   _emptyValue: variant;
 begin
   _emptyValue := myDefault(typeAsString);
