@@ -49,6 +49,7 @@ procedure deleteFileIfExists(fileName: string);
 function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
 function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
 function checkIfFileIsEmpty(fileName: string): boolean;
+function checkIfFileExistsInSystem32(filename: string): boolean;
 function checkIfFileExists(fileName: string): boolean;
 procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING);
 function getTextFromFile(fileName: string): string;
@@ -66,6 +67,14 @@ function getPathInLinuxStyle(path: string): string;
 function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 function getValidFullPath(fileName: string): string;
 function checkIfIsAPath(path: string): boolean;
+function getCombinedPath(path1: string; path2: string): string;
+
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
+
+procedure appendToFileInNewLine(filename: string; text: string); overload;
+procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE); overload;
+procedure saveToFile(source: string; fileName: string);
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 
@@ -85,15 +94,6 @@ function getValidItalianTelephoneNumber(number: string): string;
 function getValidTelephoneNumber(number: string): string;
 
 function getRandString(size: integer = 5): string;
-
-function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
-
-procedure appendToFileInNewLine(filename: string; text: string); overload;
-procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE); overload;
-procedure saveToFile(source: string; fileName: string);
-
-function getCombinedPath(path1: string; path2: string): string;
 
 function getCurrentDayOfWeekAsString: string;
 function getDayOfWeekAsString(date: TDateTime): string;
@@ -270,6 +270,29 @@ begin
   CloseFile(_file);
 
   Result := fileIsEmpty;
+end;
+
+function checkIfFileExistsInSystem32(filename: string): boolean;
+var
+  fileExistsInSystem32: boolean;
+
+  _fileName: string;
+  _filenameIsAPath: boolean;
+begin
+  _fileName := filename;
+  _filenameIsAPath := checkIfIsAPath(_fileName);
+  if _filenameIsAPath then
+  begin
+    validateThatIsWindowsSubDir(_fileName, WINDOWS_SYSTEM32_PATH);
+  end
+  else
+  begin
+    _fileName := getCombinedPath(WINDOWS_SYSTEM32_PATH, _fileName);
+  end;
+
+  fileExistsInSystem32 := checkIfFileExists(_fileName);
+
+  Result := fileExistsInSystem32;
 end;
 
 function checkIfFileExists(fileName: string): boolean;
@@ -499,6 +522,107 @@ end;
 function checkIfIsAPath(path: string): boolean;
 begin
   Result := ExtractFilePath(path) <> EMPTY_STRING;
+end;
+
+function getCombinedPath(path1: string; path2: string): string;
+begin
+  Result := TPath.Combine(path1, path2);
+end;
+
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
+const
+  ERR_MSG = 'No files found.';
+var
+  fileName: string;
+
+  _fileNamesList: TStringList;
+begin
+  _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
+  if _fileNamesList.Count > 0 then
+  begin
+    fileName := _fileNamesList[0];
+  end
+  else
+  begin
+    fileName := EMPTY_STRING;
+  end;
+  FreeAndNil(_fileNamesList);
+  if fileName = EMPTY_STRING then
+  begin
+    raise Exception.Create(ERR_MSG);
+  end;
+
+  Result := fileName;
+end;
+
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
+var
+  fileNamesList: TStringList;
+
+  _searchRec: TSearchRec;
+  _mask: string;
+  _fileExists: boolean;
+  _fileName: string;
+  _returnCode: integer;
+  _errorMsg: string;
+begin
+  fileNamesList := TStringList.Create;
+  _mask := getCombinedPath(dirName, '*');
+  if fileType <> EMPTY_STRING then
+  begin
+    _mask := _mask + '.' + fileType;
+  end;
+  _returnCode := FindFirst(_mask, faAnyFile - faDirectory, _searchRec);
+  if (_returnCode <> 0) and (_returnCode <> 2) then
+  begin
+    _errorMsg := dirName + ' : ' + SysErrorMessage(_returnCode);
+    raise Exception.Create(_errorMsg);
+  end;
+  _fileExists := _returnCode = 0;
+  while _fileExists do
+  begin
+    _fileName := _searchRec.Name;
+    if fullPath then
+    begin
+      _fileName := getCombinedPath(dirName, _fileName);
+    end;
+    fileNamesList.Add(_fileName);
+    _fileExists := FindNext(_searchRec) = 0;
+  end;
+
+  Result := fileNamesList;
+end;
+
+procedure appendToFileInNewLine(filename: string; text: string);
+begin
+  appendToFile(fileName, text, FORCE);
+end;
+
+procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE);
+var
+  _text: string;
+begin
+  _text := text;
+  if (checkIfFileExistsAndIsNotEmpty(filename)) then
+  begin
+    if (forceAppendInNewLine) then
+    begin
+      _text := sLineBreak + _text;
+    end;
+  end;
+  TFile.AppendAllText(filename, _text);
+end;
+
+procedure saveToFile(source: string; fileName: string);
+var
+  _stringList: TStringList;
+begin
+  try
+    _stringList := stringToTStringList(source);
+    _stringList.SaveToFile(fileName);
+  finally
+    FreeAndNil(_stringList);
+  end;
 end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
@@ -750,107 +874,6 @@ begin
   Result := randString;
 end;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
-const
-  ERR_MSG = 'No files found.';
-var
-  fileName: string;
-
-  _fileNamesList: TStringList;
-begin
-  _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
-  if _fileNamesList.Count > 0 then
-  begin
-    fileName := _fileNamesList[0];
-  end
-  else
-  begin
-    fileName := EMPTY_STRING;
-  end;
-  FreeAndNil(_fileNamesList);
-  if fileName = EMPTY_STRING then
-  begin
-    raise Exception.Create(ERR_MSG);
-  end;
-
-  Result := fileName;
-end;
-
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
-var
-  fileNamesList: TStringList;
-
-  _searchRec: TSearchRec;
-  _mask: string;
-  _fileExists: boolean;
-  _fileName: string;
-  _returnCode: integer;
-  _errorMsg: string;
-begin
-  fileNamesList := TStringList.Create;
-  _mask := getCombinedPath(dirName, '*');
-  if fileType <> EMPTY_STRING then
-  begin
-    _mask := _mask + '.' + fileType;
-  end;
-  _returnCode := FindFirst(_mask, faAnyFile - faDirectory, _searchRec);
-  if (_returnCode <> 0) and (_returnCode <> 2) then
-  begin
-    _errorMsg := dirName + ' : ' + SysErrorMessage(_returnCode);
-    raise Exception.Create(_errorMsg);
-  end;
-  _fileExists := _returnCode = 0;
-  while _fileExists do
-  begin
-    _fileName := _searchRec.Name;
-    if fullPath then
-    begin
-      _fileName := getCombinedPath(dirName, _fileName);
-    end;
-    fileNamesList.Add(_fileName);
-    _fileExists := FindNext(_searchRec) = 0;
-  end;
-
-  Result := fileNamesList;
-end;
-
-procedure appendToFileInNewLine(filename: string; text: string);
-begin
-  appendToFile(fileName, text, FORCE);
-end;
-
-procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE);
-var
-  _text: string;
-begin
-  _text := text;
-  if (checkIfFileExistsAndIsNotEmpty(filename)) then
-  begin
-    if (forceAppendInNewLine) then
-    begin
-      _text := sLineBreak + _text;
-    end;
-  end;
-  TFile.AppendAllText(filename, _text);
-end;
-
-procedure saveToFile(source: string; fileName: string);
-var
-  _stringList: TStringList;
-begin
-  try
-    _stringList := stringToTStringList(source);
-    _stringList.SaveToFile(fileName);
-  finally
-    FreeAndNil(_stringList);
-  end;
-end;
-
-function getCombinedPath(path1: string; path2: string): string;
-begin
-  Result := TPath.Combine(path1, path2);
-end;
-
 function getCurrentDayOfWeekAsString: string;
 var
   dayAsString: string;
@@ -895,7 +918,7 @@ var
 begin
   _date := getDateAsString(date);
   _time := TimeToStr(date);
-  _time := stringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
+  _time := StringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
   dateTimeAsString := _date + '_' + _time;
 
   Result := dateTimeAsString;
@@ -911,7 +934,7 @@ var
   dateAsString: string;
 begin
   dateAsString := DateToStr(date);
-  dateAsString := stringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
+  dateAsString := StringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
 
   Result := dateAsString;
 end;
@@ -945,11 +968,11 @@ var
   parsedXMLstring: string;
 begin
   parsedXMLstring := mainString;
-  parsedXMLstring := stringreplace(parsedXMLstring, '&', '&amp;', [rfreplaceall]);
-  parsedXMLstring := stringreplace(parsedXMLstring, '"', '&quot;', [rfreplaceall]);
-  parsedXMLstring := stringreplace(parsedXMLstring, '''', '&#39;', [rfreplaceall]);
-  parsedXMLstring := stringreplace(parsedXMLstring, '<', '&lt;', [rfreplaceall]);
-  parsedXMLstring := stringreplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
+  parsedXMLstring := StringReplace(parsedXMLstring, '&', '&amp;', [rfreplaceall]);
+  parsedXMLstring := StringReplace(parsedXMLstring, '"', '&quot;', [rfreplaceall]);
+  parsedXMLstring := StringReplace(parsedXMLstring, '''', '&#39;', [rfreplaceall]);
+  parsedXMLstring := StringReplace(parsedXMLstring, '<', '&lt;', [rfreplaceall]);
+  parsedXMLstring := StringReplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
 
   Result := parsedXMLstring;
 end;
@@ -1060,8 +1083,8 @@ function getStringWithoutLineBreaks(mainString: string; substituteString: string
 var
   stringWithoutLineBreaks: string;
 begin
-  stringWithoutLineBreaks := stringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
-  stringWithoutLineBreaks := stringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
+  stringWithoutLineBreaks := StringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
+  stringWithoutLineBreaks := StringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
 
   Result := stringWithoutLineBreaks;
 end;

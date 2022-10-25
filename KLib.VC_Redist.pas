@@ -100,43 +100,45 @@ function checkIfVC_RedistIsInstalled(version: TVC_RedistVersion): boolean;
 const
   ERR_MSG_VERSION_NOT_SPECIFIED = 'Version of Microsoft Visual C++ Redistributable not being specified.';
 var
-  _isVC_RedistInstalled: boolean;
+  VC_RedistIsInstalled: boolean;
 begin
   case version of
     TVC_RedistVersion.VC_Redist2013X86:
-      _isVC_RedistInstalled := checkIfVC_Redist2013X86IsInstalled;
+      VC_RedistIsInstalled := checkIfVC_Redist2013X86IsInstalled;
     TVC_RedistVersion.VC_Redist2013X64:
-      _isVC_RedistInstalled := checkIfVC_Redist2013X64IsInstalled;
+      VC_RedistIsInstalled := checkIfVC_Redist2013X64IsInstalled;
     TVC_RedistVersion.VC_Redist2019X64:
-      _isVC_RedistInstalled := checkIfVC_Redist2019X64IsInstalled;
+      VC_RedistIsInstalled := checkIfVC_Redist2019X64IsInstalled;
   else
     raise Exception.Create(ERR_MSG_VERSION_NOT_SPECIFIED);
   end;
 
-  Result := _isVC_RedistInstalled;
+  Result := VC_RedistIsInstalled;
 end;
 
 function checkIfVC_Redist2013IsInstalled(accordingWindowsArchitecture: boolean = true): boolean;
 var
+  VC_Redist2013IsInstalled: boolean;
+
   _windowsArchitecture: TWindowsArchitecture;
-  _result: boolean;
 begin
   if accordingWindowsArchitecture then
   begin
     _windowsArchitecture := getWindowsArchitecture;
-    _result := false;
+    VC_Redist2013IsInstalled := false;
     case _windowsArchitecture of
       TWindowsArchitecture.WindowsX86:
-        _result := checkIfVC_Redist2013X86IsInstalled;
+        VC_Redist2013IsInstalled := checkIfVC_Redist2013X86IsInstalled;
       TWindowsArchitecture.WindowsX64:
-        _result := checkIfVC_Redist2013X64IsInstalled;
+        VC_Redist2013IsInstalled := checkIfVC_Redist2013X64IsInstalled;
     end;
   end
   else
   begin
-    _result := checkIfVC_Redist2013X86IsInstalled or checkIfVC_Redist2013X64IsInstalled;
+    VC_Redist2013IsInstalled := checkIfVC_Redist2013X86IsInstalled or checkIfVC_Redist2013X64IsInstalled;
   end;
-  Result := _result;
+
+  Result := VC_Redist2013IsInstalled;
 end;
 
 function checkIfVC_Redist2013X86IsInstalled: boolean;
@@ -144,12 +146,16 @@ const
   HKEY_VCREDIST_X86 = '\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
   HKEY_VCREDIST_X86_V2 = '\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86';
 var
-  existsHKEY_VCREDIST_X86: boolean;
-  existsHKEY_VCREDIST_X86_V2: boolean;
+  VC_Redist2013X86IsInstalled: boolean;
+
+  _existsHKEY_VCREDIST_X86: boolean;
+  _existsHKEY_VCREDIST_X86_V2: boolean;
 begin
-  existsHKEY_VCREDIST_X86 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86);
-  existsHKEY_VCREDIST_X86_V2 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86_V2);
-  Result := existsHKEY_VCREDIST_X86 or existsHKEY_VCREDIST_X86_V2;
+  _existsHKEY_VCREDIST_X86 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86);
+  _existsHKEY_VCREDIST_X86_V2 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X86_V2);
+  VC_Redist2013X86IsInstalled := _existsHKEY_VCREDIST_X86 or _existsHKEY_VCREDIST_X86_V2;
+
+  Result := VC_Redist2013X86IsInstalled;
 end;
 
 function checkIfVC_Redist2013X64IsInstalled: boolean;
@@ -159,17 +165,24 @@ var
   existsHKEY_VCREDIST_X64: boolean;
 begin
   existsHKEY_VCREDIST_X64 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VCREDIST_X64);
+
   Result := existsHKEY_VCREDIST_X64;
 end;
 
 function checkIfVC_Redist2019X64IsInstalled: boolean;
 const
   HKEY_VC_REDIST2019_X64 = '\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64';
+  VCRUNTIME140_1_DLL = 'vcruntime140_1.dll';
 var
-  existsHKEY_VC_REDIST2019_X64: boolean;
+  VC_Redist2019X64IsInstalled: boolean;
+  _existsHKEY_VC_REDIST2019_X64: boolean;
+  _dllExists: boolean;
 begin
-  existsHKEY_VC_REDIST2019_X64 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VC_REDIST2019_X64);
-  Result := existsHKEY_VC_REDIST2019_X64;
+  _existsHKEY_VC_REDIST2019_X64 := checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(HKEY_VC_REDIST2019_X64);
+  _dllExists := checkIfFileExistsInSystem32(VCRUNTIME140_1_DLL);
+  VC_Redist2019X64IsInstalled := _existsHKEY_VC_REDIST2019_X64 and _dllExists;
+
+  Result := VC_Redist2019X64IsInstalled;
 end;
 
 end.

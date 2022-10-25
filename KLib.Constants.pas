@@ -62,6 +62,7 @@ const
   _1_MB_IN_BYTES = 1048576;
 
   CMD_EXE_NAME = 'cmd.exe';
+  WINDOWS_SYSTEM32_PATH = 'C:\Windows\System32';
 
   PNG_TYPE = 'PNG';
   ZIP_TYPE = 'ZIP';

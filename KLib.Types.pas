@@ -60,6 +60,8 @@ type
   TType = (_null, _string, _integer, _double, _char, _boolean);
 
   TFileSystemTimeType = (created, modified, accessed);
+
+  TWindowsServiceStartupType = (_null, delayed_auto, auto, manual, disabled);
 {$scopedenums OFF}
 
   THostPort = record

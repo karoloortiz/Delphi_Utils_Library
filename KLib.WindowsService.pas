@@ -39,6 +39,7 @@ unit KLib.WindowsService;
 interface
 
 uses
+  KLib.Types,
   Winapi.Messages, Winapi.Winsvc;
 
 const
@@ -74,13 +75,20 @@ type
     class function getCurrentState(nameService: string; nameMachine: string = ''): TWindowsServiceState;
 
     class function checkIfExists(nameService: string; nameMachine: string = ''): boolean;
+
+    class procedure setStartupTypeAsDelayedAuto(nameService: string);
+    class procedure setStartupTypeAsAuto(nameService: string);
+    class procedure setStartupTypeAsManual(nameService: string);
+    class procedure setStartupTypeAsDisabled(nameService: string);
+    class procedure setStartupType(nameService: string; startupType: TWindowsServiceStartupType);
+
     class procedure delete(nameService: string);
   end;
 
 implementation
 
 uses
-  KLib.Windows, KLib.Constants,
+  KLib.Windows, KLib.Constants, KLib.Validate, KLib.Utils,
   Winapi.Windows,
   System.Classes, System.SysUtils;
 
@@ -294,6 +302,7 @@ var
 
   _currentState: TWindowsServiceState;
 begin
+  validateThatServiceExists(nameService);
   _currentState := getCurrentState(nameService, nameMachine);
   _result := state = _currentState;
 
@@ -391,6 +400,52 @@ begin
   Result := serviceExists;
 end;
 
+class procedure TWindowsService.setStartupTypeAsDelayedAuto(nameService: string);
+begin
+  setStartupType(nameService, TWindowsServiceStartupType.delayed_auto);
+end;
+
+class procedure TWindowsService.setStartupTypeAsAuto(nameService: string);
+begin
+  setStartupType(nameService, TWindowsServiceStartupType.auto);
+end;
+
+class procedure TWindowsService.setStartupTypeAsManual(nameService: string);
+begin
+  setStartupType(nameService, TWindowsServiceStartupType.manual);
+end;
+
+class procedure TWindowsService.setStartupTypeAsDisabled(nameService: string);
+begin
+  setStartupType(nameService, TWindowsServiceStartupType.disabled);
+end;
+
+class procedure TWindowsService.setStartupType(nameService: string; startupType: TWindowsServiceStartupType);
+const
+  ERR_MSG = 'Invalid startup type';
+var
+  _cmdParams: string;
+  _startuTypeCMD: string;
+begin
+  validateThatServiceExists(nameService);
+  case startupType of
+    TWindowsServiceStartupType._null:
+      raise Exception.Create(nameService + ' : ' + ERR_MSG);
+    TWindowsServiceStartupType.delayed_auto:
+      _startuTypeCMD := 'delayed-auto';
+    TWindowsServiceStartupType.auto:
+      _startuTypeCMD := 'auto';
+    TWindowsServiceStartupType.manual:
+      _startuTypeCMD := 'demand';
+    TWindowsServiceStartupType.disabled:
+      _startuTypeCMD := 'disabled';
+  end;
+  _cmdParams := '/K SC CONFIG ' + getDoubleQuotedString(nameService) + ' START= ' + _startuTypeCMD;
+  //  shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
+  _cmdParams := 'SC CONFIG ' + getDoubleQuotedString(nameService) + ' START= ' + _startuTypeCMD;
+  shellExecuteExeAsAdmin(CMD_EXE_NAME, _cmdParams);
+end;
+
 class procedure TWindowsService.delete(nameService: string);
 const
   ERR_MSG = 'Unable to delete the Windows service.';
@@ -404,6 +459,7 @@ begin
       stop(nameService, '', true);
     end;
     _cmdParams := '/K SC DELETE ' + nameService + ' & EXIT';
+
     shellExecuteExCMDAndWait(_cmdParams, RUN_AS_ADMIN);
     if (checkIfExists(nameService)) then
     begin
