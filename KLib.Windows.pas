@@ -78,6 +78,10 @@ type
     );
 
 procedure openWebPageWithDefaultBrowser(url: string);
+function executeExeAsAdmin(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
+function executeExe(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
+function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+
 function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_NORMAL;
   exceptionIfFunctionFails: boolean = false): integer;
 
@@ -92,7 +96,6 @@ function shellExecuteExCMDAndWait(params: string; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 function shellExecuteExAndWait(fileName: string; params: string = ''; runAsAdmin: boolean = false;
   showWindowType: TShowWindowType = TShowWindowType._SW_HIDE; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
-function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
 
 function netShare(targetDir: string; netName: string = ''; netPassw: string = '';
   grantAllPermissionToEveryoneGroup: boolean = false): string;
@@ -448,6 +451,70 @@ begin
   shellExecuteOpen(url);
 end;
 
+function executeExeAsAdmin(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
+var
+  returnCode: integer;
+begin
+  returnCode := shellExecuteExeAsAdmin(fileName, params, TShowWindowType._SW_HIDE, exceptionIfFunctionFails);
+
+  Result := returnCode;
+end;
+
+function executeExe(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
+var
+  returnCode: integer;
+begin
+  returnCode := shellExecuteExe(fileName, params, TShowWindowType._SW_HIDE, exceptionIfFunctionFails);
+
+  Result := returnCode;
+end;
+
+function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
+var
+  returnCode: Longint;
+
+  _commad: String;
+  _startupInfo: TStartupInfo;
+  _processInfo: TProcessInformation;
+begin
+  returnCode := -1;
+
+  _commad := getDoubleQuotedString(fileName) + ' ' + trim(params);
+
+  FillChar(_startupInfo, sizeOf(_startupInfo), 0);
+  with _startupInfo do
+  begin
+    cb := SizeOf(TStartupInfo);
+    wShowWindow := Winapi.Windows.SW_HIDE;
+  end;
+  if not CreateProcess(nil, pchar(_commad), nil, nil, false,
+    //   CREATE_NO_WINDOW,
+    CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
+    nil, nil, _startupInfo, _processInfo) then
+  begin
+    raiseLastSysErrorMessage;
+  end;
+
+  //TODO CHECK
+  waitForMultiple(_processInfo.hProcess);
+  //  waitFor(_processInfo.hProcess);
+
+  if not GetExitCodeProcess(_processInfo.hProcess, dword(returnCode)) then //assign return code
+  begin
+    raiseLastSysErrorMessage;
+  end;
+
+  CloseHandle(_processInfo.hProcess);
+  CloseHandle(_processInfo.hThread);
+
+  if (exceptionIfReturnCodeIsNot0) and (returnCode <> 0) then
+  begin
+    raise Exception.Create(fileName + ' exit code: ' + IntToStr(returnCode));
+  end;
+
+  Result := returnCode;
+end;
+
 function shellExecuteOpen(fileName: string; params: string = ''; directory: string = ''; showWindowType: TShowWindowType = TShowWindowType._SW_NORMAL;
   exceptionIfFunctionFails: boolean = false): integer;
 var
@@ -595,52 +662,6 @@ begin
   end;
 
   CloseHandle(_shellExecuteInfo.hProcess);
-
-  if (exceptionIfReturnCodeIsNot0) and (returnCode <> 0) then
-  begin
-    raise Exception.Create(fileName + ' exit code: ' + IntToStr(returnCode));
-  end;
-
-  Result := returnCode;
-end;
-
-function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
-var
-  returnCode: Longint;
-
-  _commad: String;
-  _startupInfo: TStartupInfo;
-  _processInfo: TProcessInformation;
-begin
-  returnCode := -1;
-
-  _commad := getDoubleQuotedString(fileName) + ' ' + trim(params);
-
-  FillChar(_startupInfo, sizeOf(_startupInfo), 0);
-  with _startupInfo do
-  begin
-    cb := SizeOf(TStartupInfo);
-    wShowWindow := Winapi.Windows.SW_HIDE;
-  end;
-  if not CreateProcess(nil, pchar(_commad), nil, nil, false,
-    //   CREATE_NO_WINDOW,
-    CREATE_NEW_CONSOLE or NORMAL_PRIORITY_CLASS, //TODO check if is ok
-    nil, nil, _startupInfo, _processInfo) then
-  begin
-    raiseLastSysErrorMessage;
-  end;
-
-  //TODO CHECK
-  waitForMultiple(_processInfo.hProcess);
-  //  waitFor(_processInfo.hProcess);
-
-  if not GetExitCodeProcess(_processInfo.hProcess, dword(returnCode)) then //assign return code
-  begin
-    raiseLastSysErrorMessage;
-  end;
-
-  CloseHandle(_processInfo.hProcess);
-  CloseHandle(_processInfo.hThread);
 
   if (exceptionIfReturnCodeIsNot0) and (returnCode <> 0) then
   begin

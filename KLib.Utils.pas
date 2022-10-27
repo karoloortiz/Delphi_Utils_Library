@@ -69,6 +69,8 @@ function getValidFullPath(fileName: string): string;
 function checkIfIsAPath(path: string): boolean;
 function getCombinedPath(path1: string; path2: string): string;
 
+function getParentDir(source: string): string;
+
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
@@ -529,6 +531,16 @@ begin
   Result := TPath.Combine(path1, path2);
 end;
 
+function getParentDir(source: string): string;
+var
+  parentDir: string;
+begin
+  parentDir := getValidFullPath(source);
+  parentDir := ExtractFilePath(parentDir);
+
+  Result := parentDir;
+end;
+
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 const
   ERR_MSG = 'No files found.';
@@ -701,11 +713,15 @@ end;
 
 procedure getResourceAsFile(resource: TResource; destinationFileName: string);
 var
-  resourceStream: TResourceStream;
+  _resourceStream: TResourceStream;
+  _destinationDirPath: string;
 begin
-  resourceStream := getResourceAsStream(resource);
-  resourceStream.SaveToFile(destinationFileName);
-  resourceStream.Free;
+  _destinationDirPath := getParentDir(destinationFileName);
+  validateThatDirExists(_destinationDirPath);
+
+  _resourceStream := getResourceAsStream(resource);
+  _resourceStream.SaveToFile(destinationFileName);
+  _resourceStream.Free;
 end;
 
 function getResourceAsString(resource: TResource): string;

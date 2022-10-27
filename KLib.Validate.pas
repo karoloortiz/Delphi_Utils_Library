@@ -112,7 +112,7 @@ procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: s
 
 procedure validateThatStringIsNotEmpty(value: string; errMsg: string = 'Value is empty.');
 
-procedure exceptionIfCannotDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
+procedure validateDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
 
 procedure validateThatEditIsNotEmpty(myForm: TForm; myEdit: TCustomEdit; myEditDisplayName: string = '';
   errMsg: string = 'The field cannot be empty.');
@@ -563,7 +563,7 @@ begin
   end;
 end;
 
-procedure exceptionIfCannotDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
+procedure validateDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
 var
   _errMsg: string;
 begin

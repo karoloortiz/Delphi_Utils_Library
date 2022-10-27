@@ -62,7 +62,8 @@ const
   _1_MB_IN_BYTES = 1048576;
 
   CMD_EXE_NAME = 'cmd.exe';
-  WINDOWS_SYSTEM32_PATH = 'C:\Windows\System32';
+  //Sysnative is a virtual folder to accessing the 64-bit System32 folder from a 32-bit application
+  WINDOWS_SYSTEM32_PATH = 'C:\Windows\Sysnative';
 
   PNG_TYPE = 'PNG';
   ZIP_TYPE = 'ZIP';
