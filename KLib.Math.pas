@@ -44,6 +44,7 @@ uses
 function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
 function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
 function megabyteToByte(MB: int64): int64;
+function getMax(const a: integer; const b: integer): integer;
 
 implementation
 
@@ -73,7 +74,24 @@ var
   bytes: int64;
 begin
   bytes := MB * _1_MB_IN_BYTES;
+
   Result := bytes;
+end;
+
+function getMax(const a: integer; const b: integer): integer;
+var
+  max: integer;
+begin
+  if a >= b then
+  begin
+    max := A
+  end
+  else
+  begin
+    max := B;
+  end;
+
+  Result := max;
 end;
 
 end.

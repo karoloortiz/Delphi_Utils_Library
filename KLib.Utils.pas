@@ -1,4 +1,4 @@
-{
+﻿{
   KLib Version = 3.0
   The Clear BSD License
 
@@ -51,7 +51,8 @@ function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
 function checkIfFileIsEmpty(fileName: string): boolean;
 function checkIfFileExistsInSystem32(filename: string): boolean;
 function checkIfFileExists(fileName: string): boolean;
-procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING);
+procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING;
+  replaceFlags: TReplaceFlags = [rfReplaceAll]);
 function getTextFromFile(fileName: string): string;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
@@ -68,6 +69,7 @@ function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter:
 function getValidFullPath(fileName: string): string;
 function checkIfIsAPath(path: string): boolean;
 function getCombinedPath(path1: string; path2: string): string;
+function getTempfolderPath: string;
 
 function getParentDir(source: string): string;
 
@@ -179,7 +181,7 @@ function myDefault(typeAsString: string): Variant;
 implementation
 
 uses
-  KLib.Validate, KLib.Indy,
+  KLib.Validate, KLib.Indy, KLib.FileSearchReplacer, KLib.Math,
   Vcl.ExtCtrls,
   System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants;
 
@@ -302,31 +304,16 @@ begin
   Result := FileExists(fileName);
 end;
 
-procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING);
+procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING;
+  replaceFlags: TReplaceFlags = [rfReplaceAll]);
 var
-  _file: TStringList;
-  _stringBuilder: TStringBuilder;
-  _filenameOutput: string;
+  _fileSearchReplacer: TFileSearchReplacer;
 begin
-  validateThatFileExists(filename);
-  _filenameOutput := filenameOutput;
-
-  if _filenameOutput = '' then
-  begin
-    _filenameOutput := filename;
-  end;
-  _file := TStringList.Create;
-  _stringBuilder := TStringBuilder.Create;
+  _fileSearchReplacer := TFileSearchReplacer.Create(filename, filenameOutput);
   try
-    _file.LoadFromFile(filename);
-    _stringBuilder.Append(_file.Text);
-    _stringBuilder.Replace(oldText, newText);
-    _file.Clear;
-    _file.Text := _stringBuilder.ToString;
-    _file.SaveToFile(_filenameOutput);
+    _fileSearchReplacer.replace(oldText, newText, replaceFlags);
   finally
-    FreeAndNil(_file);
-    FreeAndNil(_stringBuilder);
+    _fileSearchReplacer.Free;
   end;
 end;
 
@@ -529,6 +516,16 @@ end;
 function getCombinedPath(path1: string; path2: string): string;
 begin
   Result := TPath.Combine(path1, path2);
+end;
+
+function getTempfolderPath: string;
+var
+  path: string;
+begin
+  path := TPath.GetTempPath;
+  path := ExcludeTrailingPathDelimiter(path);
+
+  Result := path;
 end;
 
 function getParentDir(source: string): string;
