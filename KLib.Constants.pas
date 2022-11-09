@@ -73,6 +73,7 @@ const
   JSON_TYPE = 'JSON';
   RTF_TYPE = 'RTF';
   DLL_TYPE = 'DLL';
+  SQL_TYPE = 'SQL';
 
   EVERYONE_GROUP = 'Everyone';
   USERS_GROUP = 'Users';

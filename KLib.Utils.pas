@@ -61,6 +61,7 @@ function getIndexOfDrive(drive: char): integer;
 function getDriveExe: char;
 function getDirSize(path: string): int64;
 procedure createDirIfNotExists(dirName: string);
+function checkIfDirExists(dirName: string): boolean;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 function getPathInLinuxStyle(path: string): string;
@@ -439,13 +440,18 @@ procedure createDirIfNotExists(dirName: string);
 const
   ERR_MSG = 'Error creating dir.';
 begin
-  if not DirectoryExists(dirName) then
+  if not checkIfDirExists(dirName) then
   begin
     if not CreateDir(dirName) then
     begin
       raise Exception.Create(ERR_MSG);
     end;
   end;
+end;
+
+function checkIfDirExists(dirName: string): boolean;
+begin
+  Result := DirectoryExists(dirName);
 end;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;

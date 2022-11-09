@@ -750,7 +750,7 @@ begin
     begin
       _shareExistsAlready := true;
     end;
-    if not DirectoryExists(pathSharedDir) then
+    if not checkIfDirExists(pathSharedDir) then
     begin
       _errMsg := ERR_MSG + getDoubleQuotedString(_targetDir);
       raise Exception.Create(_errMsg);
@@ -1062,7 +1062,7 @@ var
 
   errMsg: string;
 begin
-  if DirectoryExists(dirName) then
+  if checkIfDirExists(dirName) then
   begin
     ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
     with sHFileOpStruct do
@@ -1075,7 +1075,7 @@ begin
       end
     end;
     shFileOperationResult := SHFileOperation(sHFileOpStruct);
-    if (shFileOperationResult <> 0) or (DirectoryExists(dirName)) then
+    if (shFileOperationResult <> 0) or (checkIfDirExists(dirName)) then
     begin
       errMsg := ERR_MSG + dirName;
       raise Exception.Create(errMsg);

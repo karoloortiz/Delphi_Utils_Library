@@ -341,7 +341,7 @@ procedure validateThatDirNotExists(dirName: string; errMsg: string = 'Directory 
 var
   _errMsg: string;
 begin
-  if DirectoryExists(dirName) then
+  if checkIfDirExists(dirName) then
   begin
     _errMsg := getDoubleQuotedString(dirName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
@@ -352,7 +352,7 @@ procedure validateThatDirExists(dirName: string; errMsg: string = 'Directory doe
 var
   _errMsg: string;
 begin
-  if not DirectoryExists(dirName) then
+  if not checkIfDirExists(dirName) then
   begin
     _errMsg := getDoubleQuotedString(dirName) + ' : ' + errMsg;
     raise Exception.Create(_errMsg);
