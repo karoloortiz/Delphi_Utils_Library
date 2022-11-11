@@ -96,20 +96,31 @@ var
 
   _pathIniFile: string;
   _iniManipulator: TMemIniFile;
+  _defaultPropertyValueAssigned: boolean;
 begin
   _pathIniFile := getValidFullPath(fileNameIni);
   validateThatFileExists(_pathIniFile);
+  _defaultPropertyValueAssigned := defaultPropertyValue <> _DEFAULT_ERROR_STRING_VALUE_INI_FILES;
+
   _iniManipulator := TMemIniFile.Create(_pathIniFile);
-  value := _iniManipulator.ReadString(nameSection, nameProperty, defaultPropertyValue);
-  if forceDequote then
-  begin
-    value := getDequotedString(value);
+  try
+    value := _iniManipulator.ReadString(nameSection, nameProperty, _DEFAULT_ERROR_STRING_VALUE_INI_FILES);
+  finally
+    FreeAndNil(_iniManipulator);
   end;
 
-  FreeAndNil(_iniManipulator);
-  if value = _DEFAULT_ERROR_STRING_VALUE_INI_FILES then
+  if (value = _DEFAULT_ERROR_STRING_VALUE_INI_FILES) and (not _defaultPropertyValueAssigned) then
   begin
     raise Exception.Create(ERR_MSG);
+  end
+  else if ((value = EMPTY_STRING) or (value = _DEFAULT_ERROR_STRING_VALUE_INI_FILES))
+    and (_defaultPropertyValueAssigned) then
+  begin
+    value := defaultPropertyValue;
+  end
+  else if forceDequote then
+  begin
+    value := getDequotedString(value);
   end;
 
   Result := value;
