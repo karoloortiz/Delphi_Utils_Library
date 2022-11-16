@@ -78,7 +78,8 @@ type
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
-    procedure parseXML;
+    procedure escapeXML;
+    procedure escapeJSON;
     procedure doubleQuote;
     procedure singleQuote;
     procedure quote(quotedCharacter: Char);
@@ -229,9 +230,14 @@ begin
   end;
 end;
 
-procedure TMyStringHelper.parseXML;
+procedure TMyStringHelper.escapeXML;
 begin
-  Self := getParsedXMLstring(Self);
+  Self := getEscapedXMLString(Self);
+end;
+
+procedure TMyStringHelper.escapeJSON;
+begin
+  Self := getEscapedJSONString(Self);
 end;
 
 procedure TMyStringHelper.doubleQuote;

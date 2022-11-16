@@ -45,6 +45,8 @@ uses
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
+procedure createEmptyFileIfNotExists(filename: string);
+procedure createEmptyFile(filename: string);
 procedure deleteFileIfExists(fileName: string);
 function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
 function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
@@ -77,8 +79,9 @@ function getParentDir(source: string): string;
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
 
-procedure appendToFileInNewLine(filename: string; text: string); overload;
-procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE); overload;
+procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+  forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveToFile(source: string; fileName: string);
 
 function checkMD5File(fileName: string; MD5: string): boolean;
@@ -111,7 +114,8 @@ function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORM
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
-function getParsedXMLstring(mainString: string): string;
+function getEscapedXMLString(mainString: string): string;
+function getEscapedJSONString(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getQuotedString(mainString: string; quoteCharacter: Char): string;
@@ -228,6 +232,29 @@ begin
     end;
   end;
   FreeAndNil(_files);
+end;
+
+procedure createEmptyFileIfNotExists(filename: string);
+begin
+  if not checkIfFileExists(filename) then
+  begin
+    createEmptyFile(filename);
+  end;
+end;
+
+procedure createEmptyFile(filename: string);
+var
+  _handle: THandle;
+begin
+  _handle := FileCreate(fileName);
+  if _handle = INVALID_HANDLE_VALUE then
+  begin
+    raise Exception.Create('Error creating file: ' + fileName);
+  end
+  else
+  begin
+    FileClose(_handle);
+  end;
 end;
 
 procedure deleteFileIfExists(fileName: string);
@@ -608,15 +635,20 @@ begin
   Result := fileNamesList;
 end;
 
-procedure appendToFileInNewLine(filename: string; text: string);
+procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
 begin
-  appendToFile(fileName, text, FORCE);
+  appendToFile(fileName, text, forceCreationFile, FORCE);
 end;
 
-procedure appendToFile(filename: string; text: string; forceAppendInNewLine: boolean = NOT_FORCE);
+procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+  forceAppendInNewLine: boolean = NOT_FORCE);
 var
   _text: string;
 begin
+  if forceCreationFile then
+  begin
+    createEmptyFileIfNotExists(filename);
+  end;
   _text := text;
   if (checkIfFileExistsAndIsNotEmpty(filename)) then
   begin
@@ -625,6 +657,7 @@ begin
       _text := sLineBreak + _text;
     end;
   end;
+
   TFile.AppendAllText(filename, _text);
 end;
 
@@ -982,7 +1015,7 @@ begin
   Result := Now;
 end;
 
-function getParsedXMLstring(mainString: string): string;
+function getEscapedXMLString(mainString: string): string;
 var
   parsedXMLstring: string;
 begin
@@ -994,6 +1027,76 @@ begin
   parsedXMLstring := StringReplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
 
   Result := parsedXMLstring;
+end;
+
+function getEscapedJSONString(mainString: string): string;
+
+  procedure addChars(const AChars: string; var Dest: string; var AIndex: Integer); inline;
+  begin
+    System.Insert(AChars, Dest, AIndex);
+    System.Delete(Dest, AIndex + 2, 1);
+    Inc(AIndex, 2);
+  end;
+
+  procedure addUnicodeChars(const AChars: string; var Dest: string; var AIndex: Integer); inline;
+  begin
+    System.Insert(AChars, Dest, AIndex);
+    System.Delete(Dest, AIndex + 6, 1);
+    Inc(AIndex, 6);
+  end;
+
+var
+  i, ix: Integer;
+  AChar: Char;
+begin
+  Result := mainString;
+  ix := 1;
+  for i := 1 to System.Length(mainString) do
+  begin
+    AChar := mainString[i];
+    case AChar of
+      '/', '\', '"':
+        begin
+          System.Insert('\', Result, ix);
+          Inc(ix, 2);
+        end;
+      #8: //backspace \b
+        begin
+          addChars('\b', Result, ix);
+        end;
+      #9:
+        begin
+          addChars('\t', Result, ix);
+        end;
+      #10:
+        begin
+          addChars('\n', Result, ix);
+        end;
+      #12:
+        begin
+          addChars('\f', Result, ix);
+        end;
+      #13:
+        begin
+          addChars('\r', Result, ix);
+        end;
+      #0 .. #7, #11, #14 .. #31:
+        begin
+          addUnicodeChars('\u' + IntToHex(Word(AChar), 4), Result, ix);
+        end
+    else
+      begin
+        if Word(AChar) > 127 then
+        begin
+          addUnicodeChars('\u' + IntToHex(Word(AChar), 4), Result, ix);
+        end
+        else
+        begin
+          Inc(ix);
+        end;
+      end;
+    end;
+  end;
 end;
 
 function getDoubleQuotedString(mainString: string): string;

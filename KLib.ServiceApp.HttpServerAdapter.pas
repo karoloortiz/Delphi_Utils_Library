@@ -39,7 +39,7 @@ unit KLib.ServiceApp.HttpServerAdapter;
 interface
 
 uses
-  KLib.ServiceAppPort, KLib.Types, KLib.MyIdHTTPServer,
+  KLib.ServiceAppPort, KLib.Types, KLib.MyIdHTTPServer, KLib.Constants,
   Winapi.Messages,
   System.Classes;
 
@@ -53,13 +53,16 @@ type
   private
     _handle: THandle;
     procedure WndMethod(var Msg: TMessage);
+    function _get_defaultServerErrorJSONResponse: string;
+    procedure _set_defaultServerErrorJSONResponse(value: string);
   protected
     rejectCallBack: TCallBack;
+    property defaultServerErrorJSONResponse: string read _get_defaultServerErrorJSONResponse write _set_defaultServerErrorJSONResponse;
   public
     _server: TMyIdHTTPServer;
 
     constructor Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-      rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
+      rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil); overload;
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -76,15 +79,16 @@ type
 implementation
 
 uses
-  KLib.Constants, KLib.Utils,
+  KLib.Utils,
   Winapi.Windows,
   System.SysUtils;
 
 constructor THttpServerAdapter.Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-  rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil);
 begin
   Self.rejectCallBack := rejectCallBack;
-  _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, rejectCallBack, onChangeStatus);
+  _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, rejectCallBack, defaultServerErrorJSONResponse,
+    onChangeStatus);
   _handle := AllocateHWnd(WndMethod);
 end;
 
@@ -133,6 +137,16 @@ end;
 procedure THttpServerAdapter.WndMethod(var Msg: TMessage);
 begin
   Msg.Result := DefWindowProc(_handle, Msg.Msg, Msg.wParam, Msg.lParam);
+end;
+
+function THttpServerAdapter._get_defaultServerErrorJSONResponse: string;
+begin
+  Result := _server.defaultServerErrorJSONResponse;
+end;
+
+procedure THttpServerAdapter._set_defaultServerErrorJSONResponse(value: string);
+begin
+  _server.defaultServerErrorJSONResponse := value;
 end;
 
 destructor THttpServerAdapter.Destroy;

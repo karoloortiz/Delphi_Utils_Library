@@ -181,32 +181,59 @@ type
     class function getJSONObject<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>
       (myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): TJSONObject; overload;
 
-    class function getParsedJSON<T>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(jsonAsString: string): T; overload;
-    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(jsonAsString: string): T; overload;
+    class function getParsedJSON<T>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(JSONAsString: string): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(JSONAsString: string): T; overload;
+
+    class function getParsedJSON<T>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(JSONValue: TJSONValue): T; overload;
+    class function getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(JSONValue: TJSONValue): T; overload;
   end;
 
 implementation
@@ -368,14 +395,14 @@ end;
 class function TJSONGenerics.getJSONAsString<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>
   (myRecord: T; ignoreEmptyStrings: boolean = IGNORE_EMPTY_STRINGS): string;
 var
-  jsonAsString: string;
+  JSONAsString: string;
   _JSONObject: TJSONObject;
 begin
   _JSONObject := getJSONObject<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(myRecord, ignoreEmptyStrings);
-  jsonAsString := _JSONObject.ToString;
+  JSONAsString := _JSONObject.ToString;
   _JSONObject.Free;
 
-  Result := jsonAsString;
+  Result := JSONAsString;
 end;
 
 class function TJSONGenerics.getJSONObject<T>
@@ -1112,134 +1139,278 @@ end;
 //          //          L := 2;
 //          //          DynArraySetLength(PPointer(@_record)^, TypeInfo(Z), 1, @L);
 
-class function TJSONGenerics.getParsedJSON<T>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T>(JSONAsString);
 end;
 
-class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(jsonAsString: string): T;
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(JSONAsString: string): T;
 begin
-  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, T>(jsonAsString);
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, T>(JSONAsString);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(JSONAsString: string): T;
+var
+  _result: T;
+
+  _JSONFile: TBytes;
+  _JSONValue: TJSONValue;
+begin
+  _JSONFile := TEncoding.UTF8.GetBytes(JSONAsString);
+  _JSONValue := TJSONObject.ParseJSONValue(_JSONFile, 0);
+  try
+    _result := TJSONGenerics.getParsedJSON
+      <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_JSONValue);
+  finally
+    FreeAndNil(_JSONValue);
+  end;
+
+  Result := _result;
+end;
+
+class function TJSONGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T>(JSONValue);
+end;
+
+class function TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(JSONValue: TJSONValue): T;
+begin
+  Result := TJSONGenerics.getParsedJSON<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, T>(JSONValue);
 end;
 
 class function TJSONGenerics.getParsedJSON
   <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>
-  (jsonAsString: string): T;
+  (JSONValue: TJSONValue): T;
 var
   _record: T;
 
@@ -1256,7 +1427,7 @@ var
   _rttiField: TRttiField;
 
   _JSONFile: TBytes;
-  _JSONMain: TJSONValue;
+  _JSONMainValue: TJSONValue;
   _string: string;
   _integer: integer;
   _double: double;
@@ -1300,14 +1471,13 @@ var
 
   _i: integer;
 begin
-  _record := KLib.Generics.TGenerics.getDefault<T>;
+  _JSONMainValue := JSONValue.Clone as TJSONValue;
 
-  _JSONFile := TEncoding.ASCII.GetBytes(jsonAsString);
-  _JSONMain := TJSONObject.ParseJSONValue(_JSONFile, 0);
+  _record := KLib.Generics.TGenerics.getDefault<T>;
 
   _rttiContext := TRttiContext.Create;
   try
-    if Assigned(_JSONMain) then
+    if Assigned(_JSONMainValue) then
     begin
       _rttiType := _rttiContext.GetType(TypeInfo(T));
 
@@ -1332,28 +1502,28 @@ begin
         begin
           if (_propertyType = 'string') or (_propertyType = 'Char') then
           begin
-            if _JSONMain.TryGetValue(_propertyName, _string) then
+            if _JSONMainValue.TryGetValue(_propertyName, _string) then
             begin
               _propertyValue := _string;
             end;
           end
           else if (_propertyType = 'Integer') or (_propertyType = 'Word') then
           begin
-            if _JSONMain.TryGetValue(_propertyName, _integer) then
+            if _JSONMainValue.TryGetValue(_propertyName, _integer) then
             begin
               _propertyValue := _integer;
             end;
           end
           else if _propertyType = 'Double' then
           begin
-            if _JSONMain.TryGetValue(_propertyName, _double) then
+            if _JSONMainValue.TryGetValue(_propertyName, _double) then
             begin
               _propertyValue := _double;
             end;
           end
           else if _propertyType = 'Boolean' then
           begin
-            if _JSONMain.TryGetValue(_propertyName, _boolean) then
+            if _JSONMainValue.TryGetValue(_propertyName, _boolean) then
             begin
               _propertyValue := _boolean;
             end;
@@ -1361,7 +1531,7 @@ begin
           else if _rttiField.FieldType.TypeKind = tkDynArray then
           begin
             try
-              _subArray := _JSONMain.GetValue<TJSONArray>(_propertyName);
+              _subArray := _JSONMainValue.GetValue<TJSONArray>(_propertyName);
               SetLength(_arrayOfTValue, _subArray.Count);
               for _i := 0 to _subArray.Count - 1 do
               begin
@@ -1394,151 +1564,151 @@ begin
                 if _arrayType = _rttiContext.GetType(TypeInfo(T)).ToString then
                 begin
                   _T_sub := TJSONGenerics.getParsedJSON
-                    <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_subArray.Items[_i].ToString);
+                    <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_subArray.Items[_i]);
                   TValue.Make(@_T_sub, TypeInfo(T), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(U)).ToString then
                 begin
                   _U_sub := TJSONGenerics.getParsedJSON
-                    <U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>(_subArray.Items[_i].ToString);
+                    <U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>(_subArray.Items[_i]);
                   TValue.Make(@_U_sub, TypeInfo(U), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(V)).ToString then
                 begin
                   _V_sub := TJSONGenerics.getParsedJSON
-                    <V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>(_subArray.Items[_i].ToString);
+                    <V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>(_subArray.Items[_i]);
                   TValue.Make(@_V_sub, TypeInfo(V), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(X)).ToString then
                 begin
                   _X_sub := TJSONGenerics.getParsedJSON
-                    <X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W>(_subArray.Items[_i].ToString);
+                    <X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W>(_subArray.Items[_i]);
                   TValue.Make(@_X_sub, TypeInfo(X), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(Y)).ToString then
                 begin
                   _Y_sub := TJSONGenerics.getParsedJSON
-                    <Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X>(_subArray.Items[_i].ToString);
+                    <Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X>(_subArray.Items[_i]);
                   TValue.Make(@_Y_sub, TypeInfo(Y), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(Z)).ToString then
                 begin
                   _Z_sub := TJSONGenerics.getParsedJSON
-                    <Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y>(_subArray.Items[_i].ToString);
+                    <Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y>(_subArray.Items[_i]);
                   TValue.Make(@_Z_sub, TypeInfo(Z), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(A)).ToString then
                 begin
                   _A_sub := TJSONGenerics.getParsedJSON
-                    <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>(_subArray.Items[_i].ToString);
+                    <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>(_subArray.Items[_i]);
                   TValue.Make(@_A_sub, TypeInfo(A), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(B)).ToString then
                 begin
                   _B_sub := TJSONGenerics.getParsedJSON
-                    <B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A>(_subArray.Items[_i].ToString);
+                    <B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A>(_subArray.Items[_i]);
                   TValue.Make(@_B_sub, TypeInfo(B), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(C)).ToString then
                 begin
                   _C_sub := TJSONGenerics.getParsedJSON
-                    <C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B>(_subArray.Items[_i].ToString);
+                    <C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B>(_subArray.Items[_i]);
                   TValue.Make(@_C_sub, TypeInfo(C), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(D)).ToString then
                 begin
                   _D_sub := TJSONGenerics.getParsedJSON
-                    <D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C>(_subArray.Items[_i].ToString);
+                    <D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C>(_subArray.Items[_i]);
                   TValue.Make(@_D_sub, TypeInfo(D), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(E)).ToString then
                 begin
                   _E_sub := TJSONGenerics.getParsedJSON
-                    <E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D>(_subArray.Items[_i].ToString);
+                    <E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D>(_subArray.Items[_i]);
                   TValue.Make(@_E_sub, TypeInfo(E), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(F)).ToString then
                 begin
                   _F_sub := TJSONGenerics.getParsedJSON
-                    <F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E>(_subArray.Items[_i].ToString);
+                    <F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E>(_subArray.Items[_i]);
                   TValue.Make(@_F_sub, TypeInfo(F), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(G)).ToString then
                 begin
                   _G_sub := TJSONGenerics.getParsedJSON
-                    <G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F>(_subArray.Items[_i].ToString);
+                    <G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F>(_subArray.Items[_i]);
                   TValue.Make(@_G_sub, TypeInfo(G), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(H)).ToString then
                 begin
                   _H_sub := TJSONGenerics.getParsedJSON
-                    <H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(_subArray.Items[_i].ToString);
+                    <H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(_subArray.Items[_i]);
                   TValue.Make(@_H_sub, TypeInfo(H), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(I)).ToString then
                 begin
                   _I_sub := TJSONGenerics.getParsedJSON
-                    <I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(_subArray.Items[_i].ToString);
+                    <I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(_subArray.Items[_i]);
                   TValue.Make(@_I_sub, TypeInfo(I), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(J)).ToString then
                 begin
                   _J_sub := TJSONGenerics.getParsedJSON
-                    <J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(_subArray.Items[_i].ToString);
+                    <J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(_subArray.Items[_i]);
                   TValue.Make(@_J_sub, TypeInfo(J), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(K)).ToString then
                 begin
                   _K_sub := TJSONGenerics.getParsedJSON
-                    <K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(_subArray.Items[_i].ToString);
+                    <K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(_subArray.Items[_i]);
                   TValue.Make(@_K_sub, TypeInfo(K), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(L)).ToString then
                 begin
                   _L_sub := TJSONGenerics.getParsedJSON
-                    <L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(_subArray.Items[_i].ToString);
+                    <L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(_subArray.Items[_i]);
                   TValue.Make(@_L_sub, TypeInfo(L), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(M)).ToString then
                 begin
                   _M_sub := TJSONGenerics.getParsedJSON
-                    <M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(_subArray.Items[_i].ToString);
+                    <M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(_subArray.Items[_i]);
                   TValue.Make(@_M_sub, TypeInfo(M), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(N)).ToString then
                 begin
                   _N_sub := TJSONGenerics.getParsedJSON
-                    <N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(_subArray.Items[_i].ToString);
+                    <N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(_subArray.Items[_i]);
                   TValue.Make(@_N_sub, TypeInfo(N), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(O)).ToString then
                 begin
                   _O_sub := TJSONGenerics.getParsedJSON
-                    <O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(_subArray.Items[_i].ToString);
+                    <O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(_subArray.Items[_i]);
                   TValue.Make(@_O_sub, TypeInfo(O), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(P)).ToString then
                 begin
                   _P_sub := TJSONGenerics.getParsedJSON
-                    <P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(_subArray.Items[_i].ToString);
+                    <P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(_subArray.Items[_i]);
                   TValue.Make(@_P_sub, TypeInfo(P), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(Q)).ToString then
                 begin
                   _Q_sub := TJSONGenerics.getParsedJSON
-                    <Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(_subArray.Items[_i].ToString);
+                    <Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(_subArray.Items[_i]);
                   TValue.Make(@_Q_sub, TypeInfo(Q), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(R)).ToString then
                 begin
                   _R_sub := TJSONGenerics.getParsedJSON
-                    <R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(_subArray.Items[_i].ToString);
+                    <R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(_subArray.Items[_i]);
                   TValue.Make(@_R_sub, TypeInfo(R), _newTValue);
                 end
                 else if _arrayType = _rttiContext.GetType(TypeInfo(S)).ToString then
                 begin
                   _S_sub := TJSONGenerics.getParsedJSON
-                    <S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(_subArray.Items[_i].ToString);
+                    <S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(_subArray.Items[_i]);
                   TValue.Make(@_S_sub, TypeInfo(S), _newTValue);
                 end;
 
@@ -1661,156 +1831,156 @@ begin
           else
           begin
             try
-              _subObject := _JSONMain.GetValue<TJSONObject>(_propertyName);
+              _subObject := _JSONMainValue.GetValue<TJSONObject>(_propertyName);
               _propertyExists := true;
               if _propertyType = _rttiContext.GetType(TypeInfo(T)).ToString then
               begin
                 _T_sub := TJSONGenerics.getParsedJSON
-                  <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_subObject.ToString);
+                  <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_subObject);
                 TValue.Make(@_T_sub, TypeInfo(T), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(U)).ToString then
               begin
                 _U_sub := TJSONGenerics.getParsedJSON
-                  <U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>(_subObject.ToString);
+                  <U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T>(_subObject);
                 TValue.Make(@_U_sub, TypeInfo(U), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(V)).ToString then
               begin
                 _V_sub := TJSONGenerics.getParsedJSON
-                  <V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>(_subObject.ToString);
+                  <V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U>(_subObject);
                 TValue.Make(@_V_sub, TypeInfo(V), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(X)).ToString then
               begin
                 _X_sub := TJSONGenerics.getParsedJSON
-                  <X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W>(_subObject.ToString);
+                  <X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W>(_subObject);
                 TValue.Make(@_X_sub, TypeInfo(X), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(Y)).ToString then
               begin
                 _Y_sub := TJSONGenerics.getParsedJSON
-                  <Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X>(_subObject.ToString);
+                  <Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X>(_subObject);
                 TValue.Make(@_Y_sub, TypeInfo(Y), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(Z)).ToString then
               begin
                 _Z_sub := TJSONGenerics.getParsedJSON
-                  <Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y>(_subObject.ToString);
+                  <Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y>(_subObject);
                 TValue.Make(@_Z_sub, TypeInfo(Z), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(A)).ToString then
               begin
                 _A_sub := TJSONGenerics.getParsedJSON
-                  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>(_subObject.ToString);
+                  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>(_subObject);
                 TValue.Make(@_A_sub, TypeInfo(A), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(B)).ToString then
               begin
                 _B_sub := TJSONGenerics.getParsedJSON
-                  <B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A>(_subObject.ToString);
+                  <B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A>(_subObject);
                 TValue.Make(@_B_sub, TypeInfo(B), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(C)).ToString then
               begin
                 _C_sub := TJSONGenerics.getParsedJSON
-                  <C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B>(_subObject.ToString);
+                  <C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B>(_subObject);
                 TValue.Make(@_C_sub, TypeInfo(C), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(D)).ToString then
               begin
                 _D_sub := TJSONGenerics.getParsedJSON
-                  <D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C>(_subObject.ToString);
+                  <D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C>(_subObject);
                 TValue.Make(@_D_sub, TypeInfo(D), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(E)).ToString then
               begin
                 _E_sub := TJSONGenerics.getParsedJSON
-                  <E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D>(_subObject.ToString);
+                  <E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D>(_subObject);
                 TValue.Make(@_E_sub, TypeInfo(E), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(F)).ToString then
               begin
                 _F_sub := TJSONGenerics.getParsedJSON
-                  <F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E>(_subObject.ToString);
+                  <F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E>(_subObject);
                 TValue.Make(@_F_sub, TypeInfo(F), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(G)).ToString then
               begin
                 _G_sub := TJSONGenerics.getParsedJSON
-                  <G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F>(_subObject.ToString);
+                  <G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F>(_subObject);
                 TValue.Make(@_G_sub, TypeInfo(G), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(H)).ToString then
               begin
                 _H_sub := TJSONGenerics.getParsedJSON
-                  <H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(_subObject.ToString);
+                  <H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G>(_subObject);
                 TValue.Make(@_H_sub, TypeInfo(H), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(I)).ToString then
               begin
                 _I_sub := TJSONGenerics.getParsedJSON
-                  <I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(_subObject.ToString);
+                  <I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H>(_subObject);
                 TValue.Make(@_I_sub, TypeInfo(I), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(J)).ToString then
               begin
                 _J_sub := TJSONGenerics.getParsedJSON
-                  <J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(_subObject.ToString);
+                  <J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I>(_subObject);
                 TValue.Make(@_J_sub, TypeInfo(J), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(K)).ToString then
               begin
                 _K_sub := TJSONGenerics.getParsedJSON
-                  <K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(_subObject.ToString);
+                  <K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J>(_subObject);
                 TValue.Make(@_K_sub, TypeInfo(K), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(L)).ToString then
               begin
                 _L_sub := TJSONGenerics.getParsedJSON
-                  <L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(_subObject.ToString);
+                  <L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K>(_subObject);
                 TValue.Make(@_L_sub, TypeInfo(L), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(M)).ToString then
               begin
                 _M_sub := TJSONGenerics.getParsedJSON
-                  <M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(_subObject.ToString);
+                  <M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L>(_subObject);
                 TValue.Make(@_M_sub, TypeInfo(M), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(N)).ToString then
               begin
                 _N_sub := TJSONGenerics.getParsedJSON
-                  <N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(_subObject.ToString);
+                  <N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M>(_subObject);
                 TValue.Make(@_N_sub, TypeInfo(N), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(O)).ToString then
               begin
                 _O_sub := TJSONGenerics.getParsedJSON
-                  <O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(_subObject.ToString);
+                  <O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(_subObject);
                 TValue.Make(@_O_sub, TypeInfo(O), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(P)).ToString then
               begin
                 _P_sub := TJSONGenerics.getParsedJSON
-                  <P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(_subObject.ToString);
+                  <P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(_subObject);
                 TValue.Make(@_P_sub, TypeInfo(P), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(Q)).ToString then
               begin
                 _Q_sub := TJSONGenerics.getParsedJSON
-                  <Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(_subObject.ToString);
+                  <Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P>(_subObject);
                 TValue.Make(@_Q_sub, TypeInfo(Q), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(R)).ToString then
               begin
                 _R_sub := TJSONGenerics.getParsedJSON
-                  <R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(_subObject.ToString);
+                  <R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(_subObject);
                 TValue.Make(@_R_sub, TypeInfo(R), _newTValue);
               end
               else if _propertyType = _rttiContext.GetType(TypeInfo(S)).ToString then
               begin
                 _S_sub := TJSONGenerics.getParsedJSON
-                  <S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(_subObject.ToString);
+                  <S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R>(_subObject);
                 TValue.Make(@_S_sub, TypeInfo(S), _newTValue);
               end
               else
@@ -1845,7 +2015,7 @@ begin
   finally
     begin
       _rttiContext.Free;
-      FreeAndNil(_JSONMain);
+      FreeAndNil(_JSONMainValue);
     end;
   end;
 

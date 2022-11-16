@@ -55,8 +55,8 @@ unit KLib.MyIdHTTPServer;
 interface
 
 uses
-  KLib.MyEvent, KLib.Types,
   KLib.Generics.JSON, KLib.Generics.Attributes,
+  KLib.MyEvent, KLib.Types, KLib.Constants,
   IdHTTPServer, IdContext, IdCustomHTTPServer;
 
 type
@@ -91,10 +91,12 @@ type
     rejectCallBack: TCallBack;
     onChangeStatus: TCallBack;
     defaultServerErrorResponse: TDefaultServerErrorResponse;
+    defaultServerErrorJSONResponse: string;
     property status: TStatus read _status write _set_status;
 
     constructor create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
-      rejectCallBack: TCallBack = nil; onChangeStatus: TCallBack = nil); overload;
+      rejectCallBack: TCallBack = nil; defaultServerErrorJSONResponse: string = EMPTY_STRING;
+      onChangeStatus: TCallBack = nil); overload;
     procedure Alisten(port: integer = 0);
     procedure listen(port: integer = 0);
     procedure stop(raiseExceptionEnabled: boolean = true);
@@ -109,16 +111,17 @@ type
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, KLib.Constants,
+  KLib.Validate, KLib.Utils,
   System.SysUtils;
 
 constructor TMyIdHTTPServer.create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
-  rejectCallBack: TCallBack = nil; onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack = nil; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil);
 begin
   inherited Create(nil);
   Self._myOnCommandGetAnonymousMethod := myOnCommandGetAnonymousMethod;
   Self.DefaultPort := port;
   Self.rejectCallBack := rejectCallBack;
+  Self.defaultServerErrorJSONResponse := defaultServerErrorJSONResponse;
   Self.onChangeStatus := onChangeStatus;
 
   Self.OnCommandGet := Self.myOnCommandGet;
@@ -216,6 +219,8 @@ begin
 end;
 
 procedure TMyIdHTTPServer.myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
+var
+  _JSONResponse: string;
 begin
   if Assigned(_myOnCommandGetAnonymousMethod) then
   begin
@@ -226,9 +231,17 @@ begin
       begin
         AResponseInfo.ResponseNo := 500;
         AResponseInfo.ContentType := APPLICATION_JSON_CONTENT_TYPE;
-        defaultServerErrorResponse.timestamp := getCurrentDateTimeWithFormattingAsString(DATETIME_FORMAT);
-        AResponseInfo.ContentText :=
-          TJSONGenerics.getJSONAsString<TDefaultServerErrorResponse>(defaultServerErrorResponse, NOT_IGNORE_EMPTY_STRINGS);
+
+        if defaultServerErrorJSONResponse <> EMPTY_STRING then
+        begin
+          _JSONResponse := defaultServerErrorJSONResponse;
+        end
+        else
+        begin
+          defaultServerErrorResponse.timestamp := getCurrentDateTimeWithFormattingAsString(DATETIME_FORMAT);
+          _JSONResponse := TJSONGenerics.getJSONAsString<TDefaultServerErrorResponse>(defaultServerErrorResponse, NOT_IGNORE_EMPTY_STRINGS);
+        end;
+        AResponseInfo.ContentText := _JSONResponse;
 
         if Assigned(rejectCallBack) then
         begin

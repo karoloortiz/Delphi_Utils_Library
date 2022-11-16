@@ -136,8 +136,6 @@ procedure myMoveFile(sourceFileName: string; targetFileName: string);
 procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
 procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
-procedure createEmptyFileIfNotExists(filename: string);
-procedure createEmptyFile(filename: string);
 
 function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
 function getParentDir(source: string): string;
@@ -1147,29 +1145,6 @@ begin
   Append(_file);
   Write(_file, _text);
   CloseFile(_file);
-end;
-
-procedure createEmptyFileIfNotExists(filename: string);
-begin
-  if not checkIfFileExists(filename) then
-  begin
-    createEmptyFile(filename);
-  end;
-end;
-
-procedure createEmptyFile(filename: string);
-var
-  _handle: THandle;
-begin
-  _handle := FileCreate(fileName);
-  if _handle = INVALID_HANDLE_VALUE then
-  begin
-    raise Exception.Create('Error creating file: ' + fileName);
-  end
-  else
-  begin
-    FileClose(_handle);
-  end;
 end;
 
 function checkIfIsWindowsSubDir(subDir: string; mainDir: string): boolean;
