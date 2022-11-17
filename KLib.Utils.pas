@@ -114,6 +114,7 @@ function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORM
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
+function getEscapedMySQLString(mainString: string): string;
 function getEscapedXMLString(mainString: string): string;
 function getEscapedJSONString(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
@@ -156,6 +157,8 @@ function checkIfRegexIsValid(text: string; regex: string): boolean;
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 
+function StringReplace(mainString: string; OldPattern: array of string; NewPattern: array of string; Flags: TReplaceFlags): string; overload;
+function StringReplace(const SourceString, OldPattern, NewPattern: string; Flags: TReplaceFlags): string; overload;
 function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): integer;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
@@ -499,7 +502,7 @@ function getPathInLinuxStyle(path: string): string;
 var
   pathInLinuxStyle: string;
 begin
-  pathInLinuxStyle := StringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
+  pathInLinuxStyle := KLib.Utils.StringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
 
   Result := pathInLinuxStyle;
 end;
@@ -848,7 +851,7 @@ begin
   begin
     if _number.StartsWith('0039') then
     begin
-      _number := StringReplace(_number, '0039', '+39', []);
+      _number := KLib.Utils.StringReplace(_number, '0039', '+39', []);
     end;
 
     if not _number.StartsWith('+') then
@@ -858,7 +861,7 @@ begin
 
     if not _number.StartsWith('+39') then
     begin
-      _number := StringReplace(_number, '+', '+39', []);
+      _number := KLib.Utils.StringReplace(_number, '+', '+39', []);
     end;
 
     telephoneNumber := '+';
@@ -970,7 +973,7 @@ var
 begin
   _date := getDateAsString(date);
   _time := TimeToStr(date);
-  _time := StringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
+  _time := KLib.Utils.StringReplace(_time, ':', EMPTY_STRING, [rfReplaceAll, rfIgnoreCase]);
   dateTimeAsString := _date + '_' + _time;
 
   Result := dateTimeAsString;
@@ -986,7 +989,7 @@ var
   dateAsString: string;
 begin
   dateAsString := DateToStr(date);
-  dateAsString := StringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
+  dateAsString := KLib.Utils.StringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
 
   Result := dateAsString;
 end;
@@ -1015,16 +1018,23 @@ begin
   Result := Now;
 end;
 
+function getEscapedMySQLString(mainString: string): string;
+begin
+  Result := StringReplace(mainString,
+    ['\', #39, #34, #0, #10, #13, #26], ['\\', '\'#39, '\'#34, '\0', '\n', '\r', '\Z'],
+    [rfReplaceAll]);
+end;
+
 function getEscapedXMLString(mainString: string): string;
 var
   parsedXMLstring: string;
 begin
   parsedXMLstring := mainString;
-  parsedXMLstring := StringReplace(parsedXMLstring, '&', '&amp;', [rfreplaceall]);
-  parsedXMLstring := StringReplace(parsedXMLstring, '"', '&quot;', [rfreplaceall]);
-  parsedXMLstring := StringReplace(parsedXMLstring, '''', '&#39;', [rfreplaceall]);
-  parsedXMLstring := StringReplace(parsedXMLstring, '<', '&lt;', [rfreplaceall]);
-  parsedXMLstring := StringReplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
+  parsedXMLstring := KLib.Utils.StringReplace(parsedXMLstring, '&', '&amp;', [rfreplaceall]);
+  parsedXMLstring := KLib.Utils.StringReplace(parsedXMLstring, '"', '&quot;', [rfreplaceall]);
+  parsedXMLstring := KLib.Utils.StringReplace(parsedXMLstring, '''', '&#39;', [rfreplaceall]);
+  parsedXMLstring := KLib.Utils.StringReplace(parsedXMLstring, '<', '&lt;', [rfreplaceall]);
+  parsedXMLstring := KLib.Utils.StringReplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
 
   Result := parsedXMLstring;
 end;
@@ -1205,8 +1215,8 @@ function getStringWithoutLineBreaks(mainString: string; substituteString: string
 var
   stringWithoutLineBreaks: string;
 begin
-  stringWithoutLineBreaks := StringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
-  stringWithoutLineBreaks := StringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
+  stringWithoutLineBreaks := KLib.Utils.StringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
+  stringWithoutLineBreaks := KLib.Utils.StringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
 
   Result := stringWithoutLineBreaks;
 end;
@@ -1530,6 +1540,26 @@ begin
   Result := _result;
 end;
 
+function StringReplace(mainString: string; OldPattern: array of string; NewPattern: array of string; Flags: TReplaceFlags): string;
+var
+  stringReplaced: string;
+  i: integer;
+begin
+  Assert(Length(OldPattern) = (Length(NewPattern)));
+  stringReplaced := mainString;
+  for i := Low(OldPattern) to High(OldPattern) do
+  begin
+    stringReplaced := KLib.Utils.StringReplace(stringReplaced, OldPattern[i], NewPattern[i], Flags);
+  end;
+
+  Result := stringReplaced;
+end;
+
+function StringReplace(const SourceString, OldPattern, NewPattern: string; Flags: TReplaceFlags): string;
+begin
+  Result := System.SysUtils.StringReplace(SourceString, OldPattern, NewPattern, Flags);
+end;
+
 function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): integer;
 var
   _subString: string;
@@ -1556,7 +1586,7 @@ var
 begin
   doubleAsString := FloatToStr(value);
   _FloatToStrDecimalSeparator := getFloatToStrDecimalSeparator;
-  doubleAsString := StringReplace(doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
+  doubleAsString := KLib.Utils.StringReplace(doubleAsString, _FloatToStrDecimalSeparator, decimalSeparator, [rfReplaceAll]);
 
   Result := doubleAsString;
 end;
