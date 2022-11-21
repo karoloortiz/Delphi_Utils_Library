@@ -124,14 +124,16 @@ function checkIfWindowsGroupOrUserExists(windowsGroupOrUser: string): boolean;
 procedure createDesktopLink(fileName: string; nameDesktopLink: string; description: string);
 function getDesktopDirPath: string;
 
-procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
-procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = true);
-procedure createHideDir(dirName: string; forceDelete: boolean = false);
-procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
+procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = NOT_FORCE_OVERWRITE);
+procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = FORCE_SILENT);
+procedure createHideDir(dirName: string; forceDelete: boolean = FORCE_DELETE);
+procedure deleteDirectoryIfExists(dirName: string; silent: boolean = FORCE_SILENT);
 
 procedure moveFileIntoTargetDir(sourceFileName: string; targetDir: string);
 
 procedure myMoveFile(sourceFileName: string; targetFileName: string);
+
+procedure renameDir(oldDir: string; newDir: string; silent: boolean = FORCE_SILENT);
 
 procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
 procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
@@ -166,16 +168,16 @@ function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
 
-procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
-procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = MODAL_MODE);
+procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = MODAL_MODE);
 
 procedure raiseLastSysErrorMessage;
 function getLastSysErrorMessage: string;
 
 function getLocaleDecimalSeparator: char;
 
-procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
-procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 
 //###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
 function checkIfCurrentProcessIsAServiceProcess: boolean;
@@ -972,9 +974,7 @@ begin
   Result := desktopDirPath;
 end;
 
-procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = false);
-const
-  ERR_MSG = 'Cannot rename: ';
+procedure copyDirIntoTargetDir(sourceDir: string; targetDir: string; forceOverwrite: boolean = NOT_FORCE_OVERWRITE);
 var
   _parentDirTargetDir: string;
   _sourceDirName: string;
@@ -995,27 +995,23 @@ begin
   _sourceDirName := ExtractFileName(getValidFullPathInWindowsStyle(sourceDir));
   _tempTargetDir := getCombinedPath(_parentDirTargetDir, _sourceDirName);
   copyDir(sourceDir, _parentDirTargetDir);
-  if not RenameFile(_tempTargetDir, targetDir) then
-  begin
-    _err_msg := ERR_MSG + getDoubleQuotedString(_tempTargetDir);
-    raise Exception.Create(_err_msg);
-  end;
+  renameDir(_tempTargetDir, targetDir);
 end;
 
 const
   SILENT_FLAGS: FILEOP_FLAGS = FOF_SILENT or FOF_NOCONFIRMATION;
 
-procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = true);
+procedure copyDir(sourceDir: string; destinationDir: string; silent: boolean = FORCE_SILENT);
 var
-  sHFileOpStruct: TSHFileOpStruct;
-  shFileOperationResult: integer;
+  _sHFileOpStruct: TSHFileOpStruct;
+  _shFileOperationResult: integer;
 begin
-  ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
-  with sHFileOpStruct do
+  ZeroMemory(@_sHFileOpStruct, SizeOf(_sHFileOpStruct));
+  with _sHFileOpStruct do
   begin
     wFunc := FO_COPY;
-    pFrom := PChar(sourceDir + #0);
-    pTo := PChar(destinationDir);
+    pFrom := PChar(sourceDir + #0#0);
+    pTo := PChar(destinationDir + #0#0);
     if silent then
     begin
       fFlags := FOF_FILESONLY or SILENT_FLAGS;
@@ -1025,14 +1021,14 @@ begin
       fFlags := FOF_FILESONLY;
     end;
   end;
-  shFileOperationResult := ShFileOperation(sHFileOpStruct);
-  if shFileOperationResult <> 0 then
+  _shFileOperationResult := ShFileOperation(_sHFileOpStruct);
+  if _shFileOperationResult <> 0 then
   begin
     raise Exception.Create('Unable to copy ' + sourceDir + ' to ' + destinationDir);
   end;
 end;
 
-procedure createHideDir(dirName: string; forceDelete: boolean = false);
+procedure createHideDir(dirName: string; forceDelete: boolean = FORCE_DELETE);
 const
   ERR_MSG = 'Error creating hide dir.';
 begin
@@ -1051,32 +1047,32 @@ begin
   end;
 end;
 
-procedure deleteDirectoryIfExists(dirName: string; silent: boolean = true);
+procedure deleteDirectoryIfExists(dirName: string; silent: boolean = FORCE_SILENT);
 const
   ERR_MSG = 'Unable to delete :';
 var
-  sHFileOpStruct: TSHFileOpStruct;
-  shFileOperationResult: integer;
+  _sHFileOpStruct: TSHFileOpStruct;
+  _shFileOperationResult: integer;
 
-  errMsg: string;
+  _errMsg: string;
 begin
   if checkIfDirExists(dirName) then
   begin
-    ZeroMemory(@sHFileOpStruct, SizeOf(sHFileOpStruct));
-    with sHFileOpStruct do
+    ZeroMemory(@_sHFileOpStruct, SizeOf(_sHFileOpStruct));
+    with _sHFileOpStruct do
     begin
       wFunc := FO_DELETE;
-      pFrom := PChar(DirName + #0); //double zero-terminated
+      pFrom := PChar(DirName + #0#0); //double zero-terminated
       if silent then
       begin
         fFlags := SILENT_FLAGS;
       end
     end;
-    shFileOperationResult := SHFileOperation(sHFileOpStruct);
-    if (shFileOperationResult <> 0) or (checkIfDirExists(dirName)) then
+    _shFileOperationResult := SHFileOperation(_sHFileOpStruct);
+    if (_shFileOperationResult <> 0) or (checkIfDirExists(dirName)) then
     begin
-      errMsg := ERR_MSG + dirName;
-      raise Exception.Create(errMsg);
+      _errMsg := ERR_MSG + dirName;
+      raise Exception.Create(_errMsg);
     end;
   end;
 end;
@@ -1114,6 +1110,38 @@ begin
   if not _result then
   begin
     raiseLastSysErrorMessage;
+  end;
+end;
+
+procedure renameDir(oldDir: string; newDir: string; silent: boolean = FORCE_SILENT);
+const
+  ERROR_CODE_SAMEFILE = 113;
+var
+  _sHFileOpStruct: TSHFileOpStruct;
+  _shFileOperationResult: integer;
+  _oldDir: string;
+  _newDir: string;
+begin
+  _oldDir := getValidFullPathInWindowsStyle(oldDir);
+  _newDir := getValidFullPathInWindowsStyle(newDir);
+  if _oldDir <> _newDir then
+  begin
+    ZeroMemory(@_sHFileOpStruct, SizeOf(_sHFileOpStruct));
+    with _sHFileOpStruct do
+    begin
+      wFunc := FO_RENAME;
+      pFrom := PChar(_oldDir + #0#0);
+      pTo := PChar(_newDir + #0#0);
+      if silent then
+      begin
+        fFlags := SILENT_FLAGS;
+      end;
+    end;
+    _shFileOperationResult := ShFileOperation(_sHFileOpStruct);
+    if (_shFileOperationResult <> 0) and (_shFileOperationResult <> ERROR_CODE_SAMEFILE) then
+    begin
+      raise Exception.Create('Unable to rename ' + _oldDir + ' to ' + _newDir);
+    end;
   end;
 end;
 
@@ -1636,7 +1664,7 @@ begin
   end;
 end;
 
-procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+procedure waitForMultiple(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = MODAL_MODE);
 const
   ERR_MSG_TIMEOUT = 'The timeout interval was elapsed.';
 var
@@ -1680,7 +1708,7 @@ begin
   end;
 end;
 
-procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = true);
+procedure waitFor(processHandle: THandle; timeout: DWORD = INFINITE; modalMode: boolean = MODAL_MODE);
 const
   ERR_MSG_TIMEOUT = 'The timeout interval was elapsed.';
 var
@@ -1754,7 +1782,7 @@ begin
   Result := decimalSeparator;
 end;
 
-procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 var
   _currentProcess: THandle;
 begin
@@ -1762,7 +1790,7 @@ begin
   myTerminateProcess(_currentProcess, exitCode, raiseExceptionEnabled);
 end;
 
-procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = false);
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 var
   _success: LongBool;
 begin

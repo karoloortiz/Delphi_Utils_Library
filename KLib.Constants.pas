@@ -98,6 +98,7 @@ const
   FORCE_DELETE = true;
   FORCE_CREATION = true;
   FORCE_SUSPEND = true;
+  FORCE_SILENT = true;
   RAISE_EXCEPTION = true;
   IGNORE_EMPTY_STRINGS = true;
   MODAL_MODE = true;
@@ -107,6 +108,10 @@ const
   DISABLE = false;
   NOT_FORCE = false;
   NOT_FORCE_OVERWRITE = false;
+  NOT_FORCE_DELETE = false;
+  NOT_FORCE_CREATION = false;
+  NOT_FORCE_SUSPEND = false;
+  NOT_FORCE_SILENT = false;
   RAISE_EXCEPTION_DISABLED = false;
   NOT_IGNORE_EMPTY_STRINGS = false;
   NOT_MODAL_MODE = false;
