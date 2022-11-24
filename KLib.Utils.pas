@@ -244,6 +244,7 @@ begin
     createEmptyFile(filename);
   end;
 end;
+{$hints OFF}
 
 procedure createEmptyFile(filename: string);
 var
@@ -259,6 +260,7 @@ begin
     FileClose(_handle);
   end;
 end;
+{$hints ON}
 
 procedure deleteFileIfExists(fileName: string);
 const

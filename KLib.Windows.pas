@@ -979,8 +979,6 @@ var
   _parentDirTargetDir: string;
   _sourceDirName: string;
   _tempTargetDir: string;
-
-  _err_msg: string;
 begin
   if forceOverwrite then
   begin
