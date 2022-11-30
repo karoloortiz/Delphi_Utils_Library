@@ -1211,7 +1211,7 @@ function getPathInWindowsStyle(path: string): string;
 var
   pathInWindowsStyl: string;
 begin
-  pathInWindowsStyl := KLib.Utils.StringReplace(path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
+  pathInWindowsStyl := myStringReplace(path, '/', '\', [rfReplaceAll, rfIgnoreCase]);
 
   Result := pathInWindowsStyl;
 end;
@@ -1240,7 +1240,7 @@ begin
       _newValue := GetEnvironmentVariable(copy(_valueToReplace, 2, length(_valueToReplace) - 2));
       if _newValue <> '' then
       begin
-        stringWithEnvVariablesReaded := KLib.Utils.StringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
+        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
       end;
     end
     else

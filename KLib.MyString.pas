@@ -222,11 +222,11 @@ begin
 
   if caseSensitive then
   begin
-    Self := KLib.Utils.StringReplace(Self, _param, value, [rfReplaceAll]);
+    Self := myStringReplace(Self, _param, value, [rfReplaceAll]);
   end
   else
   begin
-    Self := KLib.Utils.StringReplace(Self, _param, value, [rfReplaceAll, rfIgnoreCase]);
+    Self := myStringReplace(Self, _param, value, [rfReplaceAll, rfIgnoreCase]);
   end;
 end;
 

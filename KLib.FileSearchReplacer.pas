@@ -188,7 +188,7 @@ procedure TFileSearchReplacer.replace(const oldText: string; const newText: stri
     SetLength(BufStr, _lastIndex);
     sourceFile.Seek(encoding.GetByteCount(BufStr) - ReadedBufLen, soCurrent);
 
-    BufStr := KLib.Utils.StringReplace(BufStr, oldText, newText, ReplaceFlags);
+    BufStr := KLib.Utils.myStringReplace(BufStr, oldText, newText, ReplaceFlags);
     DestBytes := encoding.GetBytes(BufStr);
     tempFile.Write(DestBytes, Length(DestBytes));
   end;
