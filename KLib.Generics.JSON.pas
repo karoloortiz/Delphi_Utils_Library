@@ -46,7 +46,9 @@
 //  TResponse = record
 //  public
 //    timestamp: string;
-//    sucess: string;
+//    timestamps: TArrayOfString;
+//    values: TArrayOfInteger;
+//    sucess: boolen;
 //    [DefaultValueAttribute('yes')]
 //    error: string;
 //    [IgnoreAttribute]
@@ -59,7 +61,7 @@
 //
 //  begin
 //  ...
-//  _responseText := TJSONGenerics.getJSONAsString<TResponse>(_response);
+//  _responseText := TJSONGenerics.getJSONAsString<TResponse, TArrayOfString, TArrayOfInteger>(_response);
 //#####################################
 
 unit KLib.Generics.JSON;
@@ -611,6 +613,7 @@ var
   _arrayType: string;
   _i: integer;
   _exists: boolean;
+  _isJSONObject: boolean;
 begin
   JSONObject := TJSONObject.Create();
 
@@ -699,9 +702,31 @@ begin
           _arrayType := TRttiDynamicArrayType(_rttiField.FieldType).elementType.ToString;
           for _i := 0 to _newTValue.GetArrayLength - 1 do
           begin
-            //        T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S
+
             _exists := true;
-            if _arrayType = _rttiContext.GetType(TypeInfo(T)).ToString then
+            _isJSONObject := true;
+            if (_arrayType = 'string') or (_arrayType = 'Char') then
+            begin
+              _JSONArray.Add(_newTValue.GetArrayElement(_i).AsType<string>);
+              _isJSONObject := false;
+            end
+            else if (_arrayType = 'Integer') or (_arrayType = 'Word') then
+            begin
+              _JSONArray.Add(_newTValue.GetArrayElement(_i).AsType<integer>);
+              _isJSONObject := false;
+            end
+            else if (_arrayType = 'Double') then
+            begin
+              _JSONArray.Add(_newTValue.GetArrayElement(_i).AsType<double>);
+              _isJSONObject := false;
+            end
+            else if (_arrayType = 'Boolean') then
+            begin
+              _JSONArray.Add(_newTValue.GetArrayElement(_i).AsType<boolean>);
+              _isJSONObject := false;
+            end
+            //        T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S
+            else if _arrayType = _rttiContext.GetType(TypeInfo(T)).ToString then
             begin
               _JSONObject := TJSONGenerics.getJSONObject<T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>
                 (_newTValue.GetArrayElement(_i).AsType<T>, ignoreEmptyStrings);
@@ -836,7 +861,7 @@ begin
               _exists := false;
             end;
 
-            if _exists then
+            if (_exists) and (_isJSONObject) then
             begin
               _JSONArray.AddElement(_JSONObject);
             end;
@@ -1537,6 +1562,22 @@ begin
               begin
                 _arrayType := TRttiDynamicArrayType(_rttiField.FieldType).elementType.ToString;
 
+                if (_arrayType = 'string') or (_arrayType = 'Char') then
+                begin
+                  TValue.Make<string>(_subArray.Items[_i].AsType<string>, _newTValue);
+                end
+                else if (_arrayType = 'Integer') or (_arrayType = 'Word') then
+                begin
+                  TValue.Make<integer>(_subArray.Items[_i].AsType<integer>, _newTValue);
+                end
+                else if _arrayType = 'Double' then
+                begin
+                  TValue.Make<double>(_subArray.Items[_i].AsType<double>, _newTValue);
+                end
+                else if _arrayType = 'Boolean' then
+                begin
+                  TValue.Make<boolean>(_subArray.Items[_i].AsType<boolean>, _newTValue);
+                end
                 //  _X_sub: X;
                 //  _Y_sub: Y;
                 //  _Z_sub: Z;
@@ -1560,8 +1601,7 @@ begin
                 //  _R_sub: R;
                 //  _S_sub: S;
                 //              T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S
-
-                if _arrayType = _rttiContext.GetType(TypeInfo(T)).ToString then
+                else if _arrayType = _rttiContext.GetType(TypeInfo(T)).ToString then
                 begin
                   _T_sub := TJSONGenerics.getParsedJSON
                     <T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(_subArray.Items[_i]);
