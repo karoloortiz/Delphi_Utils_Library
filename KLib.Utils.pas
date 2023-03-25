@@ -115,6 +115,7 @@ function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string 
 function getCurrentDateTime: TDateTime;
 
 function getEscapedMySQLString(mainString: string): string;
+function getEscapedHTMLString(mainString: string): string;
 function getEscapedXMLString(mainString: string): string;
 function getEscapedJSONString(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
@@ -247,6 +248,7 @@ begin
 end;
 {$hints OFF}
 
+
 procedure createEmptyFile(filename: string);
 var
   _handle: THandle;
@@ -262,6 +264,7 @@ begin
   end;
 end;
 {$hints ON}
+
 
 procedure deleteFileIfExists(fileName: string);
 const
@@ -1024,22 +1027,22 @@ end;
 function getEscapedMySQLString(mainString: string): string;
 begin
   Result := myStringReplace(mainString,
-    ['\', #39, #34, #0, #10, #13, #26], ['\\', '\'#39, '\'#34, '\0', '\n', '\r', '\Z'],
+    ['\', #39, #34, #0, #10, #13, #26],
+    ['\\', '\'#39, '\'#34, '\0', '\n', '\r', '\Z'],
     [rfReplaceAll]);
 end;
 
-function getEscapedXMLString(mainString: string): string;
-var
-  parsedXMLstring: string;
+function getEscapedHTMLString(mainString: string): string;
 begin
-  parsedXMLstring := mainString;
-  parsedXMLstring := myStringReplace(parsedXMLstring, '&', '&amp;', [rfreplaceall]);
-  parsedXMLstring := myStringReplace(parsedXMLstring, '"', '&quot;', [rfreplaceall]);
-  parsedXMLstring := myStringReplace(parsedXMLstring, '''', '&#39;', [rfreplaceall]);
-  parsedXMLstring := myStringReplace(parsedXMLstring, '<', '&lt;', [rfreplaceall]);
-  parsedXMLstring := myStringReplace(parsedXMLstring, '>', '&gt;', [rfreplaceall]);
+  Result := getEscapedXMLString(mainString); //is the same?
+end;
 
-  Result := parsedXMLstring;
+function getEscapedXMLString(mainString: string): string;
+begin
+  Result := myStringReplace(mainString,
+    ['&', '"', '''', '<', '>'],
+    ['&amp;', '&quot;', '&#39;', '&lt;', '&gt;'],
+    [rfreplaceall]);
 end;
 
 function getEscapedJSONString(mainString: string): string;
