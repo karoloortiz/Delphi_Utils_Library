@@ -78,6 +78,8 @@ type
     );
 
 procedure openWebPageWithDefaultBrowser(url: string);
+procedure openFileWithWord(fileName: string);
+function getWordExeFileName: string;
 function executeExeAsAdmin(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
 function executeExe(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
 function executeAndWaitExe(fileName: string; params: string = ''; exceptionIfReturnCodeIsNot0: boolean = false): LongInt;
@@ -164,7 +166,7 @@ function checkIfWindowExists(className: string = 'TMyForm'; captionForm: string 
 function myFindWindow(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm'): THandle;
 
 procedure writeIn_HKEY_LOCAL_MACHINE(key: string; name: string; value: Variant; forceCreationKey: boolean = NOT_FORCE);
-function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string = ''): string;
 function checkIfExistsKeyIn_HKEY_LOCAL_MACHINE(key: string): boolean;
 procedure deleteKeyInHKEY_LOCAL_MACHINE(key: string);
 
@@ -449,6 +451,21 @@ end;
 procedure openWebPageWithDefaultBrowser(url: string);
 begin
   shellExecuteOpen(url);
+end;
+
+procedure openFileWithWord(fileName: string);
+var
+  winwordFileName: string;
+begin
+  winwordFileName := getWordExeFileName();
+  shellExecuteOpen(winwordFileName, getDoubleQuotedString(fileName));
+end;
+
+function getWordExeFileName: string;
+const
+  REG_KEY = '\Software\Microsoft\Windows\CurrentVersion\App Paths\Winword.exe';
+begin
+  Result := readStringFrom_HKEY_LOCAL_MACHINE(REG_KEY);
 end;
 
 function executeExeAsAdmin(fileName: string; params: string = ''; exceptionIfFunctionFails: boolean = true): integer;
@@ -1611,7 +1628,7 @@ begin
   end;
 end;
 
-function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string): string;
+function readStringFrom_HKEY_LOCAL_MACHINE(key: string; name: string = ''): string;
 var
   value: string;
 
