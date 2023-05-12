@@ -186,6 +186,7 @@ procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
 
 implementation
@@ -1756,6 +1757,16 @@ begin
 
   Result := isEmpty;
 end;
+
+function checkIfIsEmptyOrNull(value: Variant): boolean;
+begin
+  Result := VarIsClear(value) or VarIsEmpty(value) or VarIsNull(value) or (VarCompareValue(value, Unassigned) = vrEqual);
+  if (not Result) and VarIsStr(value) then
+  begin
+    Result := value = '';
+  end;
+end;
+
 
 function myDefault(typeAsString: string): Variant;
 var

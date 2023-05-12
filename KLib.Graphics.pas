@@ -107,6 +107,7 @@ procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep ver
 
 function getImageAsAnsiString(fileName: string): AnsiString;
 
+function confirmMessage(msg: string; title: string = ''): boolean;
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
@@ -476,6 +477,18 @@ begin
   end;
 
   Result := imageAsString;
+end;
+
+function confirmMessage(msg: string; title: string = ''): boolean;
+var
+  _title: string;
+begin
+  _title := title;
+  if (_title.IsEmpty()) then
+  begin
+    _title := Application.Title;
+  end;
+  Result := myMessageDlg(_title, msg, ['yes', 'no']) = 'yes';
 end;
 
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
