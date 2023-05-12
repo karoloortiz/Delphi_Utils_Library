@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyCheckbox;
+unit KLib.CheckBoxHelper;
 
 interface
 
