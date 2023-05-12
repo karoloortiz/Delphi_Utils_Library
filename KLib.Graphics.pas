@@ -114,6 +114,8 @@ function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgBut
 
 function getComponentInFormByName(componentName: string; myForm: TForm): TComponent;
 
+procedure createFormByClassName(className: string);
+
 function getStrFixedWordWrapInWidth(source: string; width: integer; font: TFont): string;
 function getNumberOfCharactersInWidth(widthOfCaption: integer; font: TFont): integer;
 function getWidthOfSingleCharacter(font: TFont): integer;
@@ -605,6 +607,18 @@ begin
   if (result = nil) then
   begin
     raise Exception.Create(ERR_MSG);
+  end;
+end;
+
+procedure createFormByClassName(className: string);
+var
+  _form: TForm;
+begin
+  _form := TFormClass(FindClass(className)).Create(Application);
+  try
+    _form.Show;
+  finally
+    _form.Free;
   end;
 end;
 
