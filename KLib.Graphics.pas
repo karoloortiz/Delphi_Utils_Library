@@ -107,6 +107,7 @@ procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep ver
 
 function getImageAsAnsiString(fileName: string): AnsiString;
 
+procedure myShowMessage(msg: string; title: string = '');
 function confirmMessage(msg: string; title: string = ''): boolean;
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
@@ -477,6 +478,21 @@ begin
   end;
 
   Result := imageAsString;
+end;
+
+procedure myShowMessage(msg: string; title: string = '');
+var
+  _title: string;
+  _msg: string;
+begin
+  _title := title;
+  if (_title.IsEmpty()) then
+  begin
+    _title := Application.Title;
+  end;
+  _msg := msg.PadRight(60, ' ');
+
+  myMessageDlg(_title, _msg, ['Ok']);
 end;
 
 function confirmMessage(msg: string; title: string = ''): boolean;
