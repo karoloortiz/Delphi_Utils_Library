@@ -39,7 +39,7 @@ unit KLib.Graphics;
 interface
 
 uses
-  KLib.Types,
+  KLib.Types, KLib.Constants,
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
   System.Classes;
 
@@ -106,6 +106,8 @@ procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep ver
 //!not include in realease!
 
 function getImageAsAnsiString(fileName: string): AnsiString;
+
+function myOpenDialog(initialDir: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
 
 procedure myShowMessage(msg: string; title: string = ''; confirmValue: string = 'ok');
 function confirmMessage(msg: string; title: string = ''; yesValue: string = 'no'; noValue: string = 'no'): boolean;
@@ -478,6 +480,34 @@ begin
   end;
 
   Result := imageAsString;
+end;
+
+function myOpenDialog(initialDir: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
+var
+  _result: string;
+
+  _opendialog: TOpenDialog;
+  _initialDir: string;
+begin
+  _initialDir := getValidFullPath(initialDir);
+  if (_initialDir = EMPTY_STRING) then
+  begin
+    _initialDir := GetCurrentDir;
+  end;
+
+  _opendialog := TOpenDialog.Create(nil);
+  try
+    _opendialog.InitialDir := _initialDir;
+    _opendialog.Options := [ofFileMustExist];
+    _opendialog.Filter := filter;
+    _opendialog.FilterIndex := 1;
+    _opendialog.execute;
+    _result := _opendialog.FileName;
+  finally
+    FreeAndNil(_opendialog)
+  end;
+
+  Result := _result;
 end;
 
 procedure myShowMessage(msg: string; title: string = ''; confirmValue: string = 'ok');
