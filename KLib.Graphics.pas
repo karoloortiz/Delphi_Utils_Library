@@ -110,7 +110,7 @@ function getImageAsAnsiString(fileName: string): AnsiString;
 function myOpenDialog(initialDir: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
 
 procedure myShowMessage(msg: string; title: string = ''; confirmValue: string = 'ok');
-function confirmMessage(msg: string; title: string = ''; yesValue: string = 'no'; noValue: string = 'no'): boolean;
+function confirmMessage(msg: string; title: string = ''; yesValue: string = 'yes'; noValue: string = 'no'): boolean;
 function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
@@ -525,7 +525,7 @@ begin
   myMessageDlg(_title, _msg, [confirmValue]);
 end;
 
-function confirmMessage(msg: string; title: string = ''; yesValue: string = 'no'; noValue: string = 'no'): boolean;
+function confirmMessage(msg: string; title: string = ''; yesValue: string = 'yes'; noValue: string = 'no'): boolean;
 var
   _title: string;
 begin
