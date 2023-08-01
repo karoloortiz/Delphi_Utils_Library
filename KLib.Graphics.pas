@@ -108,6 +108,8 @@ procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep ver
 function getImageAsAnsiString(fileName: string): AnsiString;
 
 function myOpenDialog(initialDir: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
+function mySaveDialog(initialDir: string = EMPTY_STRING;
+  fileName: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
 
 procedure myShowMessage(msg: string; title: string = ''; confirmValue: string = 'ok');
 function confirmMessage(msg: string; title: string = ''; yesValue: string = 'yes'; noValue: string = 'no'): boolean;
@@ -505,6 +507,35 @@ begin
     _result := _opendialog.FileName;
   finally
     FreeAndNil(_opendialog)
+  end;
+
+  Result := _result;
+end;
+
+function mySaveDialog(initialDir: string = EMPTY_STRING;
+  fileName: string = EMPTY_STRING; filter: string = 'All |*.*'): string;
+var
+  _result: string;
+
+  _saveDialog: TSaveDialog;
+  _initialDir: string;
+begin
+  _initialDir := getValidFullPath(initialDir);
+  if (_initialDir = EMPTY_STRING) then
+  begin
+    _initialDir := GetCurrentDir;
+  end;
+
+  _saveDialog := TSaveDialog.Create(nil);
+  try
+    _saveDialog.InitialDir := _initialDir;
+    _saveDialog.Filter := filter;
+    _saveDialog.FilterIndex := 1;
+    _saveDialog.FileName := fileName;
+    _saveDialog.execute;
+    _result := _saveDialog.FileName;
+  finally
+    FreeAndNil(_saveDialog)
   end;
 
   Result := _result;
