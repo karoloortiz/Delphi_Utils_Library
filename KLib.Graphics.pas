@@ -503,8 +503,14 @@ begin
     _opendialog.Options := [ofFileMustExist];
     _opendialog.Filter := filter;
     _opendialog.FilterIndex := 1;
-    _opendialog.execute;
-    _result := _opendialog.FileName;
+    if (_opendialog.execute) then
+    begin
+      _result := _opendialog.FileName;
+    end
+    else
+    begin
+      _result := EMPTY_STRING;
+    end;
   finally
     FreeAndNil(_opendialog)
   end;
@@ -532,8 +538,14 @@ begin
     _saveDialog.Filter := filter;
     _saveDialog.FilterIndex := 1;
     _saveDialog.FileName := fileName;
-    _saveDialog.execute;
-    _result := _saveDialog.FileName;
+    if (_saveDialog.execute) then
+    begin
+      _result := _saveDialog.FileName;
+    end
+    else
+    begin
+      _result := EMPTY_STRING;
+    end;
   finally
     FreeAndNil(_saveDialog)
   end;
