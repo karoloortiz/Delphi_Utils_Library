@@ -100,6 +100,7 @@ function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
 function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
 procedure setTColorToTPanel(component: TPanel; color: TColor);
 procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
+procedure setFormInCenterOfScreen(form: TForm);
 procedure setComponentInMiddlePosition(control: TControl);
 
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
@@ -430,6 +431,12 @@ begin
   begin
     myPanel.Visible := false;
   end;
+end;
+
+procedure setFormInCenterOfScreen(form: TForm);
+begin
+  form.Left := (form.Monitor.Width - form.Width) div 2;
+  form.Top := (form.Monitor.Height - form.Height) div 2;
 end;
 
 procedure setComponentInMiddlePosition(control: TControl);
