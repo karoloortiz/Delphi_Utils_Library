@@ -115,6 +115,7 @@ function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string 
 function getCurrentDateTime: TDateTime;
 
 function getEscapedMySQLString(mainString: string): string;
+function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
 function getEscapedHTMLString(mainString: string): string;
 function getEscapedXMLString(mainString: string): string;
 function getEscapedJSONString(mainString: string): string;
@@ -194,7 +195,7 @@ implementation
 uses
   KLib.Validate, KLib.Indy, KLib.FileSearchReplacer, KLib.Math,
   Vcl.ExtCtrls,
-  System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants;
+  System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants, System.NetEncoding;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
@@ -1033,9 +1034,24 @@ begin
     [rfReplaceAll]);
 end;
 
+function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
+var
+  _param: string;
+  _encodedUrl: string;
+begin
+  _encodedUrl := url + '?';
+  for _param in paramList do
+  begin
+    _encodedUrl := _encodedUrl + '&' + _param;
+  end;
+  _encodedUrl := myStringReplace(_encodedUrl, '?&', '?', [rfReplaceAll]);
+
+  Result := _encodedUrl;
+end;
+
 function getEscapedHTMLString(mainString: string): string;
 begin
-  Result := getEscapedXMLString(mainString); //is the same?
+  Result := TNetEncoding.URL.Encode(mainString);
 end;
 
 function getEscapedXMLString(mainString: string): string;
@@ -1766,7 +1782,6 @@ begin
     Result := value = '';
   end;
 end;
-
 
 function myDefault(typeAsString: string): Variant;
 var
