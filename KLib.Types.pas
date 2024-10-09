@@ -75,6 +75,7 @@ type
     username: string;
     password: string;
 
+    function isEmpty: Boolean;
     procedure clear;
   end;
 
@@ -206,6 +207,13 @@ const
   EMPTY: THostPort = ();
 begin
   Self := EMPTY;
+end;
+
+function TCredentials.isEmpty: boolean;
+const
+  EMPTY: TCredentials = ();
+begin
+  Result:= (Self.username = '') and (Self.password = '');
 end;
 
 procedure TCredentials.clear;

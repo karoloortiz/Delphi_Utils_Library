@@ -53,6 +53,8 @@ function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 
+function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
+function HTTP_get(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
 function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 //USING INDY WITH SSL (E.G downloadFileWithIndy) YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
@@ -193,6 +195,53 @@ begin
   Result := connection;
 end;
 
+function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string;
+var
+  HTTP_response: string;
+  _idHTTPRequest: TIdHTTPRequest;
+begin
+  _idHTTPRequest := TIdHTTPRequest.Create(nil);
+  try
+    if (not credentials.isEmpty()) then
+    begin
+      with _idHTTPRequest do
+      begin
+        BasicAuthentication := true;
+        Username := credentials.username;
+        Password := credentials.password;
+      end;
+    end;
+    HTTP_response := HTTP_get(url, paramList, _idHTTPRequest);
+  finally
+    FreeAndNil(_idHTTPRequest);
+  end;
+
+  Result := HTTP_response;
+end;
+
+function HTTP_get(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string;
+var
+  HTTP_response: string;
+  _HTTP: TMyIdHTTP;
+  _url: string;
+begin
+  _HTTP := TMyIdHTTP.Create(nil);
+
+  if Assigned(idHTTPRequest) then
+  begin
+    _HTTP.Request := idHTTPRequest;
+  end;
+
+  _url := getHTTPGetEncodedUrl(url, paramList);
+  try
+    HTTP_response := _HTTP.Get(_url);
+  finally
+    _HTTP.Free;
+  end;
+
+  Result := HTTP_response;
+end;
+
 function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string;
 var
   HTTP_response: string;
@@ -200,11 +249,14 @@ var
 begin
   _idHTTPRequest := TIdHTTPRequest.Create(nil);
   try
-    with _idHTTPRequest do
+    if (not credentials.isEmpty()) then
     begin
-      BasicAuthentication := true;
-      Username := credentials.username;
-      Password := credentials.password;
+      with _idHTTPRequest do
+      begin
+        BasicAuthentication := true;
+        Username := credentials.username;
+        Password := credentials.password;
+      end;
     end;
     HTTP_response := HTTP_post(url, paramList, _idHTTPRequest);
   finally
