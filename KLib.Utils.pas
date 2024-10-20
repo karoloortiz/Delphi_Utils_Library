@@ -190,6 +190,8 @@ function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolea
 function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
 
+function myIsDebuggerPresent: boolean;
+
 implementation
 
 uses
@@ -1809,6 +1811,11 @@ begin
   end;
 
   Result := value;
+end;
+
+function myIsDebuggerPresent: boolean;
+begin
+  Result := System.DebugHook <> 0;
 end;
 
 end.
