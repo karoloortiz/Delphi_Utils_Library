@@ -1243,30 +1243,35 @@ var
   _posEnd: integer;
   _valueToReplace: string;
   _newValue: string;
+  _exit: boolean;
 begin
+  _exit := false;
   _stringPos := source;
   _stringDir := source;
   stringWithEnvVariablesReaded := source;
-  repeat
-    _posStart := pos('%', _stringPos);
-    _stringPos := copy(_stringPos, _posStart + 1, length(_stringPos));
-    _posEnd := _posStart + pos('%', _stringPos);
-    if (_posStart > 0) and (_posEnd > 1) then
+  while (not _exit) do
+  begin
+    posStart := pos('%', stringPos);
+    exit := posStart = 0;
+
+    stringPos := copy(_stringPos, posStart + 1, length(_stringPos));
+    posEnd := posStart + pos('%', _stringPos);
+    if (posStart > 0) and (posEnd > 1) then
     begin
-      _valueToReplace := copy(_stringDir, _posStart, _posEnd - _posStart + 1);
+      valueToReplace := copy(_stringDir, posStart, posEnd - posStart + 1);
       _newValue := GetEnvironmentVariable(copy(_valueToReplace, 2, length(_valueToReplace) - 2));
       if _newValue <> '' then
       begin
-        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
+        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, valueToReplace, newValue, []);
       end;
     end
     else
     begin
-      exit;
+      _exit := true;
     end;
-    _stringDir := copy(_stringDir, _posEnd + 1, length(_stringDir));
-    _stringPos := _stringDir;
-  until _posStart < 0;
+    stringDir := copy(_stringDir, posEnd + 1, length(_stringDir));
+    stringPos := stringDir;
+  end;
 
   Result := stringWithEnvVariablesReaded;
 end;
