@@ -63,7 +63,7 @@ type
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
       onChangeStatus: TCallBack = nil);
     procedure Execute; override;
-    procedure myStart(raiseExceptionEnabled: boolean = true);
+    procedure myStart(isRaiseExceptionEnabled: boolean = true);
     procedure pause;
     procedure myResume;
     procedure stop(force: boolean = false);
@@ -96,7 +96,7 @@ begin
   end;
 end;
 
-procedure TMyThread.myStart(raiseExceptionEnabled: boolean = true);
+procedure TMyThread.myStart(isRaiseExceptionEnabled: boolean = true);
 begin
   case status of
     TStatus.created:
@@ -115,7 +115,7 @@ begin
       end;
     TStatus.running:
       begin
-        if raiseExceptionEnabled then
+        if isRaiseExceptionEnabled then
         begin
           raise Exception.Create('Thread already running.');
         end;

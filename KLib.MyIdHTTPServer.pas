@@ -99,7 +99,7 @@ type
       onChangeStatus: TCallBack = nil); overload;
     procedure Alisten(port: integer = 0);
     procedure listen(port: integer = 0);
-    procedure stop(raiseExceptionEnabled: boolean = true);
+    procedure stop(isRaiseExceptionEnabled: boolean = true);
 
     procedure waitUntilIsRunning;
 
@@ -193,7 +193,7 @@ begin
   end;
 end;
 
-procedure TMyIdHTTPServer.stop(raiseExceptionEnabled: boolean = true);
+procedure TMyIdHTTPServer.stop(isRaiseExceptionEnabled: boolean = true);
 const
   ERR_MSG = 'Server doesn''t running.';
 begin
@@ -204,7 +204,7 @@ begin
     _isRunningEvent.disable;
     Self.status := TStatus.stopped;
   end
-  else if raiseExceptionEnabled then
+  else if isRaiseExceptionEnabled then
   begin
     raise Exception.Create(ERR_MSG);
   end;

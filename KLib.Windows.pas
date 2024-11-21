@@ -178,8 +178,8 @@ function getLastSysErrorMessage: string;
 
 function getLocaleDecimalSeparator: char;
 
-procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
-procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 
 //###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
 function checkIfCurrentProcessIsAServiceProcess: boolean;
@@ -1251,26 +1251,26 @@ begin
   stringWithEnvVariablesReaded := source;
   while (not _exit) do
   begin
-    posStart := pos('%', stringPos);
-    exit := posStart = 0;
+    _posStart := pos('%', _stringPos);
+    _exit := (_posStart = 0);
 
-    stringPos := copy(_stringPos, posStart + 1, length(_stringPos));
-    posEnd := posStart + pos('%', _stringPos);
-    if (posStart > 0) and (posEnd > 1) then
+    _stringPos := copy(_stringPos, _posStart + 1, length(_stringPos));
+    _posEnd := _posStart + pos('%', _stringPos);
+    if (_posStart > 0) and (_posEnd > 1) then
     begin
-      valueToReplace := copy(_stringDir, posStart, posEnd - posStart + 1);
+      _valueToReplace := copy(_stringDir, _posStart, _posEnd - _posStart + 1);
       _newValue := GetEnvironmentVariable(copy(_valueToReplace, 2, length(_valueToReplace) - 2));
       if _newValue <> '' then
       begin
-        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, valueToReplace, newValue, []);
+        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
       end;
     end
     else
     begin
       _exit := true;
     end;
-    stringDir := copy(_stringDir, posEnd + 1, length(_stringDir));
-    stringPos := stringDir;
+    _stringDir := copy(_stringDir, _posEnd + 1, length(_stringDir));
+    _stringPos := _stringDir;
   end;
 
   Result := stringWithEnvVariablesReaded;
@@ -1802,20 +1802,20 @@ begin
   Result := decimalSeparator;
 end;
 
-procedure terminateCurrentProcess(exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
+procedure terminateCurrentProcess(exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 var
   _currentProcess: THandle;
 begin
   _currentProcess := GetCurrentProcess;
-  myTerminateProcess(_currentProcess, exitCode, raiseExceptionEnabled);
+  myTerminateProcess(_currentProcess, exitCode, isRaiseExceptionEnabled);
 end;
 
-procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; raiseExceptionEnabled: boolean = RAISE_EXCEPTION);
+procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 var
   _success: LongBool;
 begin
   _success := TerminateProcess(processHandle, exitCode);
-  if not _success and raiseExceptionEnabled then
+  if not _success and isRaiseExceptionEnabled then
   begin
     raiseLastSysErrorMessage;
   end;

@@ -99,7 +99,7 @@ procedure setDarkerTColorToTPanel(component: TPanel; color: TColor; levelLighter
 function getLighterTColor(color: TColor; levelLighter: integer = 1): TColor;
 function getDarkerTColor(color: TColor; levelDarker: integer = 1): TColor;
 procedure setTColorToTPanel(component: TPanel; color: TColor);
-procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
+procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; value: string);
 procedure setFormInCenterOfScreen(form: TForm);
 procedure setComponentInMiddlePosition(control: TControl);
 
@@ -421,9 +421,9 @@ begin
   component.Color := color;
 end;
 
-procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; myString: String);
+procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; value: string);
 begin
-  if myString <> '' then
+  if value <> '' then
   begin
     myPanel.Visible := true;
   end

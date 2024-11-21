@@ -98,8 +98,8 @@ type
     defaults_file: string;
     customParameters: string;
 
-    procedure writeInfoInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
-    procedure writeErrorInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
+    procedure writeInfoInEventLog(msg: string; isRaiseExceptionEnabled: boolean = true);
+    procedure writeErrorInEventLog(msg: string; isRaiseExceptionEnabled: boolean = true);
     function getDefaultServiceName: string;
     function GetServiceController: TServiceController; override;
 
@@ -124,7 +124,7 @@ implementation
 
 
 uses
-  KLib.Windows, KLib.Utils, KLib.Constants, KLib.MyString,
+  KLib.Windows, KLib.Utils, KLib.Constants,
   System.Win.Registry;
 
 procedure TServiceApp.Run;
@@ -262,25 +262,25 @@ begin
   end;
 end;
 
-procedure TMyService.writeInfoInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
+procedure TMyService.writeInfoInEventLog(msg: string; isRaiseExceptionEnabled: boolean = true);
 begin
   if Assigned(eventLog) then
   begin
     eventLog.writeInfo(msg);
   end
-  else if raiseExceptionEnabled then
+  else if isRaiseExceptionEnabled then
   begin
     raise Exception.Create('eventLog unassigned. Set eventLogDisabled=false before create TMyService.');
   end;
 end;
 
-procedure TMyService.writeErrorInEventLog(msg: string; raiseExceptionEnabled: boolean = true);
+procedure TMyService.writeErrorInEventLog(msg: string; isRaiseExceptionEnabled: boolean = true);
 begin
   if Assigned(eventLog) then
   begin
     eventLog.writeError(msg);
   end
-  else if raiseExceptionEnabled then
+  else if isRaiseExceptionEnabled then
   begin
     raise Exception.Create('eventLog unassigned. Set eventLogDisabled=false before create TMyService.');
   end;

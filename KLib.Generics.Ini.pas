@@ -102,7 +102,7 @@ type
     class procedure saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
     class function tryGetFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section'): T;
     class function getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
-      raiseException: boolean = RAISE_EXCEPTION): T;
+      isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION): T;
   end;
 
 implementation
@@ -240,7 +240,7 @@ begin
 end;
 
 class function TIniGenerics.getFromFile<T>(fileName: string = EMPTY_STRING; sectionName: string = 'default_section';
-  raiseException: boolean = RAISE_EXCEPTION): T;
+  isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION): T;
 var
   _record: T;
 
@@ -357,7 +357,7 @@ begin
             begin
               _propertyValue := false;
             end
-            else if raiseException then
+            else if isRaiseExceptionEnabled then
             begin
               raise Exception.Create('Incorrect value -> filename: ' + _fileName + ' section name: ' + _sectionName +
                 ' property name: ' + _propertyName + ' property value: ' + _propertyValue);
@@ -389,7 +389,7 @@ begin
 
   _rttiContext.Free;
 
-  if (raiseException) and (not _fileExists) then
+  if (isRaiseExceptionEnabled) and (not _fileExists) then
   begin
     validateThatFileExists(_fileName);
   end;

@@ -1,5 +1,4 @@
 object MyService: TMyService
-  OldCreateOrder = True
   OnCreate = ServiceCreate
   OnDestroy = ServiceDestroy
   DisplayName = 'MyService'

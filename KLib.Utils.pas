@@ -122,9 +122,9 @@ function getEscapedJSONString(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getQuotedString(mainString: string; quoteCharacter: Char): string;
-function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
-function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
-function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getDoubleQuoteExtractedString(mainString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getSingleQuoteExtractedString(mainString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getExtractedString(mainString: string; quoteString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 function getDequotedString(mainString: string): string;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
   forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
@@ -180,9 +180,9 @@ function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte;
 function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;
 function getAnonymousMethodsFromMethod(_method: KLib.Types.TMethod): KLib.Types.TAnonymousMethod;
 
-procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false); overload;
-procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false); overload;
-procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false); overload;
+procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; isRaiseExceptionEnabled: boolean = false); overload;
+procedure tryToExecuteProcedure(myProcedure: TCallBack; isRaiseExceptionEnabled: boolean = false); overload;
+procedure tryToExecuteProcedure(myProcedure: TProcedure; isRaiseExceptionEnabled: boolean = false); overload;
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
@@ -1149,17 +1149,17 @@ begin
   Result := AnsiQuotedStr(mainString, quoteCharacter);
 end;
 
-function getDoubleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getDoubleQuoteExtractedString(mainString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 begin
-  Result := getExtractedString(mainString, '"', raiseExceptionEnabled);
+  Result := getExtractedString(mainString, '"', isRaiseExceptionEnabled);
 end;
 
-function getSingleQuoteExtractedString(mainString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getSingleQuoteExtractedString(mainString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 begin
-  Result := getExtractedString(mainString, '''', raiseExceptionEnabled);
+  Result := getExtractedString(mainString, '''', isRaiseExceptionEnabled);
 end;
 
-function getExtractedString(mainString: string; quoteString: string; raiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
+function getExtractedString(mainString: string; quoteString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 const
   ERR_MSG = 'String not found.';
 var
@@ -1187,7 +1187,7 @@ begin
     end;
   end;
 
-  if (raiseExceptionEnabled) and (extractedString = EMPTY_STRING) then
+  if (isRaiseExceptionEnabled) and (extractedString = EMPTY_STRING) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
@@ -1709,14 +1709,14 @@ begin
     end;
 end;
 
-procedure tryToExecuteProcedure(myProcedure: TProcedure; raiseExceptionEnabled: boolean = false);
+procedure tryToExecuteProcedure(myProcedure: TProcedure; isRaiseExceptionEnabled: boolean = false);
 begin
   try
     executeProcedure(myProcedure);
   except
     on E: Exception do
     begin
-      if raiseExceptionEnabled then
+      if isRaiseExceptionEnabled then
       begin
         raise Exception.Create(E.Message);
       end;
@@ -1724,14 +1724,14 @@ begin
   end;
 end;
 
-procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; raiseExceptionEnabled: boolean = false);
+procedure tryToExecuteProcedure(myProcedure: TAnonymousMethod; isRaiseExceptionEnabled: boolean = false);
 begin
   try
     executeProcedure(myProcedure);
   except
     on E: Exception do
     begin
-      if raiseExceptionEnabled then
+      if isRaiseExceptionEnabled then
       begin
         raise Exception.Create(E.Message);
       end;
@@ -1739,14 +1739,14 @@ begin
   end;
 end;
 
-procedure tryToExecuteProcedure(myProcedure: TCallBack; raiseExceptionEnabled: boolean = false);
+procedure tryToExecuteProcedure(myProcedure: TCallBack; isRaiseExceptionEnabled: boolean = false);
 begin
   try
     executeProcedure(myProcedure);
   except
     on E: Exception do
     begin
-      if raiseExceptionEnabled then
+      if isRaiseExceptionEnabled then
       begin
         raise Exception.Create(E.Message);
       end;
