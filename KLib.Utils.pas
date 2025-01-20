@@ -98,6 +98,12 @@ procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip
 
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
 
+function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>; overload;
+function splitByMonths(datetimeRange: TDateTimeRange): TArray<TDateTimeRange>; overload;
+
+function divideDateRange(startDate: TDateTime; endDate: TDateTime; divisions: integer = 2): TArray<TDateTimeRange>; overload;
+function divideDateRange(datetimeRange: TDateTimeRange; divisions: integer = 2): TArray<TDateTimeRange>; overload;
+
 function getValidItalianTelephoneNumber(number: string): string;
 function getValidTelephoneNumber(number: string): string;
 
@@ -197,7 +203,8 @@ implementation
 uses
   KLib.Validate, KLib.Indy, KLib.FileSearchReplacer, KLib.Math,
   Vcl.ExtCtrls,
-  System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions, System.Variants, System.NetEncoding;
+  System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions,
+  System.Variants, System.NetEncoding, System.DateUtils;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
@@ -841,6 +848,124 @@ begin
   end;
 
   Result := _result;
+end;
+
+function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>;
+var
+  _datetimeRange: TDateTimeRange;
+begin
+  _datetimeRange.clear;
+  _datetimeRange._start := startDate;
+  _datetimeRange._end := endDate;
+
+  Result := splitByMonths(_datetimeRange);
+end;
+
+function splitByMonths(datetimeRange: TDateTimeRange): TArray<TDateTimeRange>;
+var
+  dateRanges: TArray<TDateTimeRange>;
+  range: TDateTimeRange;
+  currentStart: TDateTime;
+  currentEnd: TDateTime;
+  year, month, day: Word;
+begin
+  if datetimeRange._start > datetimeRange._end then
+    raise Exception.Create('The start date must be earlier than the end date.');
+
+  currentStart := datetimeRange._start;
+
+  while currentStart <= datetimeRange._end do
+  begin
+    range.clear;
+
+    // Decode the current start date
+    DecodeDate(currentStart, year, month, day);
+
+    // Calculate the end of the current month
+    currentEnd := EncodeDate(year, month, DaysInAMonth(year, month));
+
+    // Ensure the current end does not exceed the provided range
+    if currentEnd > datetimeRange._end then
+      currentEnd := datetimeRange._end;
+
+    // Assign the range
+    range._start := currentStart;
+    range._end := currentEnd;
+
+    // Add the range to the array
+    SetLength(dateRanges, Length(dateRanges) + 1);
+    dateRanges[High(dateRanges)] := range;
+
+    // Move to the next month
+    currentStart := currentEnd + 1;
+  end;
+
+  Result := dateRanges;
+end;
+
+function divideDateRange(startDate: TDateTime; endDate: TDateTime; divisions: Integer = 2): TArray<TDateTimeRange>;
+var
+  _datetimeRange: TDateTimeRange;
+begin
+  _datetimeRange.clear;
+  _datetimeRange._start := startDate;
+  _datetimeRange._end := endDate;
+
+  Result := divideDateRange(_datetimeRange, divisions);
+end;
+
+function divideDateRange(datetimeRange: TDateTimeRange; divisions: Integer = 2): TArray<TDateTimeRange>;
+var
+  dateRanges: TArray<TDateTimeRange>;
+
+  i: Integer;
+  interval: TDateTime;
+  currentStart: TDateTime;
+  range: TDateTimeRange;
+begin
+  if (datetimeRange._start > datetimeRange._end) then
+  begin
+    raise Exception.Create('The start date must be earlier than the end date.');
+  end;
+
+  if (divisions <= 0) then
+  begin
+    raise Exception.Create('The number of divisions must be greater than 0.');
+  end;
+
+  if (divisions > Trunc(datetimeRange._end - datetimeRange._start) + 1) then
+  begin
+    raise Exception.Create('The number of divisions exceeds the number of days in the range.');
+  end;
+  // Calculate the interval for each division
+  interval := (datetimeRange._end - datetimeRange._start) / divisions;
+
+  // Initialize the result array
+  SetLength(dateRanges, divisions);
+
+  // Create each range
+  currentStart := datetimeRange._start;
+  for i := 0 to divisions - 1 do
+  begin
+    range.clear;
+
+    range._start := currentStart;
+
+    if (i = (divisions - 1)) then
+    begin
+      range._end := datetimeRange._end; // Ensure the last range ends exactly at endDate
+    end
+    else
+    begin
+      range._end := Trunc(currentStart + interval);
+    end;
+
+    dateRanges[i] := range;
+
+    currentStart := range._end + 1; // Start the next range the day after the current end
+  end;
+
+  Result := dateRanges;
 end;
 
 function getValidItalianTelephoneNumber(number: string): string;
