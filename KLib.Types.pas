@@ -213,7 +213,7 @@ function TCredentials.isEmpty: boolean;
 const
   EMPTY: TCredentials = ();
 begin
-  Result:= (Self.username = '') and (Self.password = '');
+  Result := (Self.username = '') and (Self.password = '');
 end;
 
 procedure TCredentials.clear;
