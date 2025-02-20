@@ -64,6 +64,18 @@ type
   TWindowsServiceStartupType = (_null, delayed_auto, auto, manual, disabled);
 {$scopedenums OFF}
 
+  TOAuth2Response = record
+  public
+    access_token: string;
+    token_type: string;
+    [DefaultValueAttribute('0')]
+    expires_in: integer;
+    [DefaultValueAttribute(EMPTY_STRING)]
+    refresh_token: string;
+    [DefaultValueAttribute(EMPTY_STRING)]
+    scope: string;
+  end;
+
   THostPort = record
     host: string;
     port: integer;

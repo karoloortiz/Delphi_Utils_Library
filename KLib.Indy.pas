@@ -53,6 +53,7 @@ function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 
+function getOAuth2Response(const url: string; const clientID: string; const clientSecret: string): TOAuth2Response;
 function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
 function HTTP_get(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
@@ -74,9 +75,9 @@ function getMD5ChecksumFile(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList, Klib.Windows,
+  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList, Klib.Windows, KLib.Generics.JSON,
   IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
-  System.SysUtils;
+  System.SysUtils, System.NetEncoding;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
 begin
@@ -193,6 +194,32 @@ begin
   end;
   connection.Passive := true;
   Result := connection;
+end;
+
+function getOAuth2Response(const url: string; const clientID: string; const clientSecret: string): TOAuth2Response;
+var
+  OAuth2Response: TOAuth2Response;
+  _response: string;
+  _authHeader: string;
+  _idHTTPRequest: TIdHTTPRequest;
+  _params: TStringList;
+begin
+  _idHTTPRequest := TIdHTTPRequest.Create(nil);
+  _authHeader := 'Basic ' + TNetEncoding.Base64.Encode(clientID + ':' + clientSecret).Replace(#13#10, '');
+  _idHTTPRequest.CustomHeaders.Add('Authorization: ' + _authHeader);
+  _idHTTPRequest.ContentType := 'application/x-www-form-urlencoded';
+
+  _params := TStringList.Create();
+  _params.Add('grant_type=client_credentials');
+  try
+    _response := HTTP_post(url, _params, _idHTTPRequest);
+    OAuth2Response := TJSONGenerics.getParsedJSON<TOAuth2Response>(_response);
+  finally
+    FreeAndNil(_idHTTPRequest);
+    FreeAndNil(_params);
+  end;
+
+  Result := OAuth2Response;
 end;
 
 function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string;
