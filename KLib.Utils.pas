@@ -635,7 +635,8 @@ begin
     _mask := _mask + '.' + fileType;
   end;
   _returnCode := FindFirst(_mask, faAnyFile - faDirectory, _searchRec);
-  if (_returnCode <> 0) and (_returnCode <> 2) then
+  if ((_returnCode <> 0) AND (_returnCode <> 2) AND (_returnCode <> 18))
+  then
   begin
     _errorMsg := dirName + ' : ' + SysErrorMessage(_returnCode);
     raise Exception.Create(_errorMsg);
