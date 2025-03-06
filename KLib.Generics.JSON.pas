@@ -36,6 +36,7 @@
 
 //##### JSON #################
 //  ATTRIBUTES:
+//  - CustomNameAttribute
 //  - DefaultValueAttribute
 //  - IgnoreAttribute
 //###########---EXAMPLE OF USE----##########################
@@ -567,6 +568,7 @@ var
   _defaultRecord: T;
 
   _ignoreAttribute: boolean;
+  _customNameAttribute: string;
 
   _propertyName: string;
   _propertyType: string;
@@ -631,9 +633,15 @@ begin
     _customAttributes := _rttiField.GetAttributes;
     for _customAttribute in _customAttributes do
     begin
-      if _customAttribute is IgnoreAttribute then
+      if (_customAttribute is IgnoreAttribute) then
       begin
         _ignoreAttribute := true;
+      end;
+
+      if (_customAttribute is CustomNameAttribute) then
+      begin
+        _customNameAttribute := CustomNameAttribute(_customAttribute).value;
+        _propertyName := _customNameAttribute;
       end;
     end;
 
