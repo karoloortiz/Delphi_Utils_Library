@@ -74,6 +74,10 @@ type
     refresh_token: string;
     [DefaultValueAttribute(EMPTY_STRING)]
     scope: string;
+
+    procedure readFromFile(filename: string);
+    procedure saveToFile(filename: string);
+    function getAsString(): string;
   end;
 
   THostPort = record
@@ -204,6 +208,31 @@ type
 
 implementation
 
+uses
+
+  KLib.Utils, KLib.Generics.JSON;
+
+procedure TOAuth2Response.readFromFile(filename: string);
+var
+  _text: string;
+begin
+  _text := getTextFromFile(filename);
+  Self := TJSONGenerics.getParsedJSON<TOAuth2Response>(_text);
+end;
+
+procedure TOAuth2Response.saveToFile(filename: string);
+var
+  _text: string;
+begin
+  _text := getAsString();
+  KLib.Utils.saveToFile(_text, filename);
+end;
+
+function TOAuth2Response.getAsString(): string;
+begin
+  Result := TJSONGenerics.getJSONAsString<TOAuth2Response>(Self);
+end;
+
 function TDateTimeRange.getAsString: string;
 var
   _startDataTimeAsString: string;
@@ -211,6 +240,7 @@ var
 begin
   _startDataTimeAsString := DateTimeToStr(self._start);
   _endDataTimeAsString := DateTimeToStr(self._end);
+
   Result := _startDataTimeAsString + ' - ' + _endDataTimeAsString;
 end;
 
