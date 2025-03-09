@@ -44,7 +44,10 @@ uses
 function distanceBetweenPoints(a: TPoint; b: TPoint): Double; overload;
 function distanceBetweenPoints(Xa: integer; Ya: integer; Xb: integer; Yb: integer): Double; overload;
 function megabyteToByte(MB: int64): int64;
-function getMax(const a: integer; const b: integer): integer;
+function getMax(const a: integer; const b: integer): integer; overload;
+function getMax(const a: double; const b: double): double; overload;
+function getMin(const a: integer; const b: integer): integer; overload;
+function getMin(const a: double; const b: double): double; overload;
 
 implementation
 
@@ -80,7 +83,17 @@ end;
 
 function getMax(const a: integer; const b: integer): integer;
 var
-  max: integer;
+  _a: double;
+  _b: double;
+begin
+  _a := a;
+  _b := b;
+  Result := Trunc(getMax(_a, _b));
+end;
+
+function getMax(const a: double; const b: double): double;
+var
+  max: double;
 begin
   if a >= b then
   begin
@@ -92,6 +105,33 @@ begin
   end;
 
   Result := max;
+end;
+
+function getMin(const a: integer; const b: integer): integer;
+var
+  _a: double;
+  _b: double;
+begin
+  _a := a;
+  _b := b;
+
+  Result := Trunc(getMin(_a, _b));
+end;
+
+function getMin(const a: double; const b: double): double;
+var
+  min: double;
+begin
+  if a <= b then
+  begin
+    min := A
+  end
+  else
+  begin
+    min := B;
+  end;
+
+  Result := min;
 end;
 
 end.
