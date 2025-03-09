@@ -41,7 +41,7 @@ interface
 uses
   KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
-  System.SysUtils, System.Classes;
+  System.SysUtils, System.Classes, System.Rtti;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
@@ -195,6 +195,11 @@ procedure executeProcedure(myProcedure: TCallBack); overload;
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
+
+function getResizedTValue(value: TValue; maxLenght: double): TValue;
+function getDefaultTValue(AType: TRttiType): TValue;
+
+function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
 
 function myIsDebuggerPresent: boolean;
 
@@ -1937,6 +1942,73 @@ begin
   end;
 
   Result := value;
+end;
+
+function getResizedTValue(value: TValue; maxLenght: double): TValue;
+var
+  _string: string;
+begin
+  case value.Kind of
+    tkInteger, tkInt64:
+      begin
+        if value.AsInteger >= maxLenght then
+        begin
+          Result := TValue.From<Integer>(trunc(maxLenght));
+        end
+        else
+        begin
+          Result := value.AsInteger;
+        end;
+      end;
+    tkFloat:
+      begin
+        if value.AsExtended >= maxLenght then
+        begin
+          Result := TValue.From<Double>(maxLenght);
+        end
+        else
+        begin
+          Result := value.AsExtended;
+        end;
+      end;
+    tkString, tkLString, tkWString, tkUString:
+      begin
+        _string := value.AsString;
+        SetLength(_string, trunc(maxLenght));
+        Result := TValue.From<string>(_string);
+      end;
+  end;
+end;
+
+function getDefaultTValue(AType: TRttiType): TValue;
+begin
+  case AType.TypeKind of
+    tkString, tkLString, tkWString, tkUString:
+      Result := TValue.From<string>('');
+    tkInteger, tkInt64:
+      Result := TValue.From<Integer>(0);
+    tkFloat:
+      Result := TValue.From<Double>(0.0);
+    tkEnumeration:
+      if AType.Handle = TypeInfo(Boolean) then
+        Result := TValue.From<Boolean>(false);
+  end;
+end;
+
+function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
+begin
+  case AValue.Kind of
+    tkInteger, tkInt64:
+      Result := AValue.AsInteger = 0;
+    tkFloat:
+      Result := AValue.AsExtended = 0;
+    tkString, tkLString, tkWString, tkUString:
+      Result := AValue.AsString = '';
+    tkEnumeration:
+      Result := AValue.AsBoolean = False;
+  else
+    Result := False;
+  end;
 end;
 
 function myIsDebuggerPresent: boolean;
