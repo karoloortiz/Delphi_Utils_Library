@@ -58,6 +58,8 @@ function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials
 function HTTP_get(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
 function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
+function HTTP_delete(url: string; bearerToken: string): string; overload;
+function HTTP_delete(url: string; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 //USING INDY WITH SSL (E.G downloadFileWithIndy) YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
 //INCLUDE RESOURCES IN YOUR PROJECT
 //  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
@@ -307,6 +309,39 @@ begin
 
   try
     HTTP_response := _HTTP.Post(url, paramList);
+  finally
+    _HTTP.Free;
+  end;
+
+  Result := HTTP_response;
+end;
+
+function HTTP_delete(url: string; bearerToken: string): string;
+var
+  response: string;
+  _idHTTPRequest: TIdHTTPRequest;
+begin
+  _idHTTPRequest := TIdHTTPRequest.Create(nil);
+  _idHTTPRequest.CustomHeaders.Add('Authorization: Bearer ' + bearerToken);
+  response := HTTP_delete(url, _idHTTPRequest);
+
+  Result := response;
+end;
+
+function HTTP_delete(url: string; idHTTPRequest: TIdHTTPRequest = nil): string;
+var
+  HTTP_response: string;
+  _HTTP: TMyIdHTTP;
+begin
+  _HTTP := TMyIdHTTP.Create(nil);
+
+  if Assigned(idHTTPRequest) then
+  begin
+    _HTTP.Request := idHTTPRequest;
+  end;
+
+  try
+    HTTP_response := _HTTP.Delete(url);
   finally
     _HTTP.Free;
   end;
