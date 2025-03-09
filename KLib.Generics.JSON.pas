@@ -911,7 +911,7 @@ begin
             _subObject := TJSONGenerics.getJSONObject<X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W>
               (_X_sub, ignoreEmptyStrings);
           end
-          else if _propertyType = _rttiContext.GetType(TypeInfo(X)).ToString then
+          else if _propertyType = _rttiContext.GetType(TypeInfo(Y)).ToString then
           begin
             _Y_sub := _rttiField.GetValue(@myRecord).AsType<Y>;
             _subObject := TJSONGenerics.getJSONObject<Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X>
