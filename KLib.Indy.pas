@@ -57,6 +57,8 @@ function getOAuth2Response(const url: string; const clientID: string; const clie
 function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
 function HTTP_get(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_post(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
+function HTTP_post(url: string; bearerToken: string; body: string; responseFileName: string = EMPTY_STRING): string; overload;
+function HTTP_post(url: string; body: string; idHTTPRequest: TIdHTTPRequest = nil; responseFileName: string = EMPTY_STRING): string; overload;
 function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_delete(url: string; bearerToken: string): string; overload;
 function HTTP_delete(url: string; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
@@ -290,6 +292,60 @@ begin
     HTTP_response := HTTP_post(url, paramList, _idHTTPRequest);
   finally
     FreeAndNil(_idHTTPRequest);
+  end;
+
+  Result := HTTP_response;
+end;
+
+function HTTP_post(url: string; bearerToken: string; body: string; responseFileName: string = EMPTY_STRING): string;
+var
+  HTTPResponse: string;
+
+  _idHTTPRequest: TIdHTTPRequest;
+begin
+  _idHTTPRequest := TIdHTTPRequest.Create(nil);
+  try
+    _idHTTPRequest.CustomHeaders.AddValue('Authorization', 'Bearer ' + bearerToken);
+    _idHTTPRequest.ContentType := 'application/json';
+
+    HTTPResponse := HTTP_post(url, body, _idHTTPRequest, responseFileName);
+  finally
+    FreeAndNil(_idHTTPRequest);
+  end;
+
+  Result := HTTPResponse;
+end;
+
+function HTTP_post(url: string; body: string; idHTTPRequest: TIdHTTPRequest = nil;
+  responseFileName: string = EMPTY_STRING): string;
+var
+  HTTP_response: string;
+
+  _HTTP: TMyIdHTTP;
+  _requestStream: TStringStream;
+  _responseStream: TStringStream;
+begin
+  _HTTP := TMyIdHTTP.Create(nil);
+  _responseStream := TStringStream.Create('', TEncoding.UTF8);
+  try
+    if Assigned(idHTTPRequest) then
+      _HTTP.Request := idHTTPRequest;
+
+    _requestStream := TStringStream.Create(body, TEncoding.UTF8);
+    try
+      _HTTP.Post(url, _requestStream, _responseStream);
+      HTTP_response := _responseStream.DataString;
+    finally
+      _requestStream.Free;
+    end;
+  finally
+    _HTTP.Free;
+    _responseStream.Free;
+  end;
+
+  if (responseFileName <> EMPTY_STRING) then
+  begin
+    saveToFile(HTTP_response, responseFileName);
   end;
 
   Result := HTTP_response;
