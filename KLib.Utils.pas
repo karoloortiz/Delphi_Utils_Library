@@ -41,7 +41,7 @@ interface
 uses
   KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
-  System.SysUtils, System.Classes, System.Rtti, System.JSON;
+  System.SysUtils, System.Classes, System.Rtti, System.JSON, System.TypInfo;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
@@ -82,7 +82,9 @@ function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING;
 procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
 procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
-procedure saveToFile(source: string; fileName: string);
+procedure saveBase64ToFile(text: string; fileName: string);
+procedure saveToFile(text: string; fileName: string); overload;
+procedure saveToFile(text: string; fileName: string; encoding: TEncoding); overload;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 
@@ -177,6 +179,8 @@ function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPAR
 function getFloatToStrDecimalSeparator: char;
 
 function get_status_asString(status: TStatus): string;
+
+function getSchemaOfType(AType: PTypeInfo): string;
 
 procedure restartMyThread(var myThread: TMyThread);
 
@@ -690,13 +694,32 @@ begin
   TFile.AppendAllText(filename, _text);
 end;
 
-procedure saveToFile(source: string; fileName: string);
+procedure saveBase64ToFile(text: string; fileName: string);
+var
+  _bytes: TBytes;
+  _stream: TBytesStream;
+begin
+  _bytes := TNetEncoding.Base64.DecodeStringToBytes(text);
+  _stream := TBytesStream.Create(_bytes);
+  try
+    _stream.SaveToFile(fileName);
+  finally
+    _stream.Free;
+  end;
+end;
+
+procedure saveToFile(text: string; fileName: string);
+begin
+  saveToFile(text, fileName, TEncoding.UTF8);
+end;
+
+procedure saveToFile(text: string; fileName: string; encoding: TEncoding);
 var
   _stringList: TStringList;
 begin
   try
-    _stringList := stringToTStringList(source);
-    _stringList.SaveToFile(fileName);
+    _stringList := stringToTStringList(text);
+    _stringList.SaveToFile(fileName, encoding);
   finally
     FreeAndNil(_stringList);
   end;
@@ -1858,6 +1881,69 @@ begin
   end;
 
   Result := status_asString;
+end;
+
+function getSchemaOfType(AType: PTypeInfo): string;
+var
+  ctx: TRTTIContext;
+  rttiType: TRttiType;
+  resultList: TStringList;
+
+  procedure ProcessRecord(aType: TRttiType; indent: string);
+  var
+    subField: TRttiField;
+    subFieldType: PTypeInfo;
+    subType: TRttiType;
+    elementType: PTypeInfo;
+  begin
+    for subField in aType.GetFields do
+    begin
+      subFieldType := subField.FieldType.Handle;
+
+      case subFieldType.Kind of
+        tkRecord:
+          begin
+            resultList.Add(indent + subField.Name + ': Record');
+            ProcessRecord(ctx.GetType(subFieldType), indent + '  '); // Ricorsione
+          end;
+        tkDynArray:
+          begin
+            // Prendi il tipo degli elementi dell'array
+            elementType := GetTypeData(subFieldType)^.elType2^;
+            if Assigned(elementType) then
+            begin
+              resultList.Add(indent + subField.Name + ': Array of ' + elementType.Name);
+
+              // Se gli elementi sono record, esplorali
+              subType := ctx.GetType(elementType);
+              if (subType <> nil) and (subType.TypeKind = tkRecord) then
+              begin
+                resultList.Add(indent + '  (Array Content): Record');
+                ProcessRecord(subType, indent + '    ');
+              end;
+            end
+            else
+              resultList.Add(indent + subField.Name + ': Array of Unknown');
+          end;
+      else
+        resultList.Add(indent + subField.Name + ': ' + subField.FieldType.ToString);
+      end;
+    end;
+  end;
+
+begin
+  resultList := TStringList.Create;
+  try
+    rttiType := ctx.GetType(AType);
+    if Assigned(rttiType) then
+    begin
+      resultList.Add(rttiType.Name + ': Record');
+      ProcessRecord(rttiType, '  ');
+    end;
+    Result := resultList.Text;
+  finally
+    resultList.Free;
+  end;
 end;
 
 procedure restartMyThread(var myThread: TMyThread);
