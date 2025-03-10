@@ -38,7 +38,7 @@
 //  ATTRIBUTES:
 //  - CustomNameAttribute
 //  - DefaultValueAttribute
-//  - MaxLenghtAttribute
+//  - MaxLengthAttribute
 //  - IgnoreAttribute
 //  - RequiredAttribute
 //###########---EXAMPLE OF USE----##########################
@@ -48,12 +48,12 @@
 // type
 //  TResponse = record
 //  public
-//    [MaxLenghtAttribute(8)]
+//    [MaxLengthAttribute(8)]
 //    timestamp: string;
 //    timestamps: TArrayOfString;
 //    values: TArrayOfInteger;
 //    [RequiredAttribute]
-//    sucess: boolen;
+//    success: boolean;
 //    [DefaultValueAttribute('yes')]
 //    error: string;
 //    [IgnoreAttribute]
@@ -103,7 +103,7 @@ type
     class function getJSONObject<T>(const myRecord: T; ignoreEmptyStrings: Boolean = True): TJSONObject;
 
     class function JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
-    class function getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLenghtValue: double = -1): TJSONValue;
+    class function getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLengthValue: double = -1): TJSONValue;
     //
     class function readFromFile<T>(filename: string): T;
     class function getParsedJSON<T>(JSONAsString: string): T; overload;
@@ -243,9 +243,9 @@ begin
 
       //apply maxlength attribute
       maxLengthAttributeValue := -1;
-      if (Field.GetAttribute<MaxLenghtAttribute> <> nil) then
+      if (Field.GetAttribute<MaxLengthAttribute> <> nil) then
       begin
-        maxLengthAttributeValue := Field.GetAttribute<MaxLenghtAttribute>.Value;
+        maxLengthAttributeValue := Field.GetAttribute<MaxLengthAttribute>.Value;
       end;
 
       // Skip empty values
@@ -272,7 +272,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLenghtValue: double = -1): TJSONValue;
+class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLengthValue: double = -1): TJSONValue;
 var
   _value: TValue;
   Ctx: TRttiContext;
@@ -285,9 +285,9 @@ begin
   RttiType := Ctx.GetType(AValue.TypeInfo);
 
   _value := AValue;
-  if (maxLenghtValue > 0) then
+  if (maxLengthValue > 0) then
   begin
-    _value := getResizedTValue(_value, maxLenghtValue);
+    _value := getResizedTValue(_value, maxLengthValue);
   end;
 
   case RttiType.TypeKind of
@@ -325,9 +325,9 @@ begin
     tkDynArray:
       begin
         _maxArraySize := _value.GetArrayLength;
-        if (maxLenghtValue > 0) then
+        if (maxLengthValue > 0) then
         begin
-          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxLenghtValue));
+          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxLengthValue));
         end;
 
         Arr := TJSONArray.Create;

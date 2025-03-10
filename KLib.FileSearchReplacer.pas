@@ -195,7 +195,7 @@ procedure TFileSearchReplacer.replace(const oldText: string; const newText: stri
 
 var
   _bufferBytes: TBytes;
-  _bufferLenght: Integer;
+  _bufferLength: Integer;
   bReplaced: Boolean;
 
   _sourceSize: int64;
@@ -205,15 +205,15 @@ begin
   CopyPreamble;
 
   _sourceSize := sourceFile.Size;
-  _bufferLenght := getMax(encoding.GetByteCount(oldText) * 5, 2048);
-  _bufferLenght := getMax(encoding.GetByteCount(newText) * 5, _bufferLenght);
-  SetLength(_bufferBytes, _bufferLenght);
+  _bufferLength := getMax(encoding.GetByteCount(oldText) * 5, 2048);
+  _bufferLength := getMax(encoding.GetByteCount(newText) * 5, _bufferLength);
+  SetLength(_bufferBytes, _bufferLength);
 
   bReplaced := False;
   while sourceFile.Position < _sourceSize do
   begin
-    _bufferLenght := sourceFile.Read(_bufferBytes, Length(_bufferBytes));
-    SetLength(_bufferBytes, _bufferLenght);
+    _bufferLength := sourceFile.Read(_bufferBytes, Length(_bufferBytes));
+    SetLength(_bufferBytes, _bufferLength);
     parseBuffer(_bufferBytes, bReplaced);
   end;
 

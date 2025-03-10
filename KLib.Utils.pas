@@ -1322,25 +1322,25 @@ const
 var
   extractedString: string;
 
-  _lenghtQuotedString: integer;
-  _lenghtMainString: integer;
+  _lengthQuotedString: integer;
+  _lengthMainString: integer;
   _firstIndex: integer;
   _lastIndex: integer;
 begin
   extractedString := EMPTY_STRING;
 
-  _lenghtQuotedString := quoteString.Length;
+  _lengthQuotedString := quoteString.Length;
   _firstIndex := mainString.IndexOf(quoteString);
   if _firstIndex > -1 then
   begin
-    _firstIndex := _firstIndex + _lenghtQuotedString;
+    _firstIndex := _firstIndex + _lengthQuotedString;
 
-    _lenghtMainString := Length(mainString);
-    _lastIndex := mainString.LastIndexOf(quoteString, _lenghtMainString, _lenghtMainString - _firstIndex); //IGNORE FIRST OCCURENCE
+    _lengthMainString := Length(mainString);
+    _lastIndex := mainString.LastIndexOf(quoteString, _lengthMainString, _lengthMainString - _firstIndex); //IGNORE FIRST OCCURENCE
     if _lastIndex > -1 then
     begin
-      _lastIndex := _lastIndex - _lenghtQuotedString;
-      extractedString := mainString.Substring(_lenghtQuotedString, _lastIndex);
+      _lastIndex := _lastIndex - _lengthQuotedString;
+      extractedString := mainString.Substring(_lengthQuotedString, _lastIndex);
     end;
   end;
 
@@ -1373,12 +1373,12 @@ const
 var
   mainStringWithSubStringInserted: string;
 
-  _lenght: integer;
+  _length: integer;
   _firstStringPart: string;
   _lastStringPart: string;
 begin
-  _lenght := Length(mainString);
-  if (index > _lenght) or (index < 0) then
+  _length := Length(mainString);
+  if (index > _length) or (index < 0) then
   begin
     raise Exception.Create(ERR_MSG);
   end;
@@ -1741,15 +1741,15 @@ end;
 
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string);
 var
-  _lenghtSource: integer;
+  _lengthSource: integer;
   _lengthDestSecondString: integer;
   _lastPositionOfDelimiter: integer;
 begin
-  _lenghtSource := Length(source);
+  _lengthSource := Length(source);
   _lastPositionOfDelimiter := delimiterPosition + delimiterLength;
-  if _lenghtSource > _lastPositionOfDelimiter then
+  if _lengthSource > _lastPositionOfDelimiter then
   begin
-    _lengthDestSecondString := _lenghtSource - _lastPositionOfDelimiter;
+    _lengthDestSecondString := _lengthSource - _lastPositionOfDelimiter;
     destFirstString := Copy(source, 0, delimiterPosition - 1);
     destSecondString := Copy(source, _lastPositionOfDelimiter + 1, _lengthDestSecondString);
   end

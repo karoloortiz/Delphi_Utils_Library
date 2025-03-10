@@ -116,7 +116,7 @@ type
     constructor Create;
   end;
 
-  MaxLenghtAttribute = class(TCustomAttribute)
+  MaxLengthAttribute = class(TCustomAttribute)
   public
     value: Double;
 
@@ -181,7 +181,7 @@ constructor IgnoreAttribute.Create;
 begin
 end;
 
-constructor MaxLenghtAttribute.Create(const value: Double);
+constructor MaxLengthAttribute.Create(const value: Double);
 begin
   Self.value := value;
 end;
