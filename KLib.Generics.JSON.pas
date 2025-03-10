@@ -116,7 +116,7 @@ implementation
 
 uses
   KLib.Utils, KLib.Math,
-  System.DateUtils, System.SysUtils, System.Classes;
+  System.DateUtils, System.SysUtils, System.Classes, System.Generics.Collections;
 
 constructor TJSONRecord<T>.Create();
 begin

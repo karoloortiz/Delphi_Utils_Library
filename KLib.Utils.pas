@@ -215,7 +215,8 @@ implementation
 uses
   KLib.Validate, KLib.Indy, KLib.FileSearchReplacer, KLib.Math,
   Vcl.ExtCtrls,
-  System.Zip, System.IOUtils, System.StrUtils, System.Character, System.RegularExpressions,
+  System.Zip, System.IOUtils, System.StrUtils, System.Character,
+  System.RegularExpressions, System.Generics.Collections,
   System.Variants, System.NetEncoding, System.DateUtils;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
@@ -1912,7 +1913,7 @@ var
             elementType := GetTypeData(subFieldType)^.elType2^;
             if Assigned(elementType) then
             begin
-              resultList.Add(indent + subField.Name + ': Array of ' + elementType.Name);
+              resultList.Add(indent + subField.Name + ': Array of ' + string(elementType.Name));
 
               // Se gli elementi sono record, esplorali
               subType := ctx.GetType(elementType);
@@ -2184,6 +2185,7 @@ end;
 
 function myIsDebuggerPresent: boolean;
 begin
+{$warn SYMBOL_PLATFORM OFF}
   Result := System.DebugHook <> 0;
 end;
 
