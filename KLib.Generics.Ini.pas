@@ -391,7 +391,7 @@ begin
 
         if (_rttiField.FieldType.TypeKind = tkDynArray) then
         begin
-          _tempJSONRecord := TJSONGenerics.getParsedJSON<TTempJsonRecord, TArrayOfStrings>(
+          _tempJSONRecord := TJSONGenerics.getParsedJSON<TTempJsonRecord>(
             '{"_arrayOfStrings":' + _propertyValue + '}');
 
           TValue.Make(@_tempJSONRecord._arrayOfStrings, TypeInfo(TArrayOfStrings),
