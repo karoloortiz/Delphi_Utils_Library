@@ -261,7 +261,7 @@ var
   _value: TValue;
   Ctx: TRttiContext;
   RttiType: TRttiType;
-  I: Integer;
+  i: Integer;
   Arr: TJSONArray;
   Obj: TJSONObject;
   _maxArraySize: integer;
@@ -308,16 +308,16 @@ begin
       end;
     tkDynArray:
       begin
-        _maxArraySize := _value.GetArrayLength - 1;
+        _maxArraySize := _value.GetArrayLength;
         if (maxLenghtValue > 0) then
         begin
-          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxLenghtValue)) - 1;
+          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxLenghtValue));
         end;
 
         Arr := TJSONArray.Create;
         try
-          for I := 0 to _maxArraySize do
-            Arr.AddElement(getJSONFromTValue(_value.GetArrayElement(I), AIgnoreEmpty));
+          for i := 0 to (_maxArraySize - 1) do
+            Arr.AddElement(getJSONFromTValue(_value.GetArrayElement(i), AIgnoreEmpty));
           Result := Arr;
         except
           Arr.Free;

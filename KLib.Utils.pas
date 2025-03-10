@@ -203,7 +203,7 @@ function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolea
 function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
 
-function getResizedTValue(value: TValue; maxLenght: double): TValue;
+function getResizedTValue(value: TValue; maxLengtH: double): TValue;
 function getDefaultTValue(AType: TRttiType): TValue;
 
 function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
@@ -2111,16 +2111,16 @@ begin
   Result := value;
 end;
 
-function getResizedTValue(value: TValue; maxLenght: double): TValue;
+function getResizedTValue(value: TValue; maxLength: double): TValue;
 var
   _string: string;
 begin
   case value.Kind of
     tkInteger, tkInt64:
       begin
-        if value.AsInteger >= maxLenght then
+        if value.AsInteger >= maxLength then
         begin
-          Result := TValue.From<Integer>(trunc(maxLenght));
+          Result := TValue.From<Integer>(trunc(maxLength));
         end
         else
         begin
@@ -2129,9 +2129,9 @@ begin
       end;
     tkFloat:
       begin
-        if value.AsExtended >= maxLenght then
+        if value.AsExtended >= maxLength then
         begin
-          Result := TValue.From<Double>(maxLenght);
+          Result := TValue.From<Double>(maxLength);
         end
         else
         begin
@@ -2141,9 +2141,13 @@ begin
     tkString, tkLString, tkWString, tkUString:
       begin
         _string := value.AsString;
-        SetLength(_string, trunc(maxLenght));
+        SetLength(_string, trunc(maxLength));
         Result := TValue.From<string>(_string);
       end;
+  else
+    begin
+      Result := value;
+    end;
   end;
 end;
 
