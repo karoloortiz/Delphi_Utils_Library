@@ -41,7 +41,7 @@ interface
 uses
   KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
-  System.SysUtils, System.Classes, System.Rtti;
+  System.SysUtils, System.Classes, System.Rtti, System.JSON;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
@@ -137,6 +137,9 @@ function getMainStringWithSubStringInserted(mainString: string; insertedString: 
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 function getStringWithFixedLength(value: string; fixedLength: integer): string;
 function getStringFromStream(stream: TStream): string;
+
+function getCleanJSONString(const JSONStr: string): string;
+function getCleanJSON(JsonValue: TJSONValue): TJSONValue;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): TDate; overload;
@@ -1402,6 +1405,84 @@ begin
   end;
 
   Result := _string
+end;
+
+function getCleanJSONString(const JSONStr: string): string;
+var
+  JsonValue, CleanedJson: TJSONValue;
+begin
+  JsonValue := TJSONObject.ParseJSONValue(JSONStr);
+  if Assigned(JsonValue) then
+    try
+      CleanedJson := getCleanJSON(JsonValue);
+      try
+        Result := CleanedJson.ToJSON;
+      finally
+        CleanedJson.Free;
+      end;
+    finally
+      JsonValue.Free;
+    end
+  else
+    Result := '{}';
+end;
+
+function getCleanJSON(JsonValue: TJSONValue): TJSONValue;
+var
+  JSONObject: TJSONObject;
+  JSONArray: TJSONArray;
+  Pair: TJSONPair;
+  NewObject: TJSONObject;
+  NewArray: TJSONArray;
+  Item: TJSONValue;
+  i: Integer;
+begin
+  if JsonValue is TJSONObject then
+  begin
+    JSONObject := TJSONObject(JsonValue);
+    NewObject := TJSONObject.Create;
+    try
+      for Pair in JSONObject do
+      begin
+        Pair.JsonValue := getCleanJSON(Pair.JsonValue);
+        if not(Pair.JsonValue is TJSONString and (Pair.JsonValue.Value = '')) and
+          not(Pair.JsonValue is TJSONObject and (TJSONObject(Pair.JsonValue).Count = 0)) and
+          not(Pair.JsonValue is TJSONArray and (TJSONArray(Pair.JsonValue).Count = 0)) then
+        begin
+          NewObject.AddPair(Pair.JsonString.Value, Pair.JsonValue.Clone as TJSONValue);
+        end;
+      end;
+      Result := NewObject;
+    except
+      NewObject.Free;
+      raise;
+    end;
+  end
+  else if JsonValue is TJSONArray then
+  begin
+    JSONArray := TJSONArray(JsonValue);
+    NewArray := TJSONArray.Create;
+    try
+      for i := 0 to JSONArray.Count - 1 do
+      begin
+        Item := getCleanJSON(JSONArray.Items[i]);
+        if not(Item is TJSONString and (Item.Value = '')) and
+          not(Item is TJSONObject and (TJSONObject(Item).Count = 0)) and
+          not(Item is TJSONArray and (TJSONArray(Item).Count = 0)) then
+        begin
+          NewArray.AddElement(Item.Clone as TJSONValue);
+        end;
+      end;
+      Result := NewArray;
+    except
+      NewArray.Free;
+      raise;
+    end;
+  end
+  else
+  begin
+    Result := JsonValue.Clone as TJSONValue;
+  end;
 end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
