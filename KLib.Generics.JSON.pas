@@ -38,8 +38,9 @@
 //  ATTRIBUTES:
 //  - CustomNameAttribute
 //  - DefaultValueAttribute
-//  - MaxLengthAttribute
+//  - MaxLenghtAttribute
 //  - IgnoreAttribute
+//  - RequiredAttribute
 //###########---EXAMPLE OF USE----##########################
 // uses
 //  KLib.Generics.JSON, KLib.Generics.Attributes; //always include
@@ -47,10 +48,11 @@
 // type
 //  TResponse = record
 //  public
-//    [MaxLengthAttribute(8)]
+//    [MaxLenghtAttribute(8)]
 //    timestamp: string;
 //    timestamps: TArrayOfString;
 //    values: TArrayOfInteger;
+//    [RequiredAttribute]
 //    sucess: boolen;
 //    [DefaultValueAttribute('yes')]
 //    error: string;
@@ -199,6 +201,7 @@ var
   JSONPair: TJSONPair;
   CustomName: string;
   maxLengthAttributeValue: double;
+  isRequiredAttribute: boolean;
 
   _jsonValue: TJSONValue;
 begin
@@ -214,22 +217,35 @@ begin
       // Get custom name
       CustomName := Field.Name;
       if Field.GetAttribute<CustomNameAttribute> <> nil then
+      begin
         CustomName := Field.GetAttribute<CustomNameAttribute>.Value;
+      end;
 
       // Get field value
       FieldTValue := Field.GetValue(Instance);
 
+      if Field.GetAttribute<CustomNameAttribute> <> nil then
+      begin
+        CustomName := Field.GetAttribute<CustomNameAttribute>.Value;
+      end;
+
+      isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
+
       // Apply default value
       if (checkIfTValueIsEmpty(FieldTValue)) then
       begin
+        if (isRequiredAttribute) then
+        begin
+          raise Exception.Create('Field required: ' + CustomName);
+        end;
         FieldTValue := getDefaultTValue(Field);
       end;
 
       //apply maxlength attribute
       maxLengthAttributeValue := -1;
-      if (Field.GetAttribute<MaxLengthAttribute> <> nil) then
+      if (Field.GetAttribute<MaxLenghtAttribute> <> nil) then
       begin
-        maxLengthAttributeValue := Field.GetAttribute<MaxLengthAttribute>.Value;
+        maxLengthAttributeValue := Field.GetAttribute<MaxLenghtAttribute>.Value;
       end;
 
       // Skip empty values
