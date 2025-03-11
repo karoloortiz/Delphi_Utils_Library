@@ -76,11 +76,11 @@ function getTempfolderPath: string;
 
 function getParentDir(source: string): string;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true; startingFileName: string = EMPTY_STRING): string;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true; startingFileName: string = EMPTY_STRING): TStringList;
 
-procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
-procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+procedure appendToFileInNewLine(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE); overload;
+procedure appendToFile(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveBase64ToFile(text: string; fileName: string);
 procedure saveToFile(text: string; fileName: string); overload;
@@ -244,30 +244,23 @@ begin
 end;
 
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
-const
-  IGNORE_CASE = true;
 var
   _files: TStringList;
   _file: string;
-  _fileName: string;
 begin
-  _files := getFileNamesListInDir(dirName, fileType);
+  _files := getFileNamesListInDir(dirName, fileType, true, startingFileName);
   for _file in _files do
   begin
-    _fileName := ExtractFileName(_file);
-    if _fileName.StartsWith(startingFileName, IGNORE_CASE) then
-    begin
-      deleteFileIfExists(_file);
-    end;
+    deleteFileIfExists(_file);
   end;
   FreeAndNil(_files);
 end;
 
-procedure createEmptyFileIfNotExists(filename: string);
+procedure createEmptyFileIfNotExists(fileName: string);
 begin
-  if not checkIfFileExists(filename) then
+  if not checkIfFileExists(fileName) then
   begin
-    createEmptyFile(filename);
+    createEmptyFile(fileName);
   end;
 end;
 {$hints OFF}
@@ -604,7 +597,8 @@ begin
   Result := parentDir;
 end;
 
-function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): string;
+function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING;
+  fullPath: boolean = true; startingFileName: string = EMPTY_STRING): string;
 const
   ERR_MSG = 'No files found.';
 var
@@ -612,7 +606,7 @@ var
 
   _fileNamesList: TStringList;
 begin
-  _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath);
+  _fileNamesList := getFileNamesListInDir(dirName, fileType, fullPath, startingFileName);
   if _fileNamesList.Count > 0 then
   begin
     fileName := _fileNamesList[0];
@@ -630,7 +624,8 @@ begin
   Result := fileName;
 end;
 
-function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING; fullPath: boolean = true): TStringList;
+function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING;
+  fullPath: boolean = true; startingFilename: string = EMPTY_STRING): TStringList;
 var
   fileNamesList: TStringList;
 
@@ -642,7 +637,7 @@ var
   _errorMsg: string;
 begin
   fileNamesList := TStringList.Create;
-  _mask := getCombinedPath(dirName, '*');
+  _mask := getCombinedPath(dirName, startingFileName + '*');
   if fileType <> EMPTY_STRING then
   begin
     _mask := _mask + '.' + fileType;
@@ -669,22 +664,22 @@ begin
   Result := fileNamesList;
 end;
 
-procedure appendToFileInNewLine(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE);
+procedure appendToFileInNewLine(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE);
 begin
   appendToFile(fileName, text, forceCreationFile, FORCE);
 end;
 
-procedure appendToFile(filename: string; text: string; forceCreationFile: boolean = NOT_FORCE;
+procedure appendToFile(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE);
 var
   _text: string;
 begin
   if forceCreationFile then
   begin
-    createEmptyFileIfNotExists(filename);
+    createEmptyFileIfNotExists(fileName);
   end;
   _text := text;
-  if (checkIfFileExistsAndIsNotEmpty(filename)) then
+  if (checkIfFileExistsAndIsNotEmpty(fileName)) then
   begin
     if (forceAppendInNewLine) then
     begin
@@ -692,7 +687,7 @@ begin
     end;
   end;
 
-  TFile.AppendAllText(filename, _text);
+  TFile.AppendAllText(fileName, _text);
 end;
 
 procedure saveBase64ToFile(text: string; fileName: string);
