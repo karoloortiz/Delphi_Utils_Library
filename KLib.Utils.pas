@@ -122,6 +122,7 @@ function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORM
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
+function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;
 function getEscapedMySQLString(mainString: string): string;
 function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
 function getEscapedHTMLString(mainString: string): string;
@@ -1179,6 +1180,18 @@ end;
 function getCurrentDateTime: TDateTime;
 begin
   Result := Now;
+end;
+
+function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;
+var
+  _zpl: string;
+  _indexLastPositionZPL: integer;
+begin
+  _indexLastPositionZPL := AnsiPos(END_ZPL_CMD, zpl) - 1;
+  _ZPL := getMainStringWithSubStringInserted(zpl,
+    extraText, _indexLastPositionZPL);
+
+  Result := _zpl;
 end;
 
 function getEscapedMySQLString(mainString: string): string;
