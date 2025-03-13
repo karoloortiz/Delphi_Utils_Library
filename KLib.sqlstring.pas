@@ -52,8 +52,11 @@ type
     procedure paramByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
     procedure paramByNameAsFloat(paramName: string; value: Double;
       decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR; caseSensitive: boolean = false);
+    procedure paramByNameAsString(paramName: string; value: double;
+      decimalSeparator: char = DECIMAL_SEPARATOR_IT); overload;
+    procedure paramByNameAsString(paramName: string; value: integer); overload;
     procedure paramByNameAsString(paramName: string; value: string;
-      caseSensitive: boolean = false);
+      caseSensitive: boolean = false); overload;
 
     procedure setParamAsDoubleQuotedString(paramName: string; value: string;
       caseSensitive: boolean = false);
@@ -97,6 +100,23 @@ var
 begin
   _doubleAsString := getDoubleAsString(value, decimalSeparator);
   setParamAsString(paramName, _doubleAsString, caseSensitive);
+end;
+
+procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: double;
+  decimalSeparator: char = DECIMAL_SEPARATOR_IT);
+var
+  _doubleAsString: string;
+begin
+  _doubleAsString := getDoubleAsString(value, decimalSeparator);
+  paramByNameAsString(paramName, _doubleAsString);
+end;
+
+procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: integer);
+var
+  _integerAsString: string;
+begin
+  _integerAsString := IntToStr(value);
+  paramByNameAsString(paramName, _integerAsString);
 end;
 
 procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: string;
