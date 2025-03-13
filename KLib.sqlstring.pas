@@ -45,14 +45,14 @@ type
   sqlstring = type string;
 
   TSQLStringHelper = record helper for sqlstring
-    procedure setParamByNameAsDate(paramName: string; value: TDateTime;
+    procedure paramByNameAsDate(paramName: string; value: TDateTime;
       caseSensitive: boolean = false);
-    procedure setParamByNameAsDateTime(paramName: string;
+    procedure paramByNameAsDateTime(paramName: string;
       value: TDateTime; caseSensitive: boolean = false; formatting: string = DATETIME_FORMAT);
-    procedure setParamByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
-    procedure setParamByNameAsFloat(paramName: string; value: Double;
+    procedure paramByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
+    procedure paramByNameAsFloat(paramName: string; value: Double;
       decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR; caseSensitive: boolean = false);
-    procedure setParamByNameAsString(paramName: string; value: string;
+    procedure paramByNameAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
     procedure setParamAsDoubleQuotedString(paramName: string; value: string;
@@ -67,13 +67,13 @@ uses
   Klib.Utils, KLib.mystring,
   System.SysUtils;
 
-procedure TSQLStringHelper.setParamByNameAsDate(paramName: string; value: TDateTime;
+procedure TSQLStringHelper.paramByNameAsDate(paramName: string; value: TDateTime;
   caseSensitive: boolean = false);
 begin
-  setParamByNameAsDateTime(paramName, value, caseSensitive, DATE_FORMAT);
+  paramByNameAsDateTime(paramName, value, caseSensitive, DATE_FORMAT);
 end;
 
-procedure TSQLStringHelper.setParamByNameAsDateTime(paramName: string;
+procedure TSQLStringHelper.paramByNameAsDateTime(paramName: string;
   value: TDateTime; caseSensitive: boolean = false; formatting: string = DATETIME_FORMAT);
 var
   _dateTimeAsStringWithFormatting: string;
@@ -82,7 +82,7 @@ begin
   setParamAsDoubleQuotedString(paramName, _dateTimeAsStringWithFormatting, caseSensitive);
 end;
 
-procedure TSQLStringHelper.setParamByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
+procedure TSQLStringHelper.paramByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
 var
   _integerAsString: string;
 begin
@@ -90,7 +90,7 @@ begin
   setParamAsString(paramName, _integerAsString, caseSensitive);
 end;
 
-procedure TSQLStringHelper.setParamByNameAsFloat(paramName: string; value: Double;
+procedure TSQLStringHelper.paramByNameAsFloat(paramName: string; value: Double;
   decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR; caseSensitive: boolean = false);
 var
   _doubleAsString: string;
@@ -99,7 +99,7 @@ begin
   setParamAsString(paramName, _doubleAsString, caseSensitive);
 end;
 
-procedure TSQLStringHelper.setParamByNameAsString(paramName: string; value: string;
+procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: string;
   caseSensitive: boolean = false);
 begin
   setParamAsDoubleQuotedString(paramName, value, caseSensitive);
