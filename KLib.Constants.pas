@@ -85,6 +85,10 @@ const
 
   APPLICATION_JSON_CONTENT_TYPE = 'application/json';
 
+  START_ZPL_CMD = '^XA';
+  END_ZPL_CMD = '^XZ';
+  RESET_ZPL_CMD = '^PON^LH0,0^FWN';
+
   RANDOM_STRING = '99~@(To4h7KeFSX|{T2M';
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
