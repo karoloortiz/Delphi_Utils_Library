@@ -62,6 +62,7 @@ type
       caseSensitive: boolean = false);
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
+    procedure saveToFile(fileName: string);
   end;
 
 implementation
@@ -145,6 +146,14 @@ begin
   _mystring.setParamAsString(paramName, value, caseSensitive);
 
   Self := _mystring;
+end;
+
+procedure TSQLStringHelper.saveToFile(fileName: string);
+var
+  _mystring: mystring;
+begin
+  _mystring := Self;
+  _mystring.saveToFile(fileName);
 end;
 
 end.

@@ -42,9 +42,9 @@ uses
   KLib.Constants;
 
 type
-  myString = type string;
+  mystring = type string;
 
-  TMyStringHelper = record helper for myString
+  TMyStringHelper = record helper for mystring
     procedure setParamAsDoubleQuotedDate(paramName: string; value: TDateTime;
       caseSensitive: boolean = false; formatting: string = DATE_FORMAT);
     procedure setParamAsDoubleQuotedDateTime(paramName: string;
@@ -90,6 +90,8 @@ type
     function getNumberOfLines: integer;
     function checkIfContainsSubStringNoCaseSensitive(subString: string): boolean;
     function checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
+
+    procedure saveToFile(fileName: string);
   end;
 
 implementation
@@ -301,6 +303,11 @@ end;
 function TMyStringHelper.checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
 begin
   Result := checkIfMainStringContainsSubString(Self, subString, caseSensitiveSearch);
+end;
+
+procedure TMyStringHelper.saveToFile(fileName: string);
+begin
+  KLib.Utils.saveToFile(Self, fileName);
 end;
 
 end.
