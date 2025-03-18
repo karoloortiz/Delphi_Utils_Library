@@ -40,6 +40,7 @@ interface
 
 uses
   KLib.Types, KLib.Constants,
+  RzDBCmbo,
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
   System.Classes;
 
@@ -130,6 +131,8 @@ function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
 
 function getHeightOfCaption(text: string; font: TFont; width: integer): integer;
 function getHeightOfSingleCharacter(myFont: TFont): integer;
+
+procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
 
 implementation
 
@@ -292,10 +295,10 @@ var
   _componentPositionInScreenCoordinates: TPoint;
 begin
   _componentPositionInScreenCoordinates := component.ClientToScreen(Point(0, 0));
-  self.position.top := _componentPositionInScreenCoordinates.Y;
-  self.position.left := _componentPositionInScreenCoordinates.X;
-  self.position.bottom := _componentPositionInScreenCoordinates.Y + self.size.height;
-  self.position.right := _componentPositionInScreenCoordinates.X + self.size.width;
+  Self.position.top := _componentPositionInScreenCoordinates.Y;
+  Self.position.left := _componentPositionInScreenCoordinates.X;
+  Self.position.bottom := _componentPositionInScreenCoordinates.Y + Self.size.heightAsInteger;
+  Self.position.right := _componentPositionInScreenCoordinates.X + Self.size.widthAsInteger;
 end;
 
 function TColorToString(color: TColor): string;
@@ -803,9 +806,10 @@ end;
 
 function getHeightOfSingleCharacter(myFont: TFont): integer;
 var
+  height: integer;
+
   _label: TLabel;
   _text: string;
-  _height: integer;
 begin
   _text := 'A';
   _label := TLabel.Create(nil);
@@ -815,9 +819,21 @@ begin
     Font := myFont;
     Caption := _text;
   end;
-  _height := _label.Height;
+  height := _label.Height;
   FreeAndNil(_label);
-  Result := _height;
+
+  Result := height;
+end;
+
+procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
+var
+  _codeDescription: TCodeDescription;
+begin
+  control.ClearItemsValues;
+  for _codeDescription in codeDescriptions do
+  begin
+    control.AddItemValue(_codeDescription.description, _codeDescription.code);
+  end;
 end;
 
 end.
