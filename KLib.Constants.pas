@@ -42,6 +42,8 @@ uses
   KLib.Types;
 
 const
+  DECIMAL_FORMAT = '#0.00';
+
   DATE_FORMAT = 'yyyy-mm-dd';
   DATE_FORMAT_ITALIAN = 'dd/mm/yyyy';
   DATETIME_FORMAT = 'yyyy-mm-dd hh:nn:ss';
