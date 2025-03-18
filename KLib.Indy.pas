@@ -303,6 +303,7 @@ var
 
   _idHTTPRequest: TIdHTTPRequest;
 begin
+
   _idHTTPRequest := TIdHTTPRequest.Create(nil);
   try
     _idHTTPRequest.CustomHeaders.AddValue('Authorization', 'Bearer ' + bearerToken);
@@ -329,7 +330,9 @@ begin
   _responseStream := TStringStream.Create('', TEncoding.UTF8);
   try
     if Assigned(idHTTPRequest) then
+    begin
       _HTTP.Request := idHTTPRequest;
+    end;
 
     _requestStream := TStringStream.Create(body, TEncoding.UTF8);
     try

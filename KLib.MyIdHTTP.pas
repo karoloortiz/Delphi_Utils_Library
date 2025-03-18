@@ -68,6 +68,8 @@ begin
   end;
 
   HandleRedirects := true;
+
+  HTTPOptions := HTTPOptions + [hoNoProtocolErrorException, hoWantProtocolErrorContent];
 end;
 
 procedure TMyIdHTTP.OnStatusInfoEx(ASender: TObject; const AsslSocket: PSSL;
