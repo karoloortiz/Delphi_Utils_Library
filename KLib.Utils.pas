@@ -496,9 +496,13 @@ const
 begin
   if not checkIfDirExists(dirName) then
   begin
-    if not CreateDir(dirName) then
-    begin
-      raise Exception.Create(ERR_MSG);
+    try
+      ForceDirectories(dirName);
+    except
+      on E: Exception do
+      begin
+        raise Exception.Create(ERR_MSG);
+      end;
     end;
   end;
 end;
@@ -713,7 +717,10 @@ end;
 procedure saveToFile(text: string; fileName: string; encoding: TEncoding);
 var
   _stringList: TStringList;
+  _parentDir: string;
 begin
+  _parentDir := getParentDir(fileName);
+  createDirIfNotExists(_parentDir);
   try
     _stringList := stringToTStringList(text);
     _stringList.SaveToFile(fileName, encoding);
