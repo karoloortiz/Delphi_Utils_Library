@@ -141,8 +141,19 @@ type
   end;
 
   TSize = record
-    width: integer;
-    height: integer;
+    length: double;
+    width: double;
+    height: double;
+
+    function lengthAsInteger: integer;
+    function widthAsInteger: integer;
+    function heightAsInteger: integer;
+    procedure clear;
+  end;
+
+  TCodeDescription = record
+    description: string;
+    code: string;
 
     procedure clear;
   end;
@@ -300,9 +311,31 @@ begin
   Self := EMPTY;
 end;
 
+function TSize.lengthAsInteger: integer;
+begin
+  Result := trunc(length);
+end;
+
+function TSize.widthAsInteger: integer;
+begin
+  Result := trunc(width);
+end;
+
+function TSize.heightAsInteger: integer;
+begin
+  Result := trunc(height);
+end;
+
 procedure TSize.clear;
 const
   EMPTY: TSize = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TCodeDescription.clear;
+const
+  EMPTY: TCodeDescription = ();
 begin
   Self := EMPTY;
 end;
