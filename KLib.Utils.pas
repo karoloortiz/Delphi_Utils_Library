@@ -161,6 +161,8 @@ function stringToVariantType(stringValue: string; destinationTypeAsString: strin
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 function arrayOfVariantToTStringList(arrayOfVariant: Variant): TStringList;
 
+function splitStringsAsTArrayStrings(source: string; chunkSize: Integer): TArray<string>;
+
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
@@ -1743,6 +1745,18 @@ begin
   end;
 
   Result := fieldStringList;
+end;
+
+function splitStringsAsTArrayStrings(source: string; chunkSize: Integer): TArray<string>;
+var
+  i, len, count: Integer;
+begin
+  len := Length(source);
+  count := (len + chunkSize - 1) div chunkSize;
+  SetLength(Result, count);
+
+  for i := 0 to count - 1 do
+    Result[i] := Copy(source, i * chunkSize + 1, chunkSize);
 end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
