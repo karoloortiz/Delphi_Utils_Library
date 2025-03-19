@@ -202,6 +202,7 @@ var
   CustomName: string;
   maxLengthAttributeValue: double;
   isRequiredAttribute: boolean;
+  _isDefaultAttribute: boolean;
 
   _jsonValue: TJSONValue;
 begin
@@ -231,10 +232,11 @@ begin
 
       isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
 
+      _isDefaultAttribute := Field.GetAttribute<DefaultValueAttribute> <> nil;
       // Apply default value
       if (checkIfTValueIsEmpty(FieldTValue)) then
       begin
-        if (isRequiredAttribute) then
+        if (isRequiredAttribute) and (not _isDefaultAttribute) then
         begin
           raise Exception.Create('Field required: ' + CustomName);
         end;
@@ -485,20 +487,22 @@ end;
 
 class function TJSONGenerics.getDefaultTValue(Field: TRttiField): TValue;
 var
-  DefaultAttr: DefaultValueAttribute;
+  _defaultAttr: DefaultValueAttribute;
 begin
-  DefaultAttr := Field.GetAttribute<DefaultValueAttribute>;
+  _defaultAttr := Field.GetAttribute<DefaultValueAttribute>;
 
-  if (DefaultAttr <> nil) then
+  if (_defaultAttr <> nil) then
   begin
     case Field.FieldType.TypeKind of
       tkString, tkLString, tkWString, tkUString:
-        Result := TValue.From<string>(DefaultAttr.Value);
+        Result := TValue.From<string>(_defaultAttr.Value);
       tkInteger:
-        Result := TValue.From<Integer>(StrToIntDef(DefaultAttr.Value, 0));
+        Result := TValue.From<Integer>(StrToIntDef(_defaultAttr.Value, 0));
       tkEnumeration:
         if Field.FieldType.Handle = TypeInfo(Boolean) then
-          Result := TValue.From<Boolean>(SameText(DefaultAttr.Value, 'true'));
+        begin
+          Result := TValue.From<Boolean>(SameText(_defaultAttr.Value, 'true'));
+        end;
     end;
   end
   else

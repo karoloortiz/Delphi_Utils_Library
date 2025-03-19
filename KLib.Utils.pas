@@ -2157,7 +2157,7 @@ begin
     tkString, tkLString, tkWString, tkUString:
       begin
         _string := value.AsString;
-        SetLength(_string, trunc(maxLength));
+        _string := Copy(_string, 1, trunc(maxLength));
         Result := TValue.From<string>(_string);
       end;
   else
