@@ -84,7 +84,8 @@ procedure appendToFile(fileName: string; text: string; forceCreationFile: boolea
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveBase64ToFile(text: string; fileName: string);
 procedure saveToFile(text: string; fileName: string); overload;
-procedure saveToFile(text: string; fileName: string; encoding: TEncoding); overload;
+procedure saveToFile(text: string; fileName: string; encoding: TEncoding;
+  forceOverwrite: boolean = FORCE_OVERWRITE); overload;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 
@@ -716,7 +717,8 @@ begin
   saveToFile(text, fileName, TEncoding.UTF8);
 end;
 
-procedure saveToFile(text: string; fileName: string; encoding: TEncoding);
+procedure saveToFile(text: string; fileName: string; encoding: TEncoding;
+  forceOverwrite: boolean = FORCE_OVERWRITE);
 var
   _stringList: TStringList;
   _parentDir: string;
@@ -724,6 +726,10 @@ begin
   _parentDir := getParentDir(fileName);
   createDirIfNotExists(_parentDir);
   try
+    if (forceOverwrite) then
+    begin
+      deleteFileIfExists(fileName);
+    end;
     _stringList := stringToTStringList(text);
     _stringList.SaveToFile(fileName, encoding);
   finally
