@@ -1779,9 +1779,9 @@ begin
   _lastPositionOfDelimiter := delimiterPosition + delimiterLength;
   if _lengthSource > _lastPositionOfDelimiter then
   begin
-    _lengthDestSecondString := _lengthSource - _lastPositionOfDelimiter;
+    _lengthDestSecondString := (_lengthSource - _lastPositionOfDelimiter) + 1;
     destFirstString := Copy(source, 0, delimiterPosition - 1);
-    destSecondString := Copy(source, _lastPositionOfDelimiter + 1, _lengthDestSecondString);
+    destSecondString := Copy(source, _lastPositionOfDelimiter, _lengthDestSecondString);
   end
   else
   begin
