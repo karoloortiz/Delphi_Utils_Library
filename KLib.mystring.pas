@@ -75,6 +75,7 @@ type
     procedure setParamAsString(paramName: string; value: string;
       caseSensitive: boolean = false);
 
+    procedure escapeHTML;
     procedure escapeXML;
     procedure escapeJSON;
     procedure doubleQuote;
@@ -233,6 +234,11 @@ begin
   begin
     Self := myStringReplace(Self, _param, value, [rfReplaceAll, rfIgnoreCase]);
   end;
+end;
+
+procedure TMyStringHelper.escapeHTML;
+begin
+  Self := getEscapedHTMLString(Self);
 end;
 
 procedure TMyStringHelper.escapeXML;
