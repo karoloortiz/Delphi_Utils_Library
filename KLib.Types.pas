@@ -62,6 +62,10 @@ type
   TFileSystemTimeType = (created, modified, accessed);
 
   TWindowsServiceStartupType = (_null, delayed_auto, auto, manual, disabled);
+
+  TEmailProvider = (custom, gmail, outlook);
+
+  TContentType = (text_plain, text_html);
 {$scopedenums OFF}
 
   TOAuth2Response = record
@@ -78,6 +82,34 @@ type
     procedure readFromFile(filename: string);
     procedure saveToFile(filename: string);
     function getAsString(): string;
+    procedure clear;
+  end;
+
+  TSMTPSettings = record
+    host: string;
+    port: Integer;
+    useTls: Boolean;
+    username: string;
+    password: string;
+    accessToken: string;
+    provider: TEmailProvider;
+
+    procedure clear;
+  end;
+
+  TEmailMessage = record
+    fromAddress: string;
+    toAddresses: TArray<string>;
+    ccAddresses: TArray<string>;
+    bccAddresses: TArray<string>;
+    subject: string;
+    body: string;
+    signature: string;
+    attachments: TArray<string>;
+
+    contentType: TContentType;
+
+    procedure clear;
   end;
 
   THostPort = record
@@ -221,7 +253,7 @@ implementation
 
 uses
 
-  KLib.Utils, KLib.Generics.JSON;
+  KLib.Utils, KLib.Generics.JSON, KLib.Constants;
 
 procedure TOAuth2Response.readFromFile(filename: string);
 var
@@ -242,6 +274,30 @@ end;
 function TOAuth2Response.getAsString(): string;
 begin
   Result := TJSONGenerics.getJSONAsString<TOAuth2Response>(Self);
+end;
+
+procedure TOAuth2Response.clear();
+begin
+  access_token := EMPTY_STRING;
+  token_type := EMPTY_STRING;
+  expires_in := 0;
+  refresh_token := EMPTY_STRING;
+  scope := EMPTY_STRING;
+end;
+
+procedure TSMTPSettings.clear;
+const
+  EMPTY: TSMTPSettings = ();
+begin
+  Self := EMPTY;
+  Self.provider := TEmailProvider.custom;
+end;
+
+procedure TEmailMessage.clear;
+const
+  EMPTY: TEmailMessage = ();
+begin
+  Self := EMPTY;
 end;
 
 function TDateTimeRange.getAsString: string;

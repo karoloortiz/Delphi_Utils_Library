@@ -40,7 +40,7 @@ interface
 
 uses
   KLib.Types, KLib.Constants,
-  IdFTP, IdHTTP,
+  IdFTP, IdHTTP, IdSMTP,
   System.Classes;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
@@ -52,6 +52,10 @@ procedure TCPPrintText(hostPort: THostPort; text: string);
 function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
+
+procedure sendEmail(settings: TSMTPSettings; email: TEmailMessage); overload;
+procedure sendEmail(smtp: TIdSMTP; email: TEmailMessage); overload;
+function getIdSMTP(settings: TSMTPSettings): TIdSMTP;
 
 function getOAuth2Response(const url: string; const clientID: string; const clientSecret: string): TOAuth2Response;
 function HTTP_get(url: string; paramList: TStringList; credentials: TCredentials): string; overload;
@@ -81,6 +85,7 @@ implementation
 uses
   KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList, Klib.Windows, KLib.Generics.JSON,
   IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
+  IdMessage, IdText, IdAttachmentFile, IdExplicitTLSClientServerBase,
   System.SysUtils, System.NetEncoding;
 
 procedure TCPPrintFilesInDir(hostPort: THostPort; dirName: string; fileType: string = EMPTY_STRING);
@@ -198,6 +203,137 @@ begin
   end;
   connection.Passive := true;
   Result := connection;
+end;
+
+procedure sendEmail(settings: TSMTPSettings; email: TEmailMessage);
+var
+  _smtp: TIdSMTP;
+begin
+  _smtp := getIdSMTP(settings);
+  try
+    _smtp.connect;
+    sendEmail(_smtp, email);
+  finally
+    _smtp.disconnect;
+    FreeAndNil(_smtp);
+  end;
+end;
+
+procedure sendEmail(smtp: TIdSMTP; email: TEmailMessage);
+var
+  _mail: TIdMessage;
+  _bodyPart: TIdText;
+begin
+  _mail := TIdMessage.Create(nil);
+  try
+    _mail.CharSet := 'utf-8';
+    _mail.From.Address := email.FromAddress;
+    _mail.Subject := email.Subject;
+
+    for var i := 0 to Length(email.ToAddresses) - 1 do
+    begin
+      _mail.Recipients.Add.Address := email.ToAddresses[i];
+    end;
+    for var i := 0 to Length(email.CcAddresses) - 1 do
+    begin
+      _mail.CCList.Add.Address := email.CcAddresses[i];
+    end;
+    for var i := 0 to Length(email.BccAddresses) - 1 do
+    begin
+      _mail.BCCList.Add.Address := email.BccAddresses[i];
+    end;
+
+    _mail.ContentType := 'multipart/mixed';
+
+    _bodyPart := TIdText.Create(_mail.MessageParts);
+    case email.contentType of
+      TContentType.text_plain:
+        _bodyPart.ContentType := 'text/plain; charset=UTF-8';
+      TContentType.text_html:
+        _bodyPart.ContentType := 'text/html; charset=UTF-8';
+    end;
+    _bodyPart.Body.Text := email.Body + sLineBreak + email.Signature;
+
+    for var i := 0 to High(email.Attachments) do
+    begin
+      if FileExists(email.Attachments[i]) then
+      begin
+        TIdAttachmentFile.Create(_mail.MessageParts, email.Attachments[i]);
+      end;
+    end;
+    if not smtp.Connected then
+    begin
+      raise Exception.Create('SMTP not connected.');
+    end;
+
+    smtp.Send(_mail);
+  finally
+    _mail.Free;
+  end;
+end;
+
+function getIdSMTP(settings: TSMTPSettings): TIdSMTP;
+var
+  smtp: TIdSMTP;
+
+  _sslHandler: TIdSSLIOHandlerSocketOpenSSL;
+  //_oauth: TIdOAuth2BearerAuthenticator; todo adds oauth
+begin
+  smtp := TIdSMTP.Create(nil);
+
+  _sslHandler := TIdSSLIOHandlerSocketOpenSSL.Create(smtp);
+  smtp.IOHandler := _sslHandler;
+  case settings.provider of
+    TEmailProvider.custom:
+      begin
+        smtp.Host := settings.host;
+        smtp.Port := settings.port;
+        if (settings.useTls) then
+        begin
+          smtp.UseTLS := utUseExplicitTLS;
+        end;
+        if (not settings.useTls) then
+        begin
+          smtp.UseTLS := utNoTLSSupport;
+        end;
+      end;
+    TEmailProvider.gmail:
+      begin
+        smtp.Host := 'smtp.gmail.com';
+        smtp.Port := 587;
+        smtp.UseTLS := utUseExplicitTLS;
+      end;
+    TEmailProvider.outlook:
+      begin
+        smtp.Host := 'smtp-mail.outlook.com';
+        smtp.Port := 587;
+        smtp.UseTLS := utUseExplicitTLS;
+      end;
+  end;
+
+  _sslHandler.Host := smtp.Host;
+  _sslHandler.Port := smtp.Port;
+  if (settings.useTls) then
+  begin
+    _sslHandler.SSLOptions.Method := sslvTLSv1_2;
+  end;
+
+  if settings.accessToken <> '' then
+  begin
+    raise Exception.Create('Oauth not already supported');
+    //_oauth := TIdOAuth2BearerAuthenticator.Create(smtp);
+    //_oauth.AccessToken := settings.accessToken;
+    //smtp.AuthType := satSASL;
+    //smtp.SASLMechanisms.Add.SASL := _oauth;
+  end
+  else
+  begin
+    smtp.Username := settings.username;
+    smtp.Password := settings.password;
+    smtp.AuthType := satDefault;
+  end;
+
+  Result := smtp;
 end;
 
 function getOAuth2Response(const url: string; const clientID: string; const clientSecret: string): TOAuth2Response;
