@@ -227,19 +227,23 @@ begin
   _mail := TIdMessage.Create(nil);
   try
     _mail.CharSet := 'utf-8';
+    validateThatEmailIsValid(email.FromAddress);
     _mail.From.Address := email.FromAddress;
     _mail.Subject := email.Subject;
 
     for var i := 0 to Length(email.ToAddresses) - 1 do
     begin
+      validateThatEmailIsValid(email.ToAddresses[i]);
       _mail.Recipients.Add.Address := email.ToAddresses[i];
     end;
     for var i := 0 to Length(email.CcAddresses) - 1 do
     begin
+      validateThatEmailIsValid(email.CcAddresses[i]);
       _mail.CCList.Add.Address := email.CcAddresses[i];
     end;
     for var i := 0 to Length(email.BccAddresses) - 1 do
     begin
+      validateThatEmailIsValid(email.BccAddresses[i]);
       _mail.BCCList.Add.Address := email.BccAddresses[i];
     end;
 
@@ -254,12 +258,10 @@ begin
     end;
     _bodyPart.Body.Text := email.Body + sLineBreak + email.Signature;
 
-    for var i := 0 to High(email.Attachments) do
+    for var i := 0 to Length(email.Attachments) - 1 do
     begin
-      if FileExists(email.Attachments[i]) then
-      begin
-        TIdAttachmentFile.Create(_mail.MessageParts, email.Attachments[i]);
-      end;
+      validateThatFileExists(email.Attachments[i]);
+      TIdAttachmentFile.Create(_mail.MessageParts, email.Attachments[i]);
     end;
     if not smtp.Connected then
     begin
