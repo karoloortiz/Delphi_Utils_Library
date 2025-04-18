@@ -165,6 +165,7 @@ function arrayOfVariantToTStringList(arrayOfVariant: Variant): TStringList;
 function splitStringsAsTArrayStrings(source: string; chunkSize: Integer): TArray<string>;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string); overload;
+procedure splitStrings(source: string; splitIndex: integer; var destFirstString: string; var destSecondString: string); overload;
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
@@ -202,6 +203,8 @@ procedure tryToExecuteProcedure(myProcedure: TCallBack; isRaiseExceptionEnabled:
 procedure tryToExecuteProcedure(myProcedure: TProcedure; isRaiseExceptionEnabled: boolean = false); overload;
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
+
+function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
 
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 function checkIfIsEmptyOrNull(value: Variant): boolean;
@@ -1775,6 +1778,11 @@ begin
   splitStrings(source, _delimiterPosition, _delimiterLength, destFirstString, destSecondString);
 end;
 
+procedure splitStrings(source: string; splitIndex: integer; var destFirstString: string; var destSecondString: string);
+begin
+  splitStrings(source, splitIndex, 0, destFirstString, destSecondString);
+end;
+
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string);
 var
   _lengthSource: integer;
@@ -2098,6 +2106,22 @@ begin
   myProcedure('');
 end;
 
+function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
+var
+  _result: string;
+begin
+  if (condition) then
+  begin
+    _result := trueString;
+  end;
+  if (not condition) then
+  begin
+    _result := falseString;
+  end;
+
+  Result := _result;
+end;
+
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 var
   isEmpty: boolean;
@@ -2222,6 +2246,18 @@ function myIsDebuggerPresent: boolean;
 begin
 {$warn SYMBOL_PLATFORM OFF}
   Result := System.DebugHook <> 0;
+end;
+
+initialization
+
+// force linter to include code
+if true then
+begin
+  try
+    saveToFile('', '');
+  except
+    on E: Exception do
+  end;
 end;
 
 end.

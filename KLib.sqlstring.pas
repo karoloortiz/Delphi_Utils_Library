@@ -46,61 +46,78 @@ type
 
   TSQLStringHelper = record helper for sqlstring
     procedure paramByNameAsDate(paramName: string; value: TDateTime;
-      caseSensitive: boolean = false);
+      caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsDateTime(paramName: string;
-      value: TDateTime; caseSensitive: boolean = false; formatting: string = DATETIME_FORMAT);
-    procedure paramByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
+      value: TDateTime; caseSensitive: boolean = NOT_CASE_SENSITIVE;
+      formatting: string = DATETIME_FORMAT);
+    procedure paramByNameAsInteger(paramName: string; value: integer;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsFloat(paramName: string; value: Double;
-      decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR; caseSensitive: boolean = false);
+      decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsString(paramName: string; value: double;
       decimalSeparator: char = DECIMAL_SEPARATOR_IT); overload;
     procedure paramByNameAsString(paramName: string; value: integer); overload;
     procedure paramByNameAsString(paramName: string; value: string;
       caseSensitive: boolean = false); overload;
 
-    procedure setParamAsDoubleQuotedString(paramName: string; value: string;
-      caseSensitive: boolean = false);
-    procedure setParamAsString(paramName: string; value: string;
-      caseSensitive: boolean = false);
+    procedure setParamAsDoubleQuotedString(
+      paramName: string;
+      value: string;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE;
+      isSQLSeparatorsEnabled: boolean = false);
+    procedure setParamAsString(
+      paramName: string;
+      value: string;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE;
+      isSQLSeparatorsEnabled: boolean = false);
     procedure saveToFile(fileName: string);
   end;
 
 implementation
 
+
 uses
   Klib.Utils, KLib.mystring,
-  System.SysUtils;
+  System.SysUtils, System.RegularExpressions;
+
+const
+  ENABLE_SQL_SEPARATORS = true;
 
 procedure TSQLStringHelper.paramByNameAsDate(paramName: string; value: TDateTime;
-  caseSensitive: boolean = false);
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 begin
   paramByNameAsDateTime(paramName, value, caseSensitive, DATE_FORMAT);
 end;
 
 procedure TSQLStringHelper.paramByNameAsDateTime(paramName: string;
-  value: TDateTime; caseSensitive: boolean = false; formatting: string = DATETIME_FORMAT);
+  value: TDateTime; caseSensitive: boolean = NOT_CASE_SENSITIVE;
+  formatting: string = DATETIME_FORMAT);
 var
   _dateTimeAsStringWithFormatting: string;
 begin
   _dateTimeAsStringWithFormatting := getDateTimeWithFormattingAsString(value, formatting);
-  setParamAsDoubleQuotedString(paramName, _dateTimeAsStringWithFormatting, caseSensitive);
+  setParamAsDoubleQuotedString(paramName, _dateTimeAsStringWithFormatting, caseSensitive,
+    ENABLE_SQL_SEPARATORS);
 end;
 
-procedure TSQLStringHelper.paramByNameAsInteger(paramName: string; value: integer; caseSensitive: boolean = false);
+procedure TSQLStringHelper.paramByNameAsInteger(paramName: string;
+  value: integer; caseSensitive: boolean = NOT_CASE_SENSITIVE);
 var
   _integerAsString: string;
 begin
   _integerAsString := IntToStr(value);
-  setParamAsString(paramName, _integerAsString, caseSensitive);
+  setParamAsString(paramName, _integerAsString, caseSensitive, ENABLE_SQL_SEPARATORS);
 end;
 
 procedure TSQLStringHelper.paramByNameAsFloat(paramName: string; value: Double;
-  decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR; caseSensitive: boolean = false);
+  decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 var
   _doubleAsString: string;
 begin
   _doubleAsString := getDoubleAsString(value, decimalSeparator);
-  setParamAsString(paramName, _doubleAsString, caseSensitive);
+  setParamAsString(paramName, _doubleAsString, caseSensitive, ENABLE_SQL_SEPARATORS);
 end;
 
 procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: double;
@@ -121,31 +138,75 @@ begin
 end;
 
 procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: string;
-  caseSensitive: boolean = false);
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 begin
-  setParamAsDoubleQuotedString(paramName, value, caseSensitive);
+  setParamAsDoubleQuotedString(paramName, value, caseSensitive,
+    ENABLE_SQL_SEPARATORS);
 end;
 
-procedure TSQLStringHelper.setParamAsDoubleQuotedString(paramName: string; value: string;
-  caseSensitive: boolean = false);
+procedure TSQLStringHelper.setParamAsDoubleQuotedString(
+  paramName: string;
+  value: string;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE;
+  isSQLSeparatorsEnabled: boolean = false
+  );
 var
-  _mystring: mystring;
+  _doubleQuotedValue: string;
 begin
-  _mystring := Self;
-  _mystring.setParamAsDoubleQuotedString(paramName, value, caseSensitive);
-
-  Self := _mystring;
+  _doubleQuotedValue := getDoubleQuotedString(value);
+  setParamAsString(paramName, _doubleQuotedValue, caseSensitive, isSQLSeparatorsEnabled);
 end;
 
-procedure TSQLStringHelper.setParamAsString(paramName: string; value: string;
-  caseSensitive: boolean = false);
+procedure TSQLStringHelper.setParamAsString(
+  paramName: string;
+  value: string;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE;
+  isSQLSeparatorsEnabled: boolean = false
+  );
+const
+  SQL_SEPARATORS = ' ,;:=()\r\n';
 var
-  _mystring: mystring;
+  _param: string;
+  _pattern: string;
+  _flags: string;
+  _regex: TRegEx;
 begin
-  _mystring := Self;
-  _mystring.setParamAsString(paramName, value, caseSensitive);
+  _param := trim(paramName);
+  if _param = '' then
+  begin
+    Exit;
+  end;
 
-  Self := _mystring;
+  if _param[1] <> ':' then
+  begin
+    _param := ':' + _param;
+  end;
+
+  if (isSQLSeparatorsEnabled) then
+  begin
+    if (caseSensitive) then
+    begin
+      _flags := '';
+    end;
+    if (not caseSensitive) then
+    begin
+      _flags := '(?i)';
+    end;
+    _pattern := '(?<!\w)' + TRegEx.Escape(_param) + '(?!\w)';
+    _regex := TRegEx.Create(_flags + _pattern);
+    Self := _regex.Replace(Self, value);
+  end;
+  if (not isSQLSeparatorsEnabled) then
+  begin
+    if (caseSensitive) then
+    begin
+      Self := StringReplace(Self, _param, value, [rfReplaceAll])
+    end;
+    if (not caseSensitive) then
+    begin
+      Self := StringReplace(Self, _param, value, [rfReplaceAll, rfIgnoreCase]);
+    end;
+  end;
 end;
 
 procedure TSQLStringHelper.saveToFile(fileName: string);
