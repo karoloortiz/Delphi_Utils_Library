@@ -48,18 +48,22 @@ type
     procedure paramByNameAsDate(paramName: string; value: TDateTime;
       caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsDateTime(paramName: string;
-      value: TDateTime; caseSensitive: boolean = NOT_CASE_SENSITIVE;
-      formatting: string = DATETIME_FORMAT);
+      value: TDateTime; formatting: string = DATETIME_FORMAT;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsInteger(paramName: string; value: integer;
       caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsFloat(paramName: string; value: Double;
       decimalSeparator: char = MYSQL_DECIMAL_SEPARATOR;
       caseSensitive: boolean = NOT_CASE_SENSITIVE);
     procedure paramByNameAsString(paramName: string; value: double;
-      decimalSeparator: char = DECIMAL_SEPARATOR_IT); overload;
-    procedure paramByNameAsString(paramName: string; value: integer); overload;
+      decimalSeparator: char = DECIMAL_SEPARATOR_IT;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE); overload;
+    procedure paramByNameAsString(paramName: string; value: integer;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE); overload;
     procedure paramByNameAsString(paramName: string; value: string;
-      caseSensitive: boolean = false); overload;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE); overload;
+    procedure paramByNameAsNull(paramName: string;
+      caseSensitive: boolean = NOT_CASE_SENSITIVE);
 
     procedure setParamAsDoubleQuotedString(
       paramName: string;
@@ -87,12 +91,13 @@ const
 procedure TSQLStringHelper.paramByNameAsDate(paramName: string; value: TDateTime;
   caseSensitive: boolean = NOT_CASE_SENSITIVE);
 begin
-  paramByNameAsDateTime(paramName, value, caseSensitive, DATE_FORMAT);
+  paramByNameAsDateTime(paramName, value, DATE_FORMAT, caseSensitive);
 end;
 
 procedure TSQLStringHelper.paramByNameAsDateTime(paramName: string;
-  value: TDateTime; caseSensitive: boolean = NOT_CASE_SENSITIVE;
-  formatting: string = DATETIME_FORMAT);
+  value: TDateTime;
+  formatting: string = DATETIME_FORMAT;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 var
   _dateTimeAsStringWithFormatting: string;
 begin
@@ -121,20 +126,22 @@ begin
 end;
 
 procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: double;
-  decimalSeparator: char = DECIMAL_SEPARATOR_IT);
+  decimalSeparator: char = DECIMAL_SEPARATOR_IT;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 var
   _doubleAsString: string;
 begin
   _doubleAsString := getDoubleAsString(value, decimalSeparator);
-  paramByNameAsString(paramName, _doubleAsString);
+  paramByNameAsString(paramName, _doubleAsString, caseSensitive);
 end;
 
-procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: integer);
+procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: integer;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
 var
   _integerAsString: string;
 begin
   _integerAsString := IntToStr(value);
-  paramByNameAsString(paramName, _integerAsString);
+  paramByNameAsString(paramName, _integerAsString, caseSensitive);
 end;
 
 procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: string;
@@ -142,6 +149,12 @@ procedure TSQLStringHelper.paramByNameAsString(paramName: string; value: string;
 begin
   setParamAsDoubleQuotedString(paramName, value, caseSensitive,
     ENABLE_SQL_SEPARATORS);
+end;
+
+procedure TSQLStringHelper.paramByNameAsNull(paramName: string;
+  caseSensitive: boolean = NOT_CASE_SENSITIVE);
+begin
+  setParamAsString(paramName, 'NULL', caseSensitive);
 end;
 
 procedure TSQLStringHelper.setParamAsDoubleQuotedString(
