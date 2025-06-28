@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.StreamWriterUTF8NoBOMEncoding;
+unit KLib.MyEncoding;
 
 interface
 
@@ -47,12 +47,14 @@ type
     function GetPreamble: TBytes; override;
   end;
 
-  TStreamWriterUTF8NoBOMEncoding = class(TStreamWriter)
+  TMyEncoding = class(TEncoding)
   private
-    _UTF8NoBOM: TUTF8NoBOMEncoding;
+    class var FUTF8NoBomEncoding: TEncoding;
+    class function GetUTF8NoBom: TEncoding; static;
   public
-    constructor Create(fileName: string; newLine: string = slineBreak); overload;
-    destructor Destroy; override;
+    class function IsStandardEncoding(AEncoding: TEncoding): Boolean; static;
+    class procedure FreeEncodings;
+    class property UTF8NoBom: TEncoding read GetUTF8NoBom;
   end;
 
 implementation
@@ -62,19 +64,33 @@ begin
   SetLength(Result, 0);
 end;
 
-constructor TStreamWriterUTF8NoBOMEncoding.Create(fileName: string; newLine: string = slineBreak);
-const
-  DISABLE_APPEND = false;
+class function TMyEncoding.GetUTF8NoBom: TEncoding;
+var
+  LEncoding: TEncoding;
 begin
-  Self._UTF8NoBOM := TUTF8NoBOMEncoding.Create;
-  inherited Create(fileName, DISABLE_APPEND, _UTF8NoBOM);
-  Self.NewLine := newLine;
+  if FUTF8NoBomEncoding = nil then
+  begin
+    LEncoding := TUTF8NoBOMEncoding.Create;
+    if AtomicCmpExchange(Pointer(FUTF8NoBomEncoding), Pointer(LEncoding), nil) <> nil then
+      LEncoding.Free
+{$ifdef AUTOREFCOUNT}
+    else
+      FUTF8NoBomEncoding.__ObjAddRef
+{$endif AUTOREFCOUNT};
+  end;
+  Result := FUTF8NoBomEncoding;
 end;
 
-destructor TStreamWriterUTF8NoBOMEncoding.Destroy;
+class function TMyEncoding.IsStandardEncoding(AEncoding: TEncoding): Boolean;
+begin
+  Result := inherited;
+  Result := Result or (AEncoding = FUTF8NoBomEncoding);
+end;
+
+class procedure TMyEncoding.FreeEncodings;
 begin
   inherited;
-  FreeAndNil(_UTF8NoBOM);
+  FreeAndNil(FUTF8NoBomEncoding);
 end;
 
 end.
