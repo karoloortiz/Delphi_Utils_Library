@@ -2236,7 +2236,7 @@ begin
     tkString, tkLString, tkWString, tkUString:
       Result := AValue.AsString = '';
     tkEnumeration:
-      Result := AValue.AsBoolean = False;
+      Result := AValue.AsOrdinal < 0;
   else
     Result := False;
   end;

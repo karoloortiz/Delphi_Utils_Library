@@ -313,7 +313,6 @@ begin
 
     tkRecord:
       begin
-        // Modifica cruciale per i record annidati
         Obj := processRecord(_value.GetReferenceToRawData, _value.TypeInfo, AIgnoreEmpty);
         if Obj.Count > 0 then
           Result := Obj
@@ -355,6 +354,7 @@ var
   I: Integer;
   Arr: TArray<TValue>;
   DynArrayType: TRttiDynamicArrayType;
+  _enumValue: integer;
 begin
   case TargetType.TypeKind of
     tkInteger:
@@ -370,9 +370,19 @@ begin
       Result := JSONValue.Value;
     tkEnumeration:
       if TargetType.Handle = TypeInfo(Boolean) then
+      begin
         Result := JSONValue.GetValue<Boolean>
+      end
       else
-        Result := TValue.FromOrdinal(TargetType.Handle, GetEnumValue(TargetType.Handle, JSONValue.Value));
+      begin
+        _enumValue := GetEnumValue(TargetType.Handle, JSONValue.Value);
+        if (_enumValue < 0) then
+        begin
+          raise EJSONException.CreateFmt('Unsupported value: %s',
+            [JSONValue.Value]);
+        end;
+        Result := TValue.FromOrdinal(TargetType.Handle, _enumValue);
+      end;
     tkChar, tkWChar:
       Result := TValue.From<Char>(JSONValue.Value[1]);
     tkVariant:
@@ -435,11 +445,7 @@ var
 begin
   if not(JSONValue is TJSONObject) then
     raise EJSONException.Create('TJSONObject expected');
-
-  // Inizializza il record con valori di default
   Result := Default (T);
-
-  // Elabora il JSON
   processJSONObject(@Result, Ctx.GetType(TypeInfo(T)), TJSONObject(JSONValue));
 end;
 
@@ -479,7 +485,7 @@ begin
       on E: Exception do
       begin
         FieldPath := Format('%s.%s', [RttiType.Name, Field.Name]);
-        raise EJSONException.CreateFmt('Errore nel campo %s: %s', [FieldPath, E.Message]);
+        raise EJSONException.CreateFmt('Error in field %s : %s', [FieldPath, E.Message]);
       end;
     end;
   end;

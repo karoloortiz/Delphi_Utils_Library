@@ -40,7 +40,9 @@ interface
 
 uses
   KLib.Types, KLib.Constants,
+{$ifdef KLIB_RAIZE}
   RzDBCmbo,
+{$endif}
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
   System.Classes;
 
@@ -132,7 +134,9 @@ function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
 function getHeightOfCaption(text: string; font: TFont; width: integer): integer;
 function getHeightOfSingleCharacter(myFont: TFont): integer;
 
+{$ifdef RZDBCmbo}
 procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
+{$endif}
 
 implementation
 
@@ -142,7 +146,7 @@ uses
   System.SysUtils, System.Types;
 
 //    dxGDIPlusClasses,   todo keep version with devexpress and see the differences
-//!not include in realease!
+//!not include in release!
 //-------------------------------------------------------------------------------------------------
 //  TLabelLoading
 //-------------------------------------------------------------------------------------------------
@@ -825,6 +829,7 @@ begin
   Result := height;
 end;
 
+{$ifdef KLIB_RAIZE}
 procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
 var
   _codeDescription: TCodeDescription;
@@ -835,5 +840,6 @@ begin
     control.AddItemValue(_codeDescription.description, _codeDescription.code);
   end;
 end;
+{$endif}
 
 end.
