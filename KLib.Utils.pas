@@ -210,7 +210,8 @@ function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolea
 function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
 
-function getResizedTValue(value: TValue; maxLengtH: double): TValue;
+function getMaxOfTValue(value: TValue): double;
+function getResizedTValue(value: TValue; max: Double): TValue;
 function getDefaultTValue(AType: TRttiType): TValue;
 
 function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
@@ -228,7 +229,7 @@ uses
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
-  _fileNamesList: TStringList;
+    _fileNamesList: TStringList;
   _fileName: string;
   _nameOfFile: string;
   _keepFile: boolean;
@@ -252,7 +253,7 @@ end;
 
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 var
-  _files: TStringList;
+    _files: TStringList;
   _file: string;
 begin
   _files := getFileNamesListInDir(dirName, fileType, true, startingFileName);
@@ -275,7 +276,7 @@ end;
 
 procedure createEmptyFile(filename: string);
 var
-  _handle: THandle;
+    _handle: THandle;
 begin
   _handle := FileCreate(fileName);
   if _handle = INVALID_HANDLE_VALUE then
@@ -292,7 +293,7 @@ end;
 
 procedure deleteFileIfExists(fileName: string);
 const
-  ERR_MSG = 'Error deleting file.';
+    ERR_MSG = 'Error deleting file.';
 begin
   if checkIfFileExists(fileName) then
   begin
@@ -305,7 +306,7 @@ end;
 
 function checkIfFileExistsAndIsEmpty(fileName: string): boolean;
 var
-  fileExistsAndIsEmpty: boolean;
+    fileExistsAndIsEmpty: boolean;
 begin
   fileExistsAndIsEmpty := checkIfFileExists(fileName) and checkIfFileIsEmpty(fileName);
 
@@ -314,7 +315,7 @@ end;
 
 function checkIfFileExistsAndIsNotEmpty(fileName: string): boolean;
 var
-  fileExistsAndIsNotEmpty: boolean;
+    fileExistsAndIsNotEmpty: boolean;
 begin
   fileExistsAndIsNotEmpty := checkIfFileExists(fileName) and (not checkIfFileIsEmpty(fileName));
 
@@ -323,7 +324,7 @@ end;
 
 function checkIfFileIsEmpty(fileName: string): boolean;
 var
-  fileIsEmpty: boolean;
+    fileIsEmpty: boolean;
 
   _file: file of Byte;
   _size: integer;
@@ -339,7 +340,7 @@ end;
 
 function checkIfFileExistsInSystem32(filename: string): boolean;
 var
-  fileExistsInSystem32: boolean;
+    fileExistsInSystem32: boolean;
 
   _fileName: string;
   _filenameIsAPath: boolean;
@@ -368,7 +369,7 @@ end;
 procedure replaceTextInFile(oldText: string; newText: string; filename: string; filenameOutput: string = EMPTY_STRING;
   replaceFlags: TReplaceFlags = [rfReplaceAll]);
 var
-  _fileSearchReplacer: TFileSearchReplacer;
+    _fileSearchReplacer: TFileSearchReplacer;
 begin
   _fileSearchReplacer := TFileSearchReplacer.Create(filename, filenameOutput);
   try
@@ -380,7 +381,7 @@ end;
 
 function getTextFromFile(fileName: string): string;
 var
-  text: string;
+    text: string;
 
   _stringList: TStringList;
 begin
@@ -397,7 +398,7 @@ end;
 
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 var
-  isSpaceAvailableOnDrive: boolean;
+    isSpaceAvailableOnDrive: boolean;
 
   _freeSpaceDrive: int64;
 begin
@@ -409,10 +410,10 @@ end;
 
 function getFreeSpaceOnDrive(drive: char): int64;
 const
-  ERR_MSG_INVALID_DRIVE = 'The drive is invalid.';
+    ERR_MSG_INVALID_DRIVE = 'The drive is invalid.';
   ERR_MSG_DRIVE_READ_ONLY = 'The drive is read-only';
 var
-  freeSpaceOnDrive: int64;
+    freeSpaceOnDrive: int64;
 
   _indexOfDrive: integer;
 begin
@@ -431,12 +432,12 @@ end;
 
 function getIndexOfDrive(drive: char): integer;
 const
-  ASCII_FIRST_ALPHABET_CHARACTER = 65;
+    ASCII_FIRST_ALPHABET_CHARACTER = 65;
   ASCII_LAST_ALPHABET_CHARACTER = 90;
 
   ERR_MSG = 'Invalid drive character.';
 var
-  indexOfDrive: integer;
+    indexOfDrive: integer;
 
   _drive: string;
   _asciiIndex: integer;
@@ -454,7 +455,7 @@ end;
 
 function getDriveExe: char;
 var
-  driveExe: char;
+    driveExe: char;
 
   _dirExe: string;
 begin
@@ -466,7 +467,7 @@ end;
 
 function getDirSize(path: string): int64;
 var
-  dirSize: int64;
+    dirSize: int64;
 
   _searchRec: TSearchRec;
   _subDirSize: int64;
@@ -498,7 +499,7 @@ end;
 
 procedure createDirIfNotExists(dirName: string);
 const
-  ERR_MSG = 'Error creating dir.';
+    ERR_MSG = 'Error creating dir.';
 begin
   if not checkIfDirExists(dirName) then
   begin
@@ -520,7 +521,7 @@ end;
 
 function checkIfIsLinuxSubDir(subDir: string; mainDir: string): boolean;
 var
-  isSubDir: boolean;
+    isSubDir: boolean;
 
   _subDir: string;
   _mainDir: string;
@@ -534,7 +535,7 @@ end;
 
 function getPathInLinuxStyle(path: string): string;
 var
-  pathInLinuxStyle: string;
+    pathInLinuxStyle: string;
 begin
   pathInLinuxStyle := myStringReplace(path, '\', '/', [rfReplaceAll, rfIgnoreCase]);
 
@@ -543,7 +544,7 @@ end;
 
 function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter: char = SPACE_STRING): boolean;
 var
-  isSubDir: boolean;
+    isSubDir: boolean;
 
   _subDir: string;
   _mainDir: string;
@@ -569,7 +570,7 @@ end;
 
 function getValidFullPath(fileName: string): string;
 var
-  path: string;
+    path: string;
 begin
   path := fileName;
   path := ExpandFileName(path);
@@ -590,7 +591,7 @@ end;
 
 function getTempfolderPath: string;
 var
-  path: string;
+    path: string;
 begin
   path := TPath.GetTempPath;
   path := ExcludeTrailingPathDelimiter(path);
@@ -600,7 +601,7 @@ end;
 
 function getParentDir(source: string): string;
 var
-  parentDir: string;
+    parentDir: string;
 begin
   parentDir := getValidFullPath(source);
   parentDir := ExtractFilePath(parentDir);
@@ -611,9 +612,9 @@ end;
 function getFirstFileNameInDir(dirName: string; fileType: string = EMPTY_STRING;
   fullPath: boolean = true; startingFileName: string = EMPTY_STRING): string;
 const
-  ERR_MSG = 'No files found.';
+    ERR_MSG = 'No files found.';
 var
-  fileName: string;
+    fileName: string;
 
   _fileNamesList: TStringList;
 begin
@@ -638,7 +639,7 @@ end;
 function getFileNamesListInDir(dirName: string; fileType: string = EMPTY_STRING;
   fullPath: boolean = true; startingFilename: string = EMPTY_STRING): TStringList;
 var
-  fileNamesList: TStringList;
+    fileNamesList: TStringList;
 
   _searchRec: TSearchRec;
   _mask: string;
@@ -683,7 +684,7 @@ end;
 procedure appendToFile(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE);
 var
-  _text: string;
+    _text: string;
 begin
   if forceCreationFile then
   begin
@@ -703,7 +704,7 @@ end;
 
 procedure saveBase64ToFile(text: string; fileName: string);
 var
-  _bytes: TBytes;
+    _bytes: TBytes;
   _stream: TBytesStream;
 begin
   _bytes := TNetEncoding.Base64.DecodeStringToBytes(text);
@@ -723,7 +724,7 @@ end;
 procedure saveToFile(text: string; fileName: string; encoding: TEncoding;
   forceOverwrite: boolean = FORCE_OVERWRITE);
 var
-  _stringList: TStringList;
+    _stringList: TStringList;
   _parentDir: string;
 begin
   _parentDir := getParentDir(fileName);
@@ -742,7 +743,7 @@ end;
 
 function checkMD5File(fileName: string; MD5: string): boolean;
 var
-  MD5CheckedStatus: boolean;
+    MD5CheckedStatus: boolean;
 
   _MD5ChecksumFile: string;
 begin
@@ -754,9 +755,9 @@ end;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
 const
-  DELETE_ZIP_AFTER_UNZIP = TRUE;
+    DELETE_ZIP_AFTER_UNZIP = TRUE;
 var
-  _tempZipFileName: string;
+    _tempZipFileName: string;
 begin
   _tempZipFileName := getRandString + '.' + ZIP_TYPE;
   _tempZipFileName := getCombinedPath(destinationDir, _tempZipFileName);
@@ -766,7 +767,7 @@ end;
 
 function getPNGResource(nameResource: string): TPngImage;
 var
-  resourceAsPNG: TPngImage;
+    resourceAsPNG: TPngImage;
 
   _resource: TResource;
   _resourceStream: TResourceStream;
@@ -798,7 +799,7 @@ end;
 
 procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string);
 var
-  _resource: TResource;
+    _resource: TResource;
   _destinationFileName: string;
 begin
   with _resource do
@@ -816,7 +817,7 @@ end;
 
 procedure getResourceAsFile(resource: TResource; destinationFileName: string);
 var
-  _resourceStream: TResourceStream;
+    _resourceStream: TResourceStream;
   _destinationDirPath: string;
 begin
   _destinationDirPath := getParentDir(destinationFileName);
@@ -829,7 +830,7 @@ end;
 
 function getResourceAsString(resource: TResource): string;
 var
-  resourceAsString: string;
+    resourceAsString: string;
   _resourceStream: TResourceStream;
   _stringList: TStringList;
 begin
@@ -845,7 +846,7 @@ end;
 
 function getResourceAsStream(resource: TResource): TResourceStream;
 var
-  resourceStream: TResourceStream;
+    resourceStream: TResourceStream;
 
   _errMsg: string;
 begin
@@ -868,7 +869,7 @@ end;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 const
-  ERR_MSG = 'Invalid zip file.';
+    ERR_MSG = 'Invalid zip file.';
 begin
   if TZipFile.isvalid(zipFileName) then
   begin
@@ -886,7 +887,7 @@ end;
 
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
 var
-  _result: boolean;
+    _result: boolean;
 begin
   with FTPCredentials do
   begin
@@ -899,7 +900,7 @@ end;
 
 function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>;
 var
-  _datetimeRange: TDateTimeRange;
+    _datetimeRange: TDateTimeRange;
 begin
   _datetimeRange.clear;
   _datetimeRange._start := startDate;
@@ -910,7 +911,7 @@ end;
 
 function splitByMonths(datetimeRange: TDateTimeRange): TArray<TDateTimeRange>;
 var
-  dateRanges: TArray<TDateTimeRange>;
+    dateRanges: TArray<TDateTimeRange>;
   range: TDateTimeRange;
   currentStart: TDateTime;
   currentEnd: TDateTime;
@@ -952,7 +953,7 @@ end;
 
 function divideDateRange(startDate: TDateTime; endDate: TDateTime; divisions: Integer = 2): TArray<TDateTimeRange>;
 var
-  _datetimeRange: TDateTimeRange;
+    _datetimeRange: TDateTimeRange;
 begin
   _datetimeRange.clear;
   _datetimeRange._start := startDate;
@@ -963,7 +964,7 @@ end;
 
 function divideDateRange(datetimeRange: TDateTimeRange; divisions: Integer = 2): TArray<TDateTimeRange>;
 var
-  dateRanges: TArray<TDateTimeRange>;
+    dateRanges: TArray<TDateTimeRange>;
 
   i: Integer;
   interval: TDateTime;
@@ -1017,7 +1018,7 @@ end;
 
 function getValidItalianTelephoneNumber(number: string): string;
 var
-  telephoneNumber: string;
+    telephoneNumber: string;
 
   _number: string;
   i: integer;
@@ -1061,9 +1062,9 @@ end;
 
 function getValidTelephoneNumber(number: string): string;
 const
-  ERR_MSG = 'Telephone number is empty.';
+    ERR_MSG = 'Telephone number is empty.';
 var
-  telephoneNumber: string;
+    telephoneNumber: string;
 
   _number: string;
   i: integer;
@@ -1090,9 +1091,9 @@ end;
 
 function getRandString(size: integer = 5): string;
 const
-  ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    ALPHABET: array [1 .. 62] of char = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 var
-  randString: string;
+    randString: string;
 
   _randCharacter: char;
   _randIndexOfAlphabet: integer;
@@ -1113,7 +1114,7 @@ end;
 
 function getCurrentDayOfWeekAsString: string;
 var
-  dayAsString: string;
+    dayAsString: string;
 begin
   dayAsString := getDayOfWeekAsString(Now);
 
@@ -1122,7 +1123,7 @@ end;
 
 function getDayOfWeekAsString(date: TDateTime): string;
 const
-  DAYS_OF_WEEK: TArray<string> = [
+    DAYS_OF_WEEK: TArray<string> = [
     'Sunday',
     'Monday',
     'Tuesday',
@@ -1132,7 +1133,7 @@ const
     'Saturday'
     ];
 var
-  dayAsString: string;
+    dayAsString: string;
   _indexDayOfWeek: integer;
 begin
   _indexDayOfWeek := DayOfWeek(date) - 1;
@@ -1148,7 +1149,7 @@ end;
 
 function getDateTimeAsString(date: TDateTime): string;
 var
-  dateTimeAsString: string;
+    dateTimeAsString: string;
 
   _date: string;
   _time: string;
@@ -1168,7 +1169,7 @@ end;
 
 function getDateAsString(date: TDateTime): string;
 var
-  dateAsString: string;
+    dateAsString: string;
 begin
   dateAsString := DateToStr(date);
   dateAsString := myStringReplace(dateAsString, '/', '_', [rfReplaceAll, rfIgnoreCase]);
@@ -1188,7 +1189,7 @@ end;
 
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 var
-  dateTimeAsStringWithFormatting: string;
+    dateTimeAsStringWithFormatting: string;
 begin
   dateTimeAsStringWithFormatting := FormatDateTime(formatting, value);
 
@@ -1202,7 +1203,7 @@ end;
 
 function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;
 var
-  _zpl: string;
+    _zpl: string;
   _indexLastPositionZPL: integer;
 begin
   _indexLastPositionZPL := AnsiPos(END_ZPL_CMD, zpl) - 1;
@@ -1222,7 +1223,7 @@ end;
 
 function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
 var
-  _param: string;
+    _param: string;
   _encodedUrl: string;
 begin
   _encodedUrl := url + '?';
@@ -1265,7 +1266,7 @@ function getEscapedJSONString(mainString: string): string;
   end;
 
 var
-  i, ix: Integer;
+    i, ix: Integer;
   AChar: Char;
 begin
   Result := mainString;
@@ -1345,9 +1346,9 @@ end;
 
 function getExtractedString(mainString: string; quoteString: string; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION_DISABLED): string;
 const
-  ERR_MSG = 'String not found.';
+    ERR_MSG = 'String not found.';
 var
-  extractedString: string;
+    extractedString: string;
 
   _lengthQuotedString: integer;
   _lengthMainString: integer;
@@ -1381,7 +1382,7 @@ end;
 
 function getDequotedString(mainString: string): string;
 var
-  dequotedString: string;
+    dequotedString: string;
 begin
   dequotedString := mainString;
   if ((mainString.Chars[0] = '"') and (mainString.Chars[dequotedString.Length - 1] = '"'))
@@ -1396,9 +1397,9 @@ end;
 function getMainStringWithSubStringInserted(mainString: string; insertedString: string; index: integer;
   forceOverwriteIndexCharacter: boolean = NOT_FORCE_OVERWRITE): string;
 const
-  ERR_MSG = 'Index out of range.';
+    ERR_MSG = 'Index out of range.';
 var
-  mainStringWithSubStringInserted: string;
+    mainStringWithSubStringInserted: string;
 
   _length: integer;
   _firstStringPart: string;
@@ -1422,7 +1423,7 @@ end;
 
 function getStringWithoutLineBreaks(mainString: string; substituteString: string = SPACE_STRING): string;
 var
-  stringWithoutLineBreaks: string;
+    stringWithoutLineBreaks: string;
 begin
   stringWithoutLineBreaks := KLib.Utils.myStringReplace(mainString, #13#10, substituteString, [rfReplaceAll]);
   stringWithoutLineBreaks := myStringReplace(stringWithoutLineBreaks, #10, substituteString, [rfReplaceAll]);
@@ -1437,7 +1438,7 @@ end;
 
 function getStringFromStream(stream: TStream): string;
 var
-  _string: string;
+    _string: string;
 
   _stringStream: TStringStream;
 begin
@@ -1459,7 +1460,7 @@ end;
 
 function getCleanJSONString(const JSONStr: string): string;
 var
-  JsonValue, CleanedJson: TJSONValue;
+    JsonValue, CleanedJson: TJSONValue;
 begin
   JsonValue := TJSONObject.ParseJSONValue(JSONStr);
   if Assigned(JsonValue) then
@@ -1479,7 +1480,7 @@ end;
 
 function getCleanJSON(JsonValue: TJSONValue): TJSONValue;
 var
-  JSONObject: TJSONObject;
+    JSONObject: TJSONObject;
   JSONArray: TJSONArray;
   Pair: TJSONPair;
   NewObject: TJSONObject;
@@ -1537,7 +1538,7 @@ end;
 
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): TDate;
 var
-  _result: TDate;
+    _result: TDate;
 begin
   _result := getCSVFieldFromStringAsDate(mainString, index, FormatSettings, delimiter);
 
@@ -1547,7 +1548,7 @@ end;
 function getCSVFieldFromStringAsDate(mainString: string; index: integer; formatSettings: TFormatSettings;
   delimiter: Char = SEMICOLON_DELIMITER): TDate;
 var
-  _result: TDate;
+    _result: TDate;
 
   _fieldAsString: string;
 begin
@@ -1559,7 +1560,7 @@ end;
 
 function getCSVFieldFromStringAsDouble(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): Double;
 var
-  _result: Double;
+    _result: Double;
 begin
   _result := getCSVFieldFromStringAsDouble(mainString, index, FormatSettings, delimiter);
 
@@ -1569,7 +1570,7 @@ end;
 function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings;
   delimiter: Char = SEMICOLON_DELIMITER): Double;
 var
-  _result: Double;
+    _result: Double;
 
   _fieldAsString: string;
 begin
@@ -1581,7 +1582,7 @@ end;
 
 function getCSVFieldFromStringAsInteger(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): integer;
 var
-  _result: integer;
+    _result: integer;
 
   _fieldAsString: string;
 begin
@@ -1593,9 +1594,9 @@ end;
 
 function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
 const
-  ERR_MSG = 'Field index out of range.';
+    ERR_MSG = 'Field index out of range.';
 var
-  _result: string;
+    _result: string;
 
   _stringList: TStringList;
 begin
@@ -1618,7 +1619,7 @@ end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
 var
-  _result: integer;
+    _result: integer;
 
   _stringList: TStringList;
 begin
@@ -1631,7 +1632,7 @@ end;
 
 function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
 var
-  _result: string;
+    _result: string;
 
   _stringList: TStringList;
   _text: string;
@@ -1647,7 +1648,7 @@ end;
 
 function stringToStringListWithFixedLen(source: string; fixedLen: integer): TStringList;
 var
-  stringList: TStringList;
+    stringList: TStringList;
 
   i: integer;
   _sourceLen: integer;
@@ -1674,7 +1675,7 @@ end;
 
 function stringToStringListWithDelimiter(value: string; delimiter: Char): TStringList;
 var
-  stringList: TStringList;
+    stringList: TStringList;
 begin
   stringList := TStringList.Create;
   stringList.Clear;
@@ -1687,7 +1688,7 @@ end;
 
 function stringToTStringList(source: string): TStringList;
 var
-  stringList: TStringList;
+    stringList: TStringList;
 begin
   stringList := TStringList.Create;
   stringList.Text := source;
@@ -1697,7 +1698,7 @@ end;
 
 function stringToVariantType(stringValue: string; destinationTypeAsString: string): Variant;
 var
-  value: Variant;
+    value: Variant;
 begin
   if destinationTypeAsString = 'string' then //TODO CREATE TTYPE ENUM
   begin
@@ -1725,7 +1726,7 @@ end;
 
 function arrayOfStringToTStringList(arrayOfStrings: array of string): TStringList;
 var
-  stringList: TStringList;
+    stringList: TStringList;
 
   _string: string;
 begin
@@ -1740,7 +1741,7 @@ end;
 
 function arrayOfVariantToTStringList(arrayOfVariant: Variant): TStringList;
 var
-  fieldStringList: TStringList;
+    fieldStringList: TStringList;
 
   _highBound: integer;
   i: integer;
@@ -1758,7 +1759,7 @@ end;
 
 function splitStringsAsTArrayStrings(source: string; chunkSize: Integer): TArray<string>;
 var
-  i, len, count: Integer;
+    i, len, count: Integer;
 begin
   len := Length(source);
   count := (len + chunkSize - 1) div chunkSize;
@@ -1770,7 +1771,7 @@ end;
 
 procedure splitStrings(source: string; delimiter: string; var destFirstString: string; var destSecondString: string);
 var
-  _delimiterPosition: integer;
+    _delimiterPosition: integer;
   _delimiterLength: integer;
 begin
   _delimiterPosition := myAnsiPos(delimiter, source);
@@ -1785,7 +1786,7 @@ end;
 
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string);
 var
-  _lengthSource: integer;
+    _lengthSource: integer;
   _lengthDestSecondString: integer;
   _lastPositionOfDelimiter: integer;
 begin
@@ -1811,7 +1812,7 @@ end;
 
 function checkIfEmailIsValid(email: string): boolean;
 var
-  emailIsValid: boolean;
+    emailIsValid: boolean;
 begin
   emailIsValid := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
 
@@ -1830,7 +1831,7 @@ end;
 
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 var
-  _result: boolean;
+    _result: boolean;
 begin
   if caseSensitiveSearch then
   begin
@@ -1846,7 +1847,7 @@ end;
 
 function myStringReplace(mainString: string; OldPattern: array of string; NewPattern: array of string; Flags: TReplaceFlags): string;
 var
-  stringReplaced: string;
+    stringReplaced: string;
   i: integer;
 begin
   Assert(Length(OldPattern) = (Length(NewPattern)));
@@ -1866,7 +1867,7 @@ end;
 
 function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): integer;
 var
-  _subString: string;
+    _subString: string;
   _mainString: string;
 begin
   if caseSensitiveSearch then
@@ -1885,7 +1886,7 @@ end;
 
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 var
-  doubleAsString: string;
+    doubleAsString: string;
   _FloatToStrDecimalSeparator: char;
 begin
   doubleAsString := FloatToStr(value);
@@ -1897,10 +1898,10 @@ end;
 
 function getFloatToStrDecimalSeparator: char;
 const
-  VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
+    VALUE_WITH_DECIMAL_SEPARATOR = 0.1;
   DECIMAL_SEPARATOR_INDEX = 2;
 var
-  doubleAsString: string;
+    doubleAsString: string;
 begin
   doubleAsString := FloatToStr(VALUE_WITH_DECIMAL_SEPARATOR);
 
@@ -1909,7 +1910,7 @@ end;
 
 function get_status_asString(status: TStatus): string;
 var
-  status_asString: string;
+    status_asString: string;
 begin
   case status of
     TStatus._null:
@@ -1929,13 +1930,13 @@ end;
 
 function getSchemaOfType(AType: PTypeInfo): string;
 var
-  ctx: TRTTIContext;
+    ctx: TRTTIContext;
   rttiType: TRttiType;
   resultList: TStringList;
 
   procedure ProcessRecord(aType: TRttiType; indent: string);
   var
-    subField: TRttiField;
+      subField: TRttiField;
     subFieldType: PTypeInfo;
     subType: TRttiType;
     elementType: PTypeInfo;
@@ -1992,7 +1993,7 @@ end;
 
 procedure restartMyThread(var myThread: TMyThread);
 var
-  _tempThread: TMyThread;
+    _tempThread: TMyThread;
 begin
   _tempThread := myThread.getACopyMyThread;
   FreeAndNil(myThread);
@@ -2026,7 +2027,7 @@ end;
 
 function getArrayOfAnonymousMethodsFromArrayOfMethods(_methods: KLib.Types.TArrayOfMethods): KLib.Types.TArrayOfAnonymousMethods;
 var
-  arrayOfAnonymousMethods: TArrayOfAnonymousMethods;
+    arrayOfAnonymousMethods: TArrayOfAnonymousMethods;
 
   _lengthOfMethods: integer;
   i: integer;
@@ -2108,7 +2109,7 @@ end;
 
 function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
 var
-  _result: string;
+    _result: string;
 begin
   if (condition) then
   begin
@@ -2124,7 +2125,7 @@ end;
 
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 var
-  isEmpty: boolean;
+    isEmpty: boolean;
 
   _emptyValue: variant;
 begin
@@ -2145,7 +2146,7 @@ end;
 
 function myDefault(typeAsString: string): Variant;
 var
-  value: Variant;
+    value: Variant;
 begin
   if typeAsString = 'string' then
   begin
@@ -2171,43 +2172,75 @@ begin
   Result := value;
 end;
 
-function getResizedTValue(value: TValue; maxLength: double): TValue;
+function getMaxOfTValue(value: TValue): double;
 var
-  _string: string;
+    max: double;
 begin
   case value.Kind of
-    tkInteger, tkInt64:
+    tkInteger:
       begin
-        if value.AsInteger >= maxLength then
-        begin
-          Result := TValue.From<Integer>(trunc(maxLength));
-        end
-        else
-        begin
-          Result := value.AsInteger;
-        end;
+        max := value.AsInteger;
       end;
+
+    tkInt64:
+      begin
+        max := value.AsInt64;
+      end;
+
     tkFloat:
       begin
-        if value.AsExtended >= maxLength then
-        begin
-          Result := TValue.From<Double>(maxLength);
-        end
-        else
-        begin
-          Result := value.AsExtended;
-        end;
+        max := value.AsExtended;
       end;
+
+    tkString, tkLString, tkWString, tkUString:
+      begin
+        max := Length(value.AsString);
+      end;
+
+  else
+    Result := max;
+  end;
+end;
+
+function getResizedTValue(value: TValue; max: Double): TValue;
+var
+    _string: string;
+begin
+  case value.Kind of
+    tkInteger:
+      begin
+        if value.AsInteger >= Trunc(max) then
+          Result := TValue.From<Integer>(Trunc(max))
+        else
+          Result := TValue.From<Integer>(value.AsInteger);
+      end;
+
+    tkInt64:
+      begin
+        if value.AsInt64 >= Trunc(max) then
+          Result := TValue.From<Int64>(Trunc(max))
+        else
+          Result := TValue.From<Int64>(value.AsInt64);
+      end;
+
+    tkFloat:
+      begin
+        if value.AsExtended >= max then
+          Result := TValue.From<Double>(max)
+        else
+          Result := TValue.From<Double>(value.AsExtended);
+      end;
+
     tkString, tkLString, tkWString, tkUString:
       begin
         _string := value.AsString;
-        _string := Copy(_string, 1, trunc(maxLength));
+        if Length(_string) > Trunc(max) then
+          _string := Copy(_string, 1, Trunc(max));
         Result := TValue.From<string>(_string);
       end;
+
   else
-    begin
-      Result := value;
-    end;
+    Result := value;
   end;
 end;
 

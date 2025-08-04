@@ -38,7 +38,8 @@
 //  ATTRIBUTES:
 //  - CustomNameAttribute
 //  - DefaultValueAttribute
-//  - MaxLengthAttribute
+//  - MinAttribute
+//  - MaxAttribute
 //  - IgnoreAttribute
 //  - RequiredAttribute
 //###########---EXAMPLE OF USE----##########################
@@ -48,7 +49,7 @@
 // type
 //  TResponse = record
 //  public
-//    [MaxLengthAttribute(8)]
+//    [MaxAttribute(8)]
 //    timestamp: string;
 //    timestamps: TArrayOfString;
 //    values: TArrayOfInteger;
@@ -103,7 +104,8 @@ type
     class function getJSONObject<T>(const myRecord: T; ignoreEmptyStrings: Boolean = True): TJSONObject;
 
     class function JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
-    class function getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLengthValue: double = -1): TJSONValue;
+    class function getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean;
+      minValue: double = -1; maxValue: double = -1): TJSONValue;
     //
     class function readFromFile<T>(filename: string): T;
     class function getParsedJSON<T>(JSONAsString: string): T; overload;
@@ -111,8 +113,6 @@ type
   end;
 
 implementation
-
-//todo maxlengthattribute in getParsedJSON
 
 uses
   KLib.Utils, KLib.Math,
@@ -199,9 +199,10 @@ var
   Field: TRttiField;
   FieldTValue: TValue;
   JSONPair: TJSONPair;
-  CustomName: string;
-  maxLengthAttributeValue: double;
-  isRequiredAttribute: boolean;
+  _customName: string;
+  _minAttributeValue: double;
+  _maxAttributeValue: double;
+  _isRequiredAttribute: boolean;
   _isDefaultAttribute: boolean;
 
   _jsonValue: TJSONValue;
@@ -216,10 +217,10 @@ begin
         Continue;
 
       // Get custom name
-      CustomName := Field.Name;
+      _customName := Field.Name;
       if Field.GetAttribute<CustomNameAttribute> <> nil then
       begin
-        CustomName := Field.GetAttribute<CustomNameAttribute>.Value;
+        _customName := Field.GetAttribute<CustomNameAttribute>.Value;
       end;
 
       // Get field value
@@ -227,27 +228,34 @@ begin
 
       if Field.GetAttribute<CustomNameAttribute> <> nil then
       begin
-        CustomName := Field.GetAttribute<CustomNameAttribute>.Value;
+        _customName := Field.GetAttribute<CustomNameAttribute>.Value;
       end;
 
-      isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
+      _isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
 
       _isDefaultAttribute := Field.GetAttribute<DefaultValueAttribute> <> nil;
       // Apply default value
       if (checkIfTValueIsEmpty(FieldTValue)) then
       begin
-        if (isRequiredAttribute) and (not _isDefaultAttribute) then
+        if (_isRequiredAttribute) and (not _isDefaultAttribute) then
         begin
-          raise Exception.Create('Field required: ' + CustomName);
+          raise Exception.Create('Field required: ' + _customName);
         end;
         FieldTValue := getDefaultTValue(Field);
       end;
 
-      //apply maxlength attribute
-      maxLengthAttributeValue := -1;
-      if (Field.GetAttribute<MaxLengthAttribute> <> nil) then
+      //apply minlength attribute
+      _minAttributeValue := -1;
+      if (Field.GetAttribute<MinAttribute> <> nil) then
       begin
-        maxLengthAttributeValue := Field.GetAttribute<MaxLengthAttribute>.Value;
+        _minAttributeValue := Field.GetAttribute<MinAttribute>.Value;
+      end;
+
+      //apply maxlength attribute
+      _maxAttributeValue := -1;
+      if (Field.GetAttribute<MaxAttribute> <> nil) then
+      begin
+        _maxAttributeValue := Field.GetAttribute<MaxAttribute>.Value;
       end;
 
       // Skip empty values
@@ -256,10 +264,10 @@ begin
         Continue;
 
       // Create JSON pair
-      _jsonValue := getJSONFromTValue(FieldTValue, AIgnoreEmpty, maxLengthAttributeValue);
+      _jsonValue := getJSONFromTValue(FieldTValue, AIgnoreEmpty, _maxAttributeValue);
       if (Assigned(_jsonValue)) then
       begin
-        JSONPair := TJSONPair.Create(CustomName, _jsonValue);
+        JSONPair := TJSONPair.Create(_customName, _jsonValue);
         try
           Result.AddPair(JSONPair);
         except
@@ -274,7 +282,8 @@ begin
   end;
 end;
 
-class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLengthValue: double = -1): TJSONValue;
+class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean;
+  minValue: double = -1; maxValue: double = -1): TJSONValue;
 var
     _value: TValue;
   Ctx: TRttiContext;
@@ -283,13 +292,24 @@ var
   Arr: TJSONArray;
   Obj: TJSONObject;
   _maxArraySize: integer;
+  _currentMaxValue: double;
 begin
   RttiType := Ctx.GetType(AValue.TypeInfo);
 
   _value := AValue;
-  if (maxLengthValue > 0) then
+
+  if (minValue > 0) then
   begin
-    _value := getResizedTValue(_value, maxLengthValue);
+    _currentMaxValue := getMaxOfTValue(_value);
+    if (_currentMaxValue < minValue) then
+    begin
+      raise Exception.Create('Minimum value not met for type: ' + RttiType.Name);
+    end;
+  end;
+
+  if (maxValue > 0) then
+  begin
+    _value := getResizedTValue(_value, maxValue);
   end;
 
   case RttiType.TypeKind of
@@ -326,9 +346,9 @@ begin
     tkDynArray:
       begin
         _maxArraySize := _value.GetArrayLength;
-        if (maxLengthValue > 0) then
+        if (maxValue > 0) then
         begin
-          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxLengthValue));
+          _maxArraySize := getMin(_value.GetArrayLength, Trunc(maxValue));
         end;
 
         Arr := TJSONArray.Create;
