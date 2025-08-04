@@ -2198,8 +2198,10 @@ begin
       end;
 
   else
-    Result := max;
+    raise Exception.Create('Unsupported type');
   end;
+
+  Result := max;
 end;
 
 function getResizedTValue(value: TValue; max: Double): TValue;

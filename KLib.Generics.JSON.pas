@@ -206,6 +206,7 @@ var
   _isDefaultAttribute: boolean;
 
   _jsonValue: TJSONValue;
+  _errorMessage: string;
 begin
   Result := TJSONObject.Create;
   try
@@ -264,7 +265,8 @@ begin
         Continue;
 
       // Create JSON pair
-      _jsonValue := getJSONFromTValue(FieldTValue, AIgnoreEmpty, _maxAttributeValue);
+      _jsonValue := getJSONFromTValue(FieldTValue, AIgnoreEmpty, _minAttributeValue,
+        _maxAttributeValue);
       if (Assigned(_jsonValue)) then
       begin
         JSONPair := TJSONPair.Create(_customName, _jsonValue);
@@ -277,8 +279,21 @@ begin
       end;
     end;
   except
-    FreeAndNil(Result);
-    raise;
+    on E: Exception do
+    begin
+      FreeAndNil(Result);
+      if (E.message.Contains('JSON process error in field: ')) then
+      begin
+        _errorMessage := 'JSON process error in field: ' + Field.Name +
+          E.message.Replace('JSON process error in field: ', '.');
+      end
+      else
+      begin
+        _errorMessage := 'JSON process error in field: ' + Field.Name + ' -> ' +
+          E.message;
+      end;
+      raise Exception.Create(_errorMessage);
+    end;
   end;
 end;
 
@@ -303,7 +318,7 @@ begin
     _currentMaxValue := getMaxOfTValue(_value);
     if (_currentMaxValue < minValue) then
     begin
-      raise Exception.Create('Minimum value not met for type: ' + RttiType.Name);
+      raise Exception.Create('Minimum value ' + FloatToStr(minValue) + ' not met for type: ' + RttiType.Name);
     end;
   end;
 
