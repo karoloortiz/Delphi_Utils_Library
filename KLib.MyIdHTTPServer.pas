@@ -68,15 +68,6 @@ type
   TMyOnCommandGetAnonymousMethod =
     reference to procedure(var AContext: TIdContext; var ARequestInfo: TIdHTTPRequestInfo; var AResponseInfo: TIdHTTPResponseInfo);
 
-  TDefaultServerErrorResponse = record
-    timestamp: string;
-    status: integer;
-    error: string;
-    _message: string;
-    [IgnoreAttribute()]
-    path: string;
-  end;
-
   TMyIdHTTPServer = class(TIdHTTPServer)
   private
     _myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod;
@@ -90,7 +81,6 @@ type
   public
     rejectCallBack: TCallBack;
     onChangeStatus: TCallBack;
-    defaultServerErrorResponse: TDefaultServerErrorResponse;
     defaultServerErrorJSONResponse: string;
     property status: TStatus read _status write _set_status;
 
@@ -128,14 +118,6 @@ begin
   Self._isRunningEvent := TMyEvent.Create;
 
   Self.status := TStatus.created;
-
-  with defaultServerErrorResponse do
-  begin
-    timestamp := '';
-    status := 500;
-    error := 'Internal Server Error';
-    _message := '';
-  end;
 end;
 
 procedure TMyIdHTTPServer.Alisten(port: integer = 0);
@@ -150,7 +132,7 @@ end;
 
 procedure TMyIdHTTPServer._listen(asyncMode: boolean; port: integer = 0);
 const
-  ERR_MSG = 'Port not assigned.';
+    ERR_MSG = 'Port not assigned.';
 begin
   try
     if (Self.DefaultPort = 0) and (port = 0) then
@@ -195,7 +177,7 @@ end;
 
 procedure TMyIdHTTPServer.stop(isRaiseExceptionEnabled: boolean = true);
 const
-  ERR_MSG = 'Server doesn''t running.';
+    ERR_MSG = 'Server doesn''t running.';
 begin
   if isRunning then
   begin
@@ -219,8 +201,6 @@ begin
 end;
 
 procedure TMyIdHTTPServer.myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
-var
-  _JSONResponse: string;
 begin
   if Assigned(_myOnCommandGetAnonymousMethod) then
   begin
@@ -230,18 +210,12 @@ begin
       on E: Exception do
       begin
         AResponseInfo.ResponseNo := 500;
-        AResponseInfo.ContentType := APPLICATION_JSON_CONTENT_TYPE;
 
         if defaultServerErrorJSONResponse <> EMPTY_STRING then
         begin
-          _JSONResponse := defaultServerErrorJSONResponse;
-        end
-        else
-        begin
-          defaultServerErrorResponse.timestamp := getCurrentDateTimeWithFormattingAsString(DATETIME_FORMAT);
-          _JSONResponse := TJSONGenerics.getJSONAsString<TDefaultServerErrorResponse>(defaultServerErrorResponse, NOT_IGNORE_EMPTY_STRINGS);
+          AResponseInfo.ContentType := APPLICATION_JSON_CONTENT_TYPE;
+          AResponseInfo.ContentText := defaultServerErrorJSONResponse;
         end;
-        AResponseInfo.ContentText := _JSONResponse;
 
         if Assigned(rejectCallBack) then
         begin
