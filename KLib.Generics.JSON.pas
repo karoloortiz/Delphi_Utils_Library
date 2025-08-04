@@ -130,7 +130,7 @@ end;
 
 procedure TJSONRecord<T>.readFromFile(filename: string);
 var
-  _text: string;
+    _text: string;
 begin
   _text := getTextFromFile(filename);
   myRecord := TJSONGenerics.getParsedJSON<T>(_text);
@@ -138,7 +138,7 @@ end;
 
 procedure TJSONRecord<T>.saveToFile(filename: string);
 var
-  _text: string;
+    _text: string;
 begin
   _text := getAsString();
   KLib.Utils.saveToFile(_text, filename);
@@ -168,7 +168,7 @@ end;
 class procedure TJSONGenerics.saveToFile<T>(myRecord: T; filename: string;
   ignoreEmptyStrings: boolean = true);
 var
-  _text: string;
+    _text: string;
 begin
   _text := TJSONGenerics.getJSONAsString<T>(myRecord);
   KLib.Utils.saveToFile(_text, filename);
@@ -177,7 +177,7 @@ end;
 class function TJSONGenerics.getJSONAsString<T>(myRecord: T;
   ignoreEmptyStrings: boolean = true): string;
 var
-  JSONAsString: string;
+    JSONAsString: string;
   _JSONObject: TJSONObject;
 begin
   _JSONObject := getJSONObject<T>(myRecord, ignoreEmptyStrings);
@@ -194,7 +194,7 @@ end;
 
 class function TJSONGenerics.processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
 var
-  Ctx: TRttiContext;
+    Ctx: TRttiContext;
   RttiType: TRttiType;
   Field: TRttiField;
   FieldTValue: TValue;
@@ -276,7 +276,7 @@ end;
 
 class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean; maxLengthValue: double = -1): TJSONValue;
 var
-  _value: TValue;
+    _value: TValue;
   Ctx: TRttiContext;
   RttiType: TRttiType;
   i: Integer;
@@ -349,7 +349,7 @@ end;
 
 class function TJSONGenerics.JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
 var
-  Ctx: TRttiContext;
+    Ctx: TRttiContext;
   RecInstance: Pointer;
   I: Integer;
   Arr: TArray<TValue>;
@@ -414,7 +414,7 @@ end;
 //----------------------
 class function TJSONGenerics.readFromFile<T>(filename: string): T;
 var
-  _text: string;
+    _text: string;
 begin
   _text := getTextFromFile(filename);
 
@@ -423,7 +423,7 @@ end;
 
 class function TJSONGenerics.getParsedJSON<T>(JSONAsString: string): T;
 var
-  _result: T;
+    _result: T;
 
   _JSONFile: TBytes;
   _JSONValue: TJSONValue;
@@ -441,7 +441,7 @@ end;
 
 class function TJSONGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
 var
-  Ctx: TRttiContext;
+    Ctx: TRttiContext;
 begin
   if not(JSONValue is TJSONObject) then
     raise EJSONException.Create('TJSONObject expected');
@@ -451,7 +451,7 @@ end;
 
 class procedure TJSONGenerics.processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
 var
-  Field: TRttiField;
+    Field: TRttiField;
   CustomName: string;
   FieldValue: TJSONValue;
   FieldPath: string;
@@ -471,12 +471,11 @@ begin
 
       FieldValue := JSONObject.GetValue(CustomName);
 
-      if (Assigned(FieldValue)) then
+      if Assigned(FieldValue) and not(FieldValue is TJSONNull) then
       begin
         Field.SetValue(Instance, JSONToTValue(FieldValue, Field.FieldType));
-      end;
-
-      if (not Assigned(FieldValue)) then
+      end
+      else
       begin
         Field.SetValue(Instance, getDefaultTValue(Field));
       end;
@@ -493,7 +492,7 @@ end;
 
 class function TJSONGenerics.getDefaultTValue(Field: TRttiField): TValue;
 var
-  _defaultAttr: DefaultValueAttribute;
+    _defaultAttr: DefaultValueAttribute;
 begin
   _defaultAttr := Field.GetAttribute<DefaultValueAttribute>;
 
