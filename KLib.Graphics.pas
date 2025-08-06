@@ -106,6 +106,8 @@ procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; value: string);
 procedure setFormInCenterOfScreen(form: TForm);
 procedure setComponentInMiddlePosition(control: TControl);
 
+procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: boolean = true);
+
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
 //!not include in realease!
 
@@ -134,7 +136,7 @@ function getWidthOfCaption(numberOfCharacters: integer; myFont: TFont): integer;
 function getHeightOfCaption(text: string; font: TFont; width: integer): integer;
 function getHeightOfSingleCharacter(myFont: TFont): integer;
 
-{$ifdef RZDBCmbo}
+{$ifdef KLIB_RAIZE}
 procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
 {$endif}
 
@@ -142,8 +144,9 @@ implementation
 
 uses
   KLib.Utils, KLib.Generics, KLib.Validate,
+  RTTI,
   Winapi.Windows,
-  System.SysUtils, System.Types;
+  System.SysUtils, System.Types, System.TypInfo;
 
 //    dxGDIPlusClasses,   todo keep version with devexpress and see the differences
 //!not include in release!
@@ -452,6 +455,40 @@ var
 begin
   _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
   control.Left := _left;
+end;
+
+procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = True);
+var
+  i: Integer;
+  ctx: TRttiContext;
+  rttiType: TRttiType;
+  prop: TRttiProperty;
+begin
+  ctx := TRttiContext.Create;
+  try
+    for i := 0 to parent.ControlCount - 1 do
+    begin
+      if not(parent.Controls[i] is TWinControl) then
+      begin
+        Continue;
+      end;
+
+      rttiType := ctx.GetType(parent.Controls[i].ClassType);
+      prop := rttiType.GetProperty('ReadOnly');
+      if (prop <> nil) and (prop.Visibility = mvPublished) and prop.IsWritable then
+      begin
+        prop.SetValue(parent.Controls[i], readOnlyValue);
+      end;
+
+      // recursion
+      if parent.Controls[i] is TWinControl then
+      begin
+        SetReadOnlyOnChildren(TWinControl(parent.Controls[i]), readOnlyValue);
+      end;
+    end;
+  finally
+    ctx.Free;
+  end;
 end;
 
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
@@ -830,6 +867,8 @@ begin
 end;
 
 {$ifdef KLIB_RAIZE}
+
+
 procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDescription>);
 var
   _codeDescription: TCodeDescription;
