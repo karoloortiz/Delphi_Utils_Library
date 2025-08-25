@@ -50,8 +50,8 @@ type
   public
     _myThread: TMyThread;
 
-    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload;
-    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil); overload; //if you use this constructor, define your subclass and override Run method
+    constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil); overload;
+    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil); overload; //if you use this constructor, define your subclass and override Run method
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -72,13 +72,13 @@ uses
   KLib.Constants, KLib.Utils, KLib.Windows,
   System.SysUtils;
 
-constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
+constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil);
 begin
   Self.rejectCallBack := rejectCallBack;
   _myThread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
-constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TCallBack = nil);
+constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil);
 begin
   Self.rejectCallBack := rejectCallBack;
   _myThread := TMyThread.Create(run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);

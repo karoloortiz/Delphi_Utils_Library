@@ -183,7 +183,7 @@ function myAnsiPos(subString: string; mainString: string; caseSensitiveSearch: b
 function getDoubleAsString(value: Double; decimalSeparator: char = DECIMAL_SEPARATOR_IT): string;
 function getFloatToStrDecimalSeparator: char;
 
-function get_status_asString(status: TStatus): string;
+function getStatusAsString(status: TStatus): string;
 
 function getSchemaOfType(AType: PTypeInfo): string;
 
@@ -1908,7 +1908,7 @@ begin
   Result := doubleAsString[DECIMAL_SEPARATOR_INDEX];
 end;
 
-function get_status_asString(status: TStatus): string;
+function getStatusAsString(status: TStatus): string;
 var
     status_asString: string;
 begin

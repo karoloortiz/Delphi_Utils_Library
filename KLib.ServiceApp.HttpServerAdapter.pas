@@ -62,7 +62,7 @@ type
     _server: TMyIdHTTPServer;
 
     constructor Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-      rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil); overload;
+      rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TOnChangeStatus = nil); overload;
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -84,7 +84,7 @@ uses
   System.SysUtils;
 
 constructor THttpServerAdapter.Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
-  rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TOnChangeStatus = nil);
 begin
   Self.rejectCallBack := rejectCallBack;
   _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, rejectCallBack, defaultServerErrorJSONResponse,
@@ -120,7 +120,7 @@ end;
 
 procedure THttpServerAdapter.waitUntilIsRunning;
 begin
-  Sleep(INFINITE); //better beacuse not use mainThread
+  Sleep(INFINITE); //better because not use mainThread
   //  _server.waitUntilIsRunning;
 end;
 

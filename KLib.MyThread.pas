@@ -56,12 +56,12 @@ type
   protected
     _status: TStatus;
   public
-    onChangeStatus: TCallBack;
+    onChangeStatus: TOnChangeStatus;
     property status: TStatus read _status write _set_status;
     property isRunning: boolean read _get_IsRunning;
 
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
-      onChangeStatus: TCallBack = nil);
+      onChangeStatus: TOnChangeStatus = nil);
     procedure Execute; override;
     procedure myStart(isRaiseExceptionEnabled: boolean = true);
     procedure pause;
@@ -79,7 +79,7 @@ uses
   System.SysUtils;
 
 constructor TMyThread.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
-  onChangeStatus: TCallBack = nil);
+  onChangeStatus: TOnChangeStatus = nil);
 begin
   Self._executorMethod := executorMethod;
   Self._rejectCallBack := rejectCallBack;
@@ -260,7 +260,7 @@ begin
   _status := value;
   if Assigned(onChangeStatus) then
   begin
-    onChangeStatus(get_status_asString(_status));
+    onChangeStatus(_status);
   end;
 end;
 

@@ -80,13 +80,13 @@ type
     procedure myOnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
   public
     rejectCallBack: TCallBack;
-    onChangeStatus: TCallBack;
+    onChangeStatus: TOnChangeStatus;
     defaultServerErrorJSONResponse: string;
     property status: TStatus read _status write _set_status;
 
     constructor create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
       rejectCallBack: TCallBack = nil; defaultServerErrorJSONResponse: string = EMPTY_STRING;
-      onChangeStatus: TCallBack = nil); overload;
+      onChangeStatus: TOnChangeStatus = nil); overload;
     procedure Alisten(port: integer = 0);
     procedure listen(port: integer = 0);
     procedure stop(isRaiseExceptionEnabled: boolean = true);
@@ -105,7 +105,7 @@ uses
   System.SysUtils;
 
 constructor TMyIdHTTPServer.create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer = 0;
-  rejectCallBack: TCallBack = nil; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TCallBack = nil);
+  rejectCallBack: TCallBack = nil; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TOnChangeStatus = nil);
 begin
   inherited Create(nil);
   Self._myOnCommandGetAnonymousMethod := myOnCommandGetAnonymousMethod;
@@ -132,7 +132,7 @@ end;
 
 procedure TMyIdHTTPServer._listen(asyncMode: boolean; port: integer = 0);
 const
-    ERR_MSG = 'Port not assigned.';
+  ERR_MSG = 'Port not assigned.';
 begin
   try
     if (Self.DefaultPort = 0) and (port = 0) then
@@ -177,7 +177,7 @@ end;
 
 procedure TMyIdHTTPServer.stop(isRaiseExceptionEnabled: boolean = true);
 const
-    ERR_MSG = 'Server doesn''t running.';
+  ERR_MSG = 'Server doesn''t running.';
 begin
   if isRunning then
   begin
@@ -235,7 +235,7 @@ begin
   _status := value;
   if Assigned(onChangeStatus) then
   begin
-    onChangeStatus(get_status_asString(_status));
+    onChangeStatus(_status);
   end;
 end;
 

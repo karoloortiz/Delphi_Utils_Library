@@ -55,7 +55,7 @@ type
 
   TStatus = (_null, created, stopped, paused, running);
 
-  TExecutionMode = (_null, gui, service, console);
+  TExecutionMode = (_null, desktop, service, cli);
 
   TType = (_null, _string, _integer, _double, _char, _boolean);
 
@@ -204,6 +204,9 @@ type
 
     procedure clear;
   end;
+
+  TOnChangeStatus =
+    reference to procedure(newStatus: TStatus = TStatus._null);
 
   TMethod = procedure of object;
   TArrayOfMethods = array of TMethod;
