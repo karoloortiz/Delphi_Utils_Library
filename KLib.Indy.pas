@@ -83,7 +83,7 @@ function getMD5ChecksumFile(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.MyStringList, Klib.Windows, KLib.Generics.JSON,
+  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.StringListHelper, Klib.Windows, KLib.Generics.JSON,
   IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
   IdMessage, IdText, IdAttachmentFile, IdExplicitTLSClientServerBase,
   System.SysUtils, System.NetEncoding;

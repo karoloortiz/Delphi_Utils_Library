@@ -237,7 +237,7 @@ var
 implementation
 
 uses
-  KLib.Utils, KLib.Validate, KLib.MyStringList,
+  KLib.Utils, KLib.Validate, KLib.StringListHelper,
   Vcl.Forms,
   Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
   System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants, System.StrUtils,

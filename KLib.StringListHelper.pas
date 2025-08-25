@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MyStringList;
+unit KLib.StringListHelper;
 
 interface
 
@@ -42,7 +42,7 @@ uses
   System.Classes;
 
 type
-  TMyStringListHelper = class helper for TStringList
+  TStringListHelper = class helper for TStringList
     procedure addStrings(strings: array of string); overload;
   end;
 
@@ -52,7 +52,7 @@ uses
   Klib.Utils,
   System.SysUtils;
 
-procedure TMyStringListHelper.addStrings(strings: array of string);
+procedure TStringListHelper.addStrings(strings: array of string);
 var
   _stringList: TStringList;
 begin
