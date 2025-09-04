@@ -97,6 +97,9 @@ type
     class function getDefaultTValue(Field: TRttiField): TValue;
     //
     class procedure processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
+
+    class function processClass(ClassInstance: TObject; ClassType: TRttiInstanceType): TJSONObject;
+
   public
     class procedure saveToFile<T>(myRecord: T; filename: string;
       ignoreEmptyStrings: boolean = true);
@@ -115,7 +118,7 @@ type
 implementation
 
 uses
-  KLib.Utils, KLib.Math,
+  KLib.Utils, KLib.Math, KLib.Constants,
   System.DateUtils, System.SysUtils, System.Classes, System.Generics.Collections;
 
 constructor TJSONRecord<T>.Create();
@@ -130,7 +133,7 @@ end;
 
 procedure TJSONRecord<T>.readFromFile(filename: string);
 var
-    _text: string;
+  _text: string;
 begin
   _text := getTextFromFile(filename);
   myRecord := TJSONGenerics.getParsedJSON<T>(_text);
@@ -138,7 +141,7 @@ end;
 
 procedure TJSONRecord<T>.saveToFile(filename: string);
 var
-    _text: string;
+  _text: string;
 begin
   _text := getAsString();
   KLib.Utils.saveToFile(_text, filename);
@@ -168,7 +171,7 @@ end;
 class procedure TJSONGenerics.saveToFile<T>(myRecord: T; filename: string;
   ignoreEmptyStrings: boolean = true);
 var
-    _text: string;
+  _text: string;
 begin
   _text := TJSONGenerics.getJSONAsString<T>(myRecord);
   KLib.Utils.saveToFile(_text, filename);
@@ -177,7 +180,7 @@ end;
 class function TJSONGenerics.getJSONAsString<T>(myRecord: T;
   ignoreEmptyStrings: boolean = true): string;
 var
-    JSONAsString: string;
+  JSONAsString: string;
   _JSONObject: TJSONObject;
 begin
   _JSONObject := getJSONObject<T>(myRecord, ignoreEmptyStrings);
@@ -194,7 +197,7 @@ end;
 
 class function TJSONGenerics.processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
 var
-    Ctx: TRttiContext;
+  Ctx: TRttiContext;
   RttiType: TRttiType;
   Field: TRttiField;
   FieldTValue: TValue;
@@ -282,15 +285,19 @@ begin
     on E: Exception do
     begin
       FreeAndNil(Result);
-      if (E.message.Contains('JSON process error in field: ')) then
+      _errorMessage := E.Message;
+      if (Assigned(Field)) then
       begin
-        _errorMessage := 'JSON process error in field: ' + Field.Name +
-          E.message.Replace('JSON process error in field: ', '.');
-      end
-      else
-      begin
-        _errorMessage := 'JSON process error in field: ' + Field.Name + ' -> ' +
-          E.message;
+        if (E.message.Contains('JSON process error in field: ')) then
+        begin
+          _errorMessage := 'JSON process error in field: ' + Field.Name +
+            E.message.Replace('JSON process error in field: ', '.');
+        end
+        else
+        begin
+          _errorMessage := 'JSON process error in field: ' + Field.Name + ' -> ' +
+            E.message;
+        end;
       end;
       raise Exception.Create(_errorMessage);
     end;
@@ -300,7 +307,7 @@ end;
 class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean;
   minValue: double = -1; maxValue: double = -1): TJSONValue;
 var
-    _value: TValue;
+  _value: TValue;
   Ctx: TRttiContext;
   RttiType: TRttiType;
   i: Integer;
@@ -308,6 +315,25 @@ var
   Obj: TJSONObject;
   _maxArraySize: integer;
   _currentMaxValue: double;
+
+  _classType: TRttiInstanceType;
+  _classInstance: TObject;
+  _getCountProperty: TRttiProperty;
+  _getItemMethod: TRttiMethod;
+  _countValue, _itemValue, _keyValue, _dictValue, _keysValue: TValue;
+  _count: Integer;
+  _jsonElement: TJSONValue;
+  _keyString: string;
+  _keysObject: TObject;
+  _keysType: TRttiInstanceType;
+
+  _keysProperty: TRttiProperty;
+  _toArrayMethod: TRttiMethod;
+  _keysArrayValue: TValue;
+  _keysArrayLength: Integer;
+
+  _itemsProperty: TRttiIndexedProperty; // Cambia da TRttiProperty a TRttiIndexedProperty
+
 begin
   RttiType := Ctx.GetType(AValue.TypeInfo);
 
@@ -334,6 +360,8 @@ begin
     tkFloat:
       if _value.TypeInfo = TypeInfo(TDateTime) then
         Result := TJSONString.Create(DateToISO8601(_value.AsType<TDateTime>))
+      else if _value.TypeInfo = TypeInfo(TDate) then
+        Result := TJSONString.Create(getDateTimeWithFormattingAsString(_value.AsType<TDate>, DATE_FORMAT))
       else
         Result := TJSONNumber.Create(_value.AsExtended);
 
@@ -377,19 +405,205 @@ begin
         end;
       end;
 
+    tkClass:
+      begin
+        if _value.IsEmpty or (_value.AsObject = nil) then
+        begin
+          Result := TJSONNull.Create;
+        end
+        else if RttiType.Name.StartsWith('TList<') then
+        begin
+          Arr := TJSONArray.Create;
+          try
+            _classType := RttiType as TRttiInstanceType;
+            _classInstance := _value.AsObject;
+
+            _getCountProperty := _classType.GetProperty('Count');
+            _getItemMethod := _classType.GetMethod('GetItem');
+
+            if (_getCountProperty <> nil) and (_getItemMethod <> nil) then
+            begin
+              _countValue := _getCountProperty.GetValue(_classInstance);
+              _count := _countValue.AsInteger;
+
+              for i := 0 to _count - 1 do
+              begin
+                _itemValue := _getItemMethod.Invoke(_classInstance, [i]);
+                _jsonElement := getJSONFromTValue(_itemValue, AIgnoreEmpty, minValue, maxValue);
+                if _jsonElement <> nil then
+                  Arr.AddElement(_jsonElement);
+              end;
+            end;
+
+            Result := Arr;
+          except
+            Arr.Free;
+            raise;
+          end;
+        end
+        else if RttiType.Name.StartsWith('TDictionary<') then
+        begin
+          Obj := TJSONObject.Create;
+          try
+            _classType := RttiType as TRttiInstanceType;
+            _classInstance := _value.AsObject;
+
+            _keysProperty := _classType.GetProperty('Keys');
+            if _keysProperty <> nil then
+            begin
+              _keysValue := _keysProperty.GetValue(_classInstance);
+              _keysObject := _keysValue.AsObject;
+
+              _keysType := Ctx.GetType(_keysObject.ClassInfo) as TRttiInstanceType;
+              _toArrayMethod := _keysType.GetMethod('ToArray');
+
+              if _toArrayMethod <> nil then
+              begin
+                _keysArrayValue := _toArrayMethod.Invoke(_keysObject, []);
+                _keysArrayLength := _keysArrayValue.GetArrayLength;
+
+                _itemsProperty := _classType.GetIndexedProperty('Items');
+
+                if _itemsProperty <> nil then
+                begin
+                  for i := 0 to _keysArrayLength - 1 do
+                  begin
+                    _keyValue := _keysArrayValue.GetArrayElement(i);
+                    _keyString := _keyValue.ToString;
+
+                    try
+                      _dictValue := (_itemsProperty as TRttiIndexedProperty).GetValue(_classInstance, [_keyValue]);
+                      _jsonElement := getJSONFromTValue(_dictValue, AIgnoreEmpty, minValue, maxValue);
+                      if _jsonElement <> nil then
+                        Obj.AddPair(_keyString, _jsonElement);
+                    except
+                      Continue;
+                    end;
+                  end;
+                end
+                else
+                begin
+                  _getItemMethod := _classType.GetMethod('GetItem');
+                  if _getItemMethod <> nil then
+                  begin
+                    for i := 0 to _keysArrayLength - 1 do
+                    begin
+                      _keyValue := _keysArrayValue.GetArrayElement(i);
+                      _keyString := _keyValue.ToString;
+
+                      try
+                        _dictValue := _getItemMethod.Invoke(_classInstance, [_keyValue]);
+                        _jsonElement := getJSONFromTValue(_dictValue, AIgnoreEmpty, minValue, maxValue);
+                        if _jsonElement <> nil then
+                          Obj.AddPair(_keyString, _jsonElement);
+                      except
+                        Continue;
+                      end;
+                    end;
+                  end;
+                end;
+              end;
+            end;
+
+            Result := Obj;
+          except
+            Obj.Free;
+            raise;
+          end;
+        end
+        else
+        begin
+          _classType := RttiType as TRttiInstanceType;
+          _classInstance := _value.AsObject;
+
+          Obj := processClass(_classInstance, _classType);
+          if Obj.Count > 0 then
+            Result := Obj
+          else
+          begin
+            Obj.Free;
+            Result := nil;
+          end;
+        end;
+      end;
+
   else
     raise Exception.Create('Unsupported type: ' + RttiType.Name);
   end;
 end;
 
+class function TJSONGenerics.processClass(ClassInstance: TObject; ClassType: TRttiInstanceType): TJSONObject;
+var
+  Field: TRttiField;
+  Prop: TRttiProperty;
+  FieldValue: TValue;
+  JSONElement: TJSONValue;
+  FieldName: string;
+begin
+  Result := TJSONObject.Create;
+
+  try
+    for Field in ClassType.GetFields do
+    begin
+      if Field.Visibility in [mvPublic, mvPublished] then
+      begin
+        FieldName := Field.Name;
+        FieldValue := Field.GetValue(ClassInstance);
+
+        JSONElement := getJSONFromTValue(FieldValue, false);
+
+        if (JSONElement <> nil) then
+        begin
+          Result.AddPair(FieldName, JSONElement);
+        end;
+      end;
+    end;
+
+    for Prop in ClassType.GetProperties do
+    begin
+      if (Prop.Visibility in [mvPublic, mvPublished]) and Prop.IsReadable then
+      begin
+        FieldName := Prop.Name;
+
+        try
+          FieldValue := Prop.GetValue(ClassInstance);
+          JSONElement := getJSONFromTValue(FieldValue, false);
+
+          if (JSONElement <> nil) then
+          begin
+            Result.AddPair(FieldName, JSONElement);
+          end;
+        except
+          Continue;
+        end;
+      end;
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
 class function TJSONGenerics.JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
 var
-    Ctx: TRttiContext;
+  Ctx: TRttiContext;
   RecInstance: Pointer;
-  I: Integer;
+  i: Integer;
   Arr: TArray<TValue>;
   DynArrayType: TRttiDynamicArrayType;
   _enumValue: integer;
+
+  _classType: TRttiInstanceType;
+  _classinstance: TObject;
+  _addMethod: TRttiMethod;
+  _elementType: TRttiType;
+
+  _value: TValue;
+
+  _keyType, _valueType: TRttiType;
+  _keyValue, _valueValue: TValue;
+  _jsonObject: TJSONObject;
+  _jsonPair: TJSONPair;
 begin
   case TargetType.TypeKind of
     tkInteger:
@@ -398,7 +612,9 @@ begin
       Result := StrToInt64Def(JSONValue.Value, 0);
     tkFloat:
       if TargetType.Handle = TypeInfo(TDateTime) then
-        Result := ISO8601ToDate(JSONValue.Value)
+        Result := TValue.From<TDateTime>(ISO8601ToDate(JSONValue.Value))
+      else if TargetType.Handle = TypeInfo(TDate) then
+        Result := TValue.From<TDate>(ISO8601ToDate(JSONValue.Value))
       else
         Result := TJSONNumber(JSONValue).AsDouble;
     tkString, tkLString, tkWString, tkUString:
@@ -434,10 +650,111 @@ begin
         begin
           DynArrayType := TargetType as TRttiDynamicArrayType;
           SetLength(Arr, TJSONArray(JSONValue).Count);
-          for I := 0 to High(Arr) do
-            Arr[I] := JSONToTValue(TJSONArray(JSONValue).Items[I],
+          for i := 0 to High(Arr) do
+            Arr[i] := JSONToTValue(TJSONArray(JSONValue).Items[i],
               DynArrayType.ElementType);
           Result := TValue.FromArray(TargetType.Handle, Arr);
+        end;
+      end;
+
+    tkClass:
+      begin
+        if TargetType.Name.StartsWith('TList<') then
+        begin
+          if JSONValue is TJSONArray then
+          begin
+            _classType := TargetType as TRttiInstanceType;
+
+            _classinstance := _classType.GetMethod('Create').Invoke(_classType.MetaclassType, []).AsObject;
+
+            try
+              _addMethod := _classType.GetMethod('Add');
+              if (_addMethod = nil) or (Length(_addMethod.GetParameters) = 0) then
+              begin
+                raise EJSONException.Create('Add method not found or invalid in TList');
+              end;
+
+              _elementType := _addMethod.GetParameters[0].ParamType;
+
+              for i := 0 to (TJSONArray(JSONValue).Count - 1) do
+              begin
+                _value := JSONToTValue(TJSONArray(JSONValue).Items[i], _elementType);
+                _addMethod.Invoke(_classinstance, _value);
+              end;
+
+              Result := TValue.From<TObject>(_classinstance);
+            except
+              on E: Exception do
+              begin
+                _classinstance.Free;
+                raise;
+              end;
+            end;
+          end;
+        end
+        else if TargetType.Name.StartsWith('TDictionary<') then
+        begin
+          if JSONValue is TJSONObject then
+          begin
+            _classType := TargetType as TRttiInstanceType;
+
+            _classinstance := _classType.GetMethod('Create').Invoke(_classType.MetaclassType, []).AsObject;
+
+            try
+              _addMethod := _classType.GetMethod('Add');
+              if (_addMethod = nil) or (Length(_addMethod.GetParameters) < 2) then
+              begin
+                raise EJSONException.Create('Add method not found or invalid in TDictionary');
+              end;
+
+              _keyType := _addMethod.GetParameters[0].ParamType; // TKey
+              _valueType := _addMethod.GetParameters[1].ParamType; // TValue
+
+              _jsonObject := TJSONObject(JSONValue);
+              for i := 0 to _jsonObject.Count - 1 do
+              begin
+                _jsonPair := _jsonObject.Pairs[i];
+
+                _keyValue := JSONToTValue(TJSONString.Create(_jsonPair.JsonString.Value), _keyType);
+
+                _valueValue := JSONToTValue(_jsonPair.JsonValue, _valueType);
+
+                _addMethod.Invoke(_classinstance, [_keyValue, _valueValue]);
+              end;
+
+              Result := TValue.From<TObject>(_classinstance);
+            except
+              on E: Exception do
+              begin
+                _classinstance.Free;
+                raise;
+              end;
+            end;
+          end;
+        end
+        else
+        begin
+          if JSONValue is TJSONObject then
+          begin
+            _classType := TargetType as TRttiInstanceType;
+            _classinstance := _classType.GetMethod('Create').Invoke(_classType.MetaclassType, []).AsObject;
+
+            try
+              processJSONObject(_classinstance, _classType, TJSONObject(JSONValue));
+
+              Result := TValue.From<TObject>(_classinstance);
+            except
+              on E: Exception do
+              begin
+                _classinstance.Free;
+                raise;
+              end;
+            end;
+          end
+          else
+          begin
+            raise Exception.Create('Unsupported type');
+          end;
         end;
       end;
 
@@ -449,7 +766,7 @@ end;
 //----------------------
 class function TJSONGenerics.readFromFile<T>(filename: string): T;
 var
-    _text: string;
+  _text: string;
 begin
   _text := getTextFromFile(filename);
 
@@ -458,7 +775,7 @@ end;
 
 class function TJSONGenerics.getParsedJSON<T>(JSONAsString: string): T;
 var
-    _result: T;
+  _result: T;
 
   _JSONFile: TBytes;
   _JSONValue: TJSONValue;
@@ -476,7 +793,7 @@ end;
 
 class function TJSONGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
 var
-    Ctx: TRttiContext;
+  Ctx: TRttiContext;
 begin
   if not(JSONValue is TJSONObject) then
     raise EJSONException.Create('TJSONObject expected');
@@ -486,7 +803,7 @@ end;
 
 class procedure TJSONGenerics.processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
 var
-    Field: TRttiField;
+  Field: TRttiField;
   CustomName: string;
   FieldValue: TJSONValue;
   FieldPath: string;
@@ -527,7 +844,7 @@ end;
 
 class function TJSONGenerics.getDefaultTValue(Field: TRttiField): TValue;
 var
-    _defaultAttr: DefaultValueAttribute;
+  _defaultAttr: DefaultValueAttribute;
 begin
   _defaultAttr := Field.GetAttribute<DefaultValueAttribute>;
 

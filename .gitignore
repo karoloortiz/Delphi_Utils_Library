@@ -2,3 +2,4 @@ __history/
 __recovery/
 *.~*
 !KLIB.*
+*.dcu

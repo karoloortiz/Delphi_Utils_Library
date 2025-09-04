@@ -2249,6 +2249,9 @@ begin
 end;
 
 function getDefaultTValue(AType: TRttiType): TValue;
+var
+  _classType: TRttiInstanceType;
+  _classinstance: TObject;
 begin
   case AType.TypeKind of
     tkString, tkLString, tkWString, tkUString:
@@ -2265,6 +2268,13 @@ begin
       else
       begin
         Result := TValue.FromOrdinal(AType.Handle, 0);
+      end;
+    tkClass:
+      begin
+        _classType := AType as TRttiInstanceType;
+        _classinstance := AType.GetMethod('Create').Invoke(_classType.MetaclassType, []).AsObject;
+
+        Result := TValue.From<TObject>(_classinstance);
       end;
   else
     Result := TValue.Empty;
