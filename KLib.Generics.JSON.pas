@@ -96,9 +96,10 @@ type
     class function processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
     class function getDefaultTValue(Field: TRttiField): TValue;
     //
+    class procedure processJSONObjectClass(Instance: TObject; RttiType: TRttiInstanceType; JSONObject: TJSONObject);
     class procedure processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
 
-    class function processClass(ClassInstance: TObject; ClassType: TRttiInstanceType): TJSONObject;
+    class function processClass(ClassInstance: TObject; ClassType: TRttiInstanceType; AIgnoreEmpty: Boolean = False): TJSONObject;
 
   public
     class procedure saveToFile<T>(myRecord: T; filename: string;
@@ -191,8 +192,27 @@ begin
 end;
 
 class function TJSONGenerics.getJSONObject<T>(const myRecord: T; ignoreEmptyStrings: Boolean): TJSONObject;
+var
+  Ctx: TRttiContext;
+  RttiType: TRttiType;
+  Value: TValue;
 begin
-  Result := processRecord(@myRecord, TypeInfo(T), ignoreEmptyStrings);
+  RttiType := Ctx.GetType(TypeInfo(T));
+
+  TValue.Make(@myRecord, TypeInfo(T), Value);
+
+  if RttiType.TypeKind = tkClass then
+  begin
+    Result := processClass(Value.AsObject, RttiType as TRttiInstanceType, ignoreEmptyStrings);
+  end
+  else if RttiType.TypeKind = tkRecord then
+  begin
+    Result := processRecord(@myRecord, TypeInfo(T), ignoreEmptyStrings);
+  end
+  else
+  begin
+    raise Exception.Create('Type must be a class or record');
+  end;
 end;
 
 class function TJSONGenerics.processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
@@ -229,11 +249,6 @@ begin
 
       // Get field value
       FieldTValue := Field.GetValue(Instance);
-
-      if Field.GetAttribute<CustomNameAttribute> <> nil then
-      begin
-        _customName := Field.GetAttribute<CustomNameAttribute>.Value;
-      end;
 
       _isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
 
@@ -532,29 +547,76 @@ begin
   end;
 end;
 
-class function TJSONGenerics.processClass(ClassInstance: TObject; ClassType: TRttiInstanceType): TJSONObject;
+class function TJSONGenerics.processClass(ClassInstance: TObject; ClassType: TRttiInstanceType; AIgnoreEmpty: Boolean = False): TJSONObject;
 var
   Field: TRttiField;
   Prop: TRttiProperty;
   FieldValue: TValue;
   JSONElement: TJSONValue;
   FieldName: string;
+  _customName: string;
+  _minAttributeValue: double;
+  _maxAttributeValue: double;
+  _isRequiredAttribute: boolean;
+  _isDefaultAttribute: boolean;
+  _errorMessage: string;
 begin
   Result := TJSONObject.Create;
 
   try
+
     for Field in ClassType.GetFields do
     begin
       if Field.Visibility in [mvPublic, mvPublished] then
       begin
-        FieldName := Field.Name;
+        if Field.GetAttribute<IgnoreAttribute> <> nil then
+          Continue;
+
+        _customName := Field.Name;
+        if Field.GetAttribute<CustomNameAttribute> <> nil then
+        begin
+          _customName := Field.GetAttribute<CustomNameAttribute>.Value;
+        end;
+
         FieldValue := Field.GetValue(ClassInstance);
 
-        JSONElement := getJSONFromTValue(FieldValue, false);
+        _isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
+        _isDefaultAttribute := Field.GetAttribute<DefaultValueAttribute> <> nil;
+
+        // Apply default value
+        if (checkIfTValueIsEmpty(FieldValue)) then
+        begin
+          if (_isRequiredAttribute) and (not _isDefaultAttribute) then
+          begin
+            raise Exception.Create('Field required: ' + _customName);
+          end;
+          FieldValue := getDefaultTValue(Field);
+        end;
+
+        // Apply min attribute
+        _minAttributeValue := -1;
+        if (Field.GetAttribute<MinAttribute> <> nil) then
+        begin
+          _minAttributeValue := Field.GetAttribute<MinAttribute>.Value;
+        end;
+
+        // Apply max attribute
+        _maxAttributeValue := -1;
+        if (Field.GetAttribute<MaxAttribute> <> nil) then
+        begin
+          _maxAttributeValue := Field.GetAttribute<MaxAttribute>.Value;
+        end;
+
+        // Skip empty values if needed
+        if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)
+          and (Field.FieldType.TypeKind <> tkRecord)) then
+          Continue;
+
+        JSONElement := getJSONFromTValue(FieldValue, AIgnoreEmpty, _minAttributeValue, _maxAttributeValue);
 
         if (JSONElement <> nil) then
         begin
-          Result.AddPair(FieldName, JSONElement);
+          Result.AddPair(_customName, JSONElement);
         end;
       end;
     end;
@@ -563,24 +625,80 @@ begin
     begin
       if (Prop.Visibility in [mvPublic, mvPublished]) and Prop.IsReadable then
       begin
-        FieldName := Prop.Name;
+        if Prop.GetAttribute<IgnoreAttribute> <> nil then
+          Continue;
+
+        // Get custom name
+        _customName := Prop.Name;
+        if Prop.GetAttribute<CustomNameAttribute> <> nil then
+        begin
+          _customName := Prop.GetAttribute<CustomNameAttribute>.Value;
+        end;
+
+        // Skip if already exists (field has precedence over property)
+        if Result.FindValue(_customName) <> nil then
+          Continue;
 
         try
           FieldValue := Prop.GetValue(ClassInstance);
-          JSONElement := getJSONFromTValue(FieldValue, false);
+
+          _isRequiredAttribute := Prop.GetAttribute<RequiredAttribute> <> nil;
+          _isDefaultAttribute := Prop.GetAttribute<DefaultValueAttribute> <> nil;
+
+          // Apply default value
+          if (checkIfTValueIsEmpty(FieldValue)) then
+          begin
+            if (_isRequiredAttribute) and (not _isDefaultAttribute) then
+            begin
+              raise Exception.Create('Property required: ' + _customName);
+            end;
+            if not _isRequiredAttribute then
+              Continue;
+          end;
+
+          // Apply min attribute
+          _minAttributeValue := -1;
+          if (Prop.GetAttribute<MinAttribute> <> nil) then
+          begin
+            _minAttributeValue := Prop.GetAttribute<MinAttribute>.Value;
+          end;
+
+          // Apply max attribute
+          _maxAttributeValue := -1;
+          if (Prop.GetAttribute<MaxAttribute> <> nil) then
+          begin
+            _maxAttributeValue := Prop.GetAttribute<MaxAttribute>.Value;
+          end;
+
+          // Skip empty values if needed
+          if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)) then
+            Continue;
+
+          JSONElement := getJSONFromTValue(FieldValue, AIgnoreEmpty, _minAttributeValue, _maxAttributeValue);
 
           if (JSONElement <> nil) then
           begin
-            Result.AddPair(FieldName, JSONElement);
+            Result.AddPair(_customName, JSONElement);
           end;
         except
-          Continue;
+          on E: Exception do
+          begin
+            if _isRequiredAttribute then
+            begin
+              _errorMessage := 'JSON process error in property: ' + Prop.Name + ' -> ' + E.Message;
+              raise Exception.Create(_errorMessage);
+            end;
+            Continue;
+          end;
         end;
       end;
     end;
   except
-    Result.Free;
-    raise;
+    on E: Exception do
+    begin
+      Result.Free;
+      raise;
+    end;
   end;
 end;
 
@@ -740,7 +858,7 @@ begin
             _classinstance := _classType.GetMethod('Create').Invoke(_classType.MetaclassType, []).AsObject;
 
             try
-              processJSONObject(_classinstance, _classType, TJSONObject(JSONValue));
+              processJSONObjectClass(_classinstance, _classType, TJSONObject(JSONValue)); // <-- CAMBIATO QUI
 
               Result := TValue.From<TObject>(_classinstance);
             except
@@ -794,11 +912,121 @@ end;
 class function TJSONGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
 var
   Ctx: TRttiContext;
+  RttiType: TRttiType;
+  Value: TValue;
+  ClassInstance: TObject;
 begin
   if not(JSONValue is TJSONObject) then
     raise EJSONException.Create('TJSONObject expected');
-  Result := Default (T);
-  processJSONObject(@Result, Ctx.GetType(TypeInfo(T)), TJSONObject(JSONValue));
+
+  RttiType := Ctx.GetType(TypeInfo(T));
+
+  if RttiType.TypeKind = tkClass then
+  begin
+    ClassInstance := (RttiType as TRttiInstanceType).GetMethod('Create').Invoke(
+      (RttiType as TRttiInstanceType).MetaclassType, []).AsObject;
+    try
+      processJSONObjectClass(ClassInstance, RttiType as TRttiInstanceType, TJSONObject(JSONValue));
+      TValue.Make(@ClassInstance, TypeInfo(T), Value);
+      Result := Value.AsType<T>;
+    except
+      ClassInstance.Free;
+      raise;
+    end;
+  end
+  else if RttiType.TypeKind = tkRecord then
+  begin
+    Result := Default (T);
+    processJSONObject(@Result, RttiType, TJSONObject(JSONValue));
+  end
+  else
+  begin
+    raise Exception.Create('Type must be a class or record');
+  end;
+end;
+
+class procedure TJSONGenerics.processJSONObjectClass(Instance: TObject; RttiType: TRttiInstanceType; JSONObject: TJSONObject);
+var
+  Field: TRttiField;
+  Prop: TRttiProperty;
+  CustomName: string;
+  FieldValue: TJSONValue;
+  FieldPath: string;
+  TValueField: TValue;
+begin
+  for Field in RttiType.GetFields do
+  begin
+    if Field.Visibility in [mvPublic, mvPublished] then
+    begin
+      if Field.GetAttribute<IgnoreAttribute> <> nil then
+        Continue;
+
+      try
+        // CustomNameAttribute
+        CustomName := Field.Name;
+        if (Field.GetAttribute<CustomNameAttribute> <> nil) then
+        begin
+          CustomName := Field.GetAttribute<CustomNameAttribute>.Value;
+        end;
+
+        FieldValue := JSONObject.GetValue(CustomName);
+
+        if Assigned(FieldValue) and not(FieldValue is TJSONNull) then
+        begin
+          Field.SetValue(Instance, JSONToTValue(FieldValue, Field.FieldType));
+        end
+        else
+        begin
+          Field.SetValue(Instance, getDefaultTValue(Field));
+        end;
+
+      except
+        on E: Exception do
+        begin
+          FieldPath := Format('%s.%s', [RttiType.Name, Field.Name]);
+          raise EJSONException.CreateFmt('Error in field %s : %s', [FieldPath, E.Message]);
+        end;
+      end;
+    end;
+  end;
+
+  for Prop in RttiType.GetProperties do
+  begin
+    if (Prop.Visibility in [mvPublic, mvPublished]) and Prop.IsWritable then
+    begin
+      if Prop.GetAttribute<IgnoreAttribute> <> nil then
+        Continue;
+
+      try
+        // CustomNameAttribute
+        CustomName := Prop.Name;
+        if (Prop.GetAttribute<CustomNameAttribute> <> nil) then
+        begin
+          CustomName := Prop.GetAttribute<CustomNameAttribute>.Value;
+        end;
+
+        FieldValue := JSONObject.GetValue(CustomName);
+
+        if Assigned(FieldValue) and not(FieldValue is TJSONNull) then
+        begin
+          TValueField := JSONToTValue(FieldValue, Prop.PropertyType);
+          Prop.SetValue(Instance, TValueField);
+        end
+        else
+        begin
+          TValueField := KLib.Utils.getDefaultTValue(Prop.PropertyType);
+          Prop.SetValue(Instance, TValueField);
+        end;
+
+      except
+        on E: Exception do
+        begin
+          FieldPath := Format('%s.%s', [RttiType.Name, Prop.Name]);
+          raise EJSONException.CreateFmt('Error in property %s : %s', [FieldPath, E.Message]);
+        end;
+      end;
+    end;
+  end;
 end;
 
 class procedure TJSONGenerics.processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
