@@ -196,6 +196,7 @@ var
   Ctx: TRttiContext;
   RttiType: TRttiType;
   Value: TValue;
+  ObjInstance: TObject;
 begin
   RttiType := Ctx.GetType(TypeInfo(T));
 
@@ -203,7 +204,15 @@ begin
 
   if RttiType.TypeKind = tkClass then
   begin
-    Result := processClass(Value.AsObject, RttiType as TRttiInstanceType, ignoreEmptyStrings);
+    ObjInstance := Value.AsObject;
+    if ObjInstance = nil then
+    begin
+      Result := TJSONObject.Create;
+    end
+    else
+    begin
+      Result := processClass(ObjInstance, RttiType as TRttiInstanceType, ignoreEmptyStrings);
+    end;
   end
   else if RttiType.TypeKind = tkRecord then
   begin
@@ -424,7 +433,10 @@ begin
       begin
         if _value.IsEmpty or (_value.AsObject = nil) then
         begin
-          Result := TJSONNull.Create;
+          if AIgnoreEmpty then
+            Result := nil
+          else
+            Result := TJSONNull.Create;
         end
         else if RttiType.Name.StartsWith('TList<') then
         begin
@@ -458,16 +470,38 @@ begin
         end
         else if RttiType.Name.StartsWith('TDictionary<') then
         begin
+          _classInstance := _value.AsObject;
+          if _classInstance = nil then
+          begin
+            if AIgnoreEmpty then
+              Result := nil
+            else
+              Result := TJSONNull.Create;
+            Exit;
+          end;
+
           Obj := TJSONObject.Create;
           try
             _classType := RttiType as TRttiInstanceType;
-            _classInstance := _value.AsObject;
 
             _keysProperty := _classType.GetProperty('Keys');
             if _keysProperty <> nil then
             begin
               _keysValue := _keysProperty.GetValue(_classInstance);
+
+              if _keysValue.IsEmpty then
+              begin
+                Result := Obj;
+                Exit;
+              end;
+
               _keysObject := _keysValue.AsObject;
+
+              if _keysObject = nil then
+              begin
+                Result := Obj;
+                Exit;
+              end;
 
               _keysType := Ctx.GetType(_keysObject.ClassInfo) as TRttiInstanceType;
               _toArrayMethod := _keysType.GetMethod('ToArray');
@@ -531,13 +565,23 @@ begin
           _classType := RttiType as TRttiInstanceType;
           _classInstance := _value.AsObject;
 
-          Obj := processClass(_classInstance, _classType);
-          if Obj.Count > 0 then
-            Result := Obj
+          if _classInstance = nil then
+          begin
+            if AIgnoreEmpty then
+              Result := nil
+            else
+              Result := TJSONNull.Create;
+          end
           else
           begin
-            Obj.Free;
-            Result := nil;
+            Obj := processClass(_classInstance, _classType, AIgnoreEmpty);
+            if Obj.Count > 0 then
+              Result := Obj
+            else
+            begin
+              Obj.Free;
+              Result := nil;
+            end;
           end;
         end;
       end;
@@ -560,10 +604,15 @@ var
   _isRequiredAttribute: boolean;
   _isDefaultAttribute: boolean;
   _errorMessage: string;
+  _fieldOffset: Integer;
 begin
   Result := TJSONObject.Create;
 
   try
+    if ClassInstance = nil then
+    begin
+      Exit;
+    end;
 
     for Field in ClassType.GetFields do
     begin
@@ -578,100 +627,123 @@ begin
           _customName := Field.GetAttribute<CustomNameAttribute>.Value;
         end;
 
-        FieldValue := Field.GetValue(ClassInstance);
-
-        _isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
-        _isDefaultAttribute := Field.GetAttribute<DefaultValueAttribute> <> nil;
-
-        // Apply default value
-        if (checkIfTValueIsEmpty(FieldValue)) then
-        begin
-          if (_isRequiredAttribute) and (not _isDefaultAttribute) then
-          begin
-            raise Exception.Create('Field required: ' + _customName);
-          end;
-          FieldValue := getDefaultTValue(Field);
-        end;
-
-        // Apply min attribute
-        _minAttributeValue := -1;
-        if (Field.GetAttribute<MinAttribute> <> nil) then
-        begin
-          _minAttributeValue := Field.GetAttribute<MinAttribute>.Value;
-        end;
-
-        // Apply max attribute
-        _maxAttributeValue := -1;
-        if (Field.GetAttribute<MaxAttribute> <> nil) then
-        begin
-          _maxAttributeValue := Field.GetAttribute<MaxAttribute>.Value;
-        end;
-
-        // Skip empty values if needed
-        if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)
-          and (Field.FieldType.TypeKind <> tkRecord)) then
-          Continue;
-
-        JSONElement := getJSONFromTValue(FieldValue, AIgnoreEmpty, _minAttributeValue, _maxAttributeValue);
-
-        if (JSONElement <> nil) then
-        begin
-          Result.AddPair(_customName, JSONElement);
-        end;
-      end;
-    end;
-
-    for Prop in ClassType.GetProperties do
-    begin
-      if (Prop.Visibility in [mvPublic, mvPublished]) and Prop.IsReadable then
-      begin
-        if Prop.GetAttribute<IgnoreAttribute> <> nil then
-          Continue;
-
-        // Get custom name
-        _customName := Prop.Name;
-        if Prop.GetAttribute<CustomNameAttribute> <> nil then
-        begin
-          _customName := Prop.GetAttribute<CustomNameAttribute>.Value;
-        end;
-
-        // Skip if already exists (field has precedence over property)
-        if Result.FindValue(_customName) <> nil then
-          Continue;
-
         try
-          FieldValue := Prop.GetValue(ClassInstance);
+          _fieldOffset := Field.Offset;
 
-          _isRequiredAttribute := Prop.GetAttribute<RequiredAttribute> <> nil;
-          _isDefaultAttribute := Prop.GetAttribute<DefaultValueAttribute> <> nil;
+          if (_fieldOffset < 0) or (_fieldOffset > 100000) then
+          begin
+            if not AIgnoreEmpty then
+              Result.AddPair(_customName, TJSONNull.Create);
+            Continue;
+          end;
 
-          // Apply default value
-          if (checkIfTValueIsEmpty(FieldValue)) then
+          try
+            if Field.FieldType.Name.StartsWith('TDictionary<') then
+            begin
+              try
+                FieldValue := Field.GetValue(ClassInstance);
+              except
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+                Continue;
+              end;
+
+              if FieldValue.IsEmpty then
+              begin
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+                Continue;
+              end;
+
+              try
+                if FieldValue.AsObject = nil then
+                begin
+                  if not AIgnoreEmpty then
+                    Result.AddPair(_customName, TJSONNull.Create);
+                  Continue;
+                end;
+              except
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+                Continue;
+              end;
+            end
+            else
+            begin
+              FieldValue := Field.GetValue(ClassInstance);
+            end;
+          except
+            on E: EAccessViolation do
+            begin
+              if Field.FieldType.TypeKind = tkClass then
+              begin
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+                Continue;
+              end
+              else
+              begin
+                try
+                  FieldValue := getDefaultTValue(Field);
+                except
+                  Continue;
+                end;
+              end;
+            end;
+            on E: Exception do
+            begin
+              if Field.FieldType.TypeKind = tkClass then
+              begin
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+                Continue;
+              end
+              else
+                raise;
+            end;
+          end;
+
+          _isRequiredAttribute := Field.GetAttribute<RequiredAttribute> <> nil;
+          _isDefaultAttribute := Field.GetAttribute<DefaultValueAttribute> <> nil;
+
+          if (Field.FieldType.TypeKind = tkClass) then
+          begin
+            if FieldValue.IsEmpty or (FieldValue.AsObject = nil) then
+            begin
+              if _isRequiredAttribute and not _isDefaultAttribute then
+              begin
+                raise Exception.Create('Field required: ' + _customName);
+              end;
+              if AIgnoreEmpty then
+                Continue
+              else
+                Result.AddPair(_customName, TJSONNull.Create);
+              Continue;
+            end;
+          end;
+
+          if (checkIfTValueIsEmpty(FieldValue)) and (Field.FieldType.TypeKind <> tkClass) then
           begin
             if (_isRequiredAttribute) and (not _isDefaultAttribute) then
             begin
-              raise Exception.Create('Property required: ' + _customName);
+              raise Exception.Create('Field required: ' + _customName);
             end;
-            if not _isRequiredAttribute then
-              Continue;
+            FieldValue := getDefaultTValue(Field);
           end;
 
-          // Apply min attribute
+          // Apply min/max attributes
           _minAttributeValue := -1;
-          if (Prop.GetAttribute<MinAttribute> <> nil) then
-          begin
-            _minAttributeValue := Prop.GetAttribute<MinAttribute>.Value;
-          end;
+          if (Field.GetAttribute<MinAttribute> <> nil) then
+            _minAttributeValue := Field.GetAttribute<MinAttribute>.Value;
 
-          // Apply max attribute
           _maxAttributeValue := -1;
-          if (Prop.GetAttribute<MaxAttribute> <> nil) then
-          begin
-            _maxAttributeValue := Prop.GetAttribute<MaxAttribute>.Value;
-          end;
+          if (Field.GetAttribute<MaxAttribute> <> nil) then
+            _maxAttributeValue := Field.GetAttribute<MaxAttribute>.Value;
 
           // Skip empty values if needed
-          if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)) then
+          if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)
+            and (Field.FieldType.TypeKind <> tkRecord)
+            and (Field.FieldType.TypeKind <> tkClass)) then
             Continue;
 
           JSONElement := getJSONFromTValue(FieldValue, AIgnoreEmpty, _minAttributeValue, _maxAttributeValue);
@@ -681,11 +753,104 @@ begin
             Result.AddPair(_customName, JSONElement);
           end;
         except
+          on E: EAccessViolation do
+          begin
+            if not AIgnoreEmpty then
+              Result.AddPair(_customName, TJSONNull.Create);
+          end;
+          on E: Exception do
+          begin
+            _errorMessage := Format('JSON process error in field "%s": %s',
+              [Field.Name, E.Message]);
+            raise Exception.Create(_errorMessage);
+          end;
+        end;
+      end;
+    end;
+
+
+    for Prop in ClassType.GetProperties do
+    begin
+      if (Prop.Visibility in [mvPublic, mvPublished]) and Prop.IsReadable then
+      begin
+        if Prop.GetAttribute<IgnoreAttribute> <> nil then
+          Continue;
+
+        _customName := Prop.Name;
+        if Prop.GetAttribute<CustomNameAttribute> <> nil then
+          _customName := Prop.GetAttribute<CustomNameAttribute>.Value;
+
+        if Result.FindValue(_customName) <> nil then
+          Continue;
+
+        try
+          try
+            FieldValue := Prop.GetValue(ClassInstance);
+          except
+            on E: EAccessViolation do
+            begin
+              if Prop.PropertyType.TypeKind = tkClass then
+              begin
+                if not AIgnoreEmpty then
+                  Result.AddPair(_customName, TJSONNull.Create);
+              end;
+              Continue;
+            end;
+            on E: Exception do
+            begin
+              Continue;
+            end;
+          end;
+
+          _isRequiredAttribute := Prop.GetAttribute<RequiredAttribute> <> nil;
+          _isDefaultAttribute := Prop.GetAttribute<DefaultValueAttribute> <> nil;
+
+          if (Prop.PropertyType.TypeKind = tkClass) then
+          begin
+            if FieldValue.IsEmpty or (FieldValue.AsObject = nil) then
+            begin
+              if _isRequiredAttribute and not _isDefaultAttribute then
+                raise Exception.Create('Property required: ' + _customName);
+
+              if AIgnoreEmpty then
+                Continue
+              else
+                Result.AddPair(_customName, TJSONNull.Create);
+              Continue;
+            end;
+          end;
+
+          if (checkIfTValueIsEmpty(FieldValue)) and (Prop.PropertyType.TypeKind <> tkClass) then
+          begin
+            if (_isRequiredAttribute) and (not _isDefaultAttribute) then
+              raise Exception.Create('Property required: ' + _customName);
+            if not _isRequiredAttribute then
+              Continue;
+          end;
+
+          _minAttributeValue := -1;
+          if (Prop.GetAttribute<MinAttribute> <> nil) then
+            _minAttributeValue := Prop.GetAttribute<MinAttribute>.Value;
+
+          _maxAttributeValue := -1;
+          if (Prop.GetAttribute<MaxAttribute> <> nil) then
+            _maxAttributeValue := Prop.GetAttribute<MaxAttribute>.Value;
+
+          if (AIgnoreEmpty and checkIfTValueIsEmpty(FieldValue)
+            and (Prop.PropertyType.TypeKind <> tkClass)) then
+            Continue;
+
+          JSONElement := getJSONFromTValue(FieldValue, AIgnoreEmpty, _minAttributeValue, _maxAttributeValue);
+
+          if (JSONElement <> nil) then
+            Result.AddPair(_customName, JSONElement);
+        except
           on E: Exception do
           begin
             if _isRequiredAttribute then
             begin
-              _errorMessage := 'JSON process error in property: ' + Prop.Name + ' -> ' + E.Message;
+              _errorMessage := Format('JSON process error in property "%s": %s',
+                [Prop.Name, E.Message]);
               raise Exception.Create(_errorMessage);
             end;
             Continue;
