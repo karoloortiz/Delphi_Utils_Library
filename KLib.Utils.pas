@@ -123,6 +123,9 @@ function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORM
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
 function getCurrentDateTime: TDateTime;
 
+function encryptString(value: string; key: string): string;
+function decryptString(value: string; key: string): string;
+
 function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;
 function getEscapedMySQLString(mainString: string): string;
 function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
@@ -225,7 +228,8 @@ uses
   Vcl.ExtCtrls,
   System.Zip, System.IOUtils, System.StrUtils, System.Character,
   System.RegularExpressions, System.Generics.Collections,
-  System.Variants, System.NetEncoding, System.DateUtils;
+  System.Variants, System.NetEncoding, System.DateUtils,
+  System.Hash;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
@@ -1199,6 +1203,36 @@ end;
 function getCurrentDateTime: TDateTime;
 begin
   Result := Now;
+end;
+
+function encryptString(value: string; key: string): string;
+var
+  _hashedKey: string;
+  _xorBytes: TBytes;
+  _i: Integer;
+begin
+  _hashedKey := THashSHA2.GetHashString(key);
+  _xorBytes := TEncoding.UTF8.GetBytes(value);
+  for _i := 0 to Length(_xorBytes) - 1 do
+  begin
+    _xorBytes[_i] := _xorBytes[_i] xor Byte(_hashedKey[(_i mod Length(_hashedKey)) + 1]);
+  end;
+  Result := TNetEncoding.Base64.EncodeBytesToString(_xorBytes);
+end;
+
+function decryptString(value: string; key: string): string;
+var
+  _hashedKey: string;
+  _xorBytes: TBytes;
+  _i: Integer;
+begin
+  _hashedKey := THashSHA2.GetHashString(key);
+  _xorBytes := TNetEncoding.Base64.DecodeStringToBytes(value);
+  for _i := 0 to Length(_xorBytes) - 1 do
+  begin
+    _xorBytes[_i] := _xorBytes[_i] xor Byte(_hashedKey[(_i mod Length(_hashedKey)) + 1]);
+  end;
+  Result := TEncoding.UTF8.GetString(_xorBytes);
 end;
 
 function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;

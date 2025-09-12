@@ -92,6 +92,9 @@ type
     function checkIfContainsSubStringNoCaseSensitive(subString: string): boolean;
     function checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
 
+    function encrypt(key: string): string;
+    function decrypt(key: string): string;
+
     procedure saveToFile(fileName: string);
   end;
 
@@ -309,6 +312,16 @@ end;
 function TMyStringHelper.checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
 begin
   Result := checkIfMainStringContainsSubString(Self, subString, caseSensitiveSearch);
+end;
+
+function TMyStringHelper.encrypt(key: string): string;
+begin
+  Result := encryptString(Self, key);
+end;
+
+function TMyStringHelper.decrypt(key: string): string;
+begin
+  Result := decryptString(Self, key);
 end;
 
 procedure TMyStringHelper.saveToFile(fileName: string);
