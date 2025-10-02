@@ -894,16 +894,11 @@ begin
 end;
 
 function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
-var
-  _result: boolean;
 begin
-  with FTPCredentials do
-  begin
-    _result := (server <> EMPTY_STRING) and (credentials.username <> EMPTY_STRING) and (credentials.password <> EMPTY_STRING)
-      and (port >= 0);
-  end;
-
-  Result := _result;
+  Result := (FTPCredentials.server <> EMPTY_STRING)
+    and (FTPCredentials.credentials.username <> EMPTY_STRING)
+    and (FTPCredentials.credentials.password <> EMPTY_STRING)
+    and (FTPCredentials.port >= 0);
 end;
 
 function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>;

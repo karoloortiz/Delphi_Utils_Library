@@ -39,7 +39,7 @@ unit KLib.Indy;
 interface
 
 uses
-  KLib.Types, KLib.Constants,
+  KLib.Types, KLib.Constants, KLib.MyIdFTP,
   IdFTP, IdHTTP, IdSMTP,
   System.Classes;
 
@@ -49,9 +49,11 @@ procedure TCPPrintFilesInDirWithStartingFileName(hostPort: THostPort;
 procedure TCPPrintFromFile(hostPort: THostPort; fileName: string);
 procedure TCPPrintText(hostPort: THostPort; text: string);
 
-function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
+procedure putFtpFile(FTPCredentials: TFTPCredentials;
+  sourceFileName: string; targetFileName: string; isOverwriteEnabledForced: boolean = NOT_FORCE_OVERWRITE);
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
-function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
+function getValidTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 
 procedure sendEmail(settings: TSMTPSettings; email: TEmailMessage); overload;
 procedure sendEmail(smtp: TIdSMTP; email: TEmailMessage); overload;
@@ -141,22 +143,29 @@ begin
   end;
 end;
 
-function getValidIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
+procedure putFtpFile(FTPCredentials: TFTPCredentials;
+  sourceFileName: string; targetFileName: string; isOverwriteEnabledForced: boolean = NOT_FORCE_OVERWRITE);
 var
-  connection: TIdFTP;
+  _connection: TMyIdFTP;
 begin
-  validateFTPCredentials(FTPCredentials);
-  connection := getIdFTP(FTPCredentials);
-  Result := connection;
+  _connection := getValidTMyIdFTP(FTPCredentials);
+  try
+    _connection.Connect;
+    _connection.put(sourceFileName, targetFileName, isOverwriteEnabledForced);
+  finally
+    begin
+      FreeAndNil(_connection);
+    end;
+  end;
 end;
 
 function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
 var
-  _connection: TIdFTP;
+  _connection: TMyIdFTP;
   _result: boolean;
 begin
   _result := true;
-  _connection := getIdFTP(FTPCredentials);
+  _connection := getTMyIdFTP(FTPCredentials);
   try
     _connection.Connect;
     if FTPCredentials.pathFTPDir <> EMPTY_STRING then
@@ -175,13 +184,21 @@ begin
   Result := _result;
 end;
 
-function getIdFTP(FTPCredentials: TFTPCredentials): TIdFTP;
+function getValidTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
 var
-  connection: TIdFTP;
+  connection: TMyIdFTP;
+begin
+  validateFTPCredentials(FTPCredentials);
+  connection := getTMyIdFTP(FTPCredentials);
+  Result := connection;
+end;
+
+function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+var
+  connection: TMyIdFTP;
 begin
   validateRequiredFTPProperties(FTPCredentials);
-  connection := TIdFTP.Create(nil);
-
+  connection := TMyIdFTP.Create(nil);
   with connection do
   begin
     Host := FTPCredentials.server;
@@ -202,6 +219,9 @@ begin
     connection.transferType := ftBinary;
   end;
   connection.Passive := true;
+
+  connection.defaultDir := FTPCredentials.pathFTPDir;
+
   Result := connection;
 end;
 

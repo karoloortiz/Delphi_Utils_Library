@@ -55,9 +55,6 @@ type
     destructor Destroy; overload; override;
   end;
 
-function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-
 implementation
 
 uses
@@ -65,50 +62,9 @@ uses
   IdFTPCommon,
   System.Classes;
 
-function getValidMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-var
-  connection: TMyIdFTP;
-begin
-  validateFTPCredentials(FTPCredentials);
-  connection := getTMyIdFTP(FTPCredentials);
-  Result := connection;
-end;
-
-function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-var
-  connection: TMyIdFTP;
-begin
-  validateRequiredFTPProperties(FTPCredentials);
-  connection := TMyIdFTP.Create(nil);
-  with connection do
-  begin
-    Host := FTPCredentials.server;
-    Username := FTPCredentials.credentials.username;
-    Password := FTPCredentials.credentials.password;
-    Port := FTPCredentials.port;
-    TransferType := TIdFTPTransferType(FTPCredentials.transferType);
-  end;
-
-  if connection.Port = 0 then
-  begin
-    connection.Port := FTP_DEFAULT_PORT;
-  end;
-
-  //todo create function checkIFEnumIsInValidRange
-  if (connection.transferType < Low(TIdFTPTransferType)) or (connection.transferType > High(TIdFTPTransferType)) then
-  begin
-    connection.transferType := ftBinary;
-  end;
-  connection.Passive := true;
-
-  connection.defaultDir := FTPCredentials.pathFTPDir;
-
-  Result := connection;
-end;
-
 constructor TMyIdFTP.create(FTPCredentials: TFTPCredentials);
 begin
-  Self := getValidMyIdFTP(FTPCredentials);
+  Self := getValidTMyIdFTP(FTPCredentials);
 end;
 
 procedure TMyIdFTP.Connect;
