@@ -205,6 +205,19 @@ type
     procedure clear;
   end;
 
+  TCsvExportOptions = record
+    delimiter: Char;
+    isIncludeHeader: boolean;
+    encoding: TEncoding;
+    dateFormat: string;
+    decimalSeparator: Char;
+    isQuoteStrings: boolean;
+    isQuoteNumbers: boolean;
+
+    class function getDefault: TCsvExportOptions; static;
+    procedure clear;
+  end;
+
   TOnChangeStatus =
     reference to procedure(newStatus: TStatus = TStatus._null);
 
@@ -409,6 +422,24 @@ end;
 procedure TResource.clear;
 const
   EMPTY: TResource = ();
+begin
+  Self := EMPTY;
+end;
+
+class function TCsvExportOptions.getDefault: TCsvExportOptions;
+begin
+  Result.delimiter := SEMICOLON_DELIMITER;
+  Result.isIncludeHeader := INCLUDE_HEADER;
+  Result.encoding := TEncoding.UTF8;
+  Result.dateFormat := DATE_FORMAT;
+  Result.decimalSeparator := MYSQL_DECIMAL_SEPARATOR;
+  Result.isQuoteStrings := USE_QUOTES;
+  Result.isQuoteNumbers := NO_QUOTES;
+end;
+
+procedure TCsvExportOptions.clear;
+const
+  EMPTY: TCsvExportOptions = ();
 begin
   Self := EMPTY;
 end;

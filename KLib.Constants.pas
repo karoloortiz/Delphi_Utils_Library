@@ -76,6 +76,13 @@ const
   RTF_TYPE = 'RTF';
   DLL_TYPE = 'DLL';
   SQL_TYPE = 'SQL';
+  CSV_TYPE = 'CSV';
+
+  INCLUDE_HEADER = true;
+  EXCLUDE_HEADER = false;
+
+  USE_QUOTES = true;
+  NO_QUOTES = false;
 
   EVERYONE_GROUP = 'Everyone';
   USERS_GROUP = 'Users';

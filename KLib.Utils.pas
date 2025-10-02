@@ -41,7 +41,8 @@ interface
 uses
   KLib.Types, KLib.Constants, KLib.MyThread,
   Vcl.Imaging.pngimage,
-  System.SysUtils, System.Classes, System.Rtti, System.JSON, System.TypInfo;
+  System.SysUtils, System.Classes, System.Rtti, System.JSON, System.TypInfo,
+  Data.DB;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
@@ -154,6 +155,9 @@ function getCSVFieldFromStringAsDouble(mainString: string; index: integer; delim
 function getCSVFieldFromStringAsDouble(mainString: string; index: integer; formatSettings: TFormatSettings; delimiter: Char = SEMICOLON_DELIMITER): Double; overload;
 function getCSVFieldFromStringAsInteger(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): integer;
 function getCSVFieldFromString(mainString: string; index: integer; delimiter: Char = SEMICOLON_DELIMITER): string;
+
+procedure exportDatasetToCSV(dataset: TDataSet; fileName: string); overload;
+procedure exportDatasetToCSV(dataset: TDataSet; fileName: string; options: TCsvExportOptions); overload;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
 function stringToStrFixedWordWrap(source: string; fixedLen: Integer): string;
@@ -1651,6 +1655,132 @@ begin
   end;
 
   Result := _result;
+end;
+
+procedure exportDatasetToCSV(dataset: TDataSet; fileName: string);
+var
+  _options: TCsvExportOptions;
+begin
+  _options := TCsvExportOptions.getDefault;
+  exportDatasetToCSV(dataset, fileName, _options);
+end;
+
+procedure exportDatasetToCSV(dataset: TDataSet; fileName: string; options: TCsvExportOptions);
+const
+  ERR_MSG_DATASET_NIL = 'Dataset cannot be nil';
+  ERR_MSG_FILENAME_EMPTY = 'Filename cannot be empty';
+var
+  _csvContent: TStringList;
+  _headerRow: string;
+  _dataRow: string;
+  _fieldValue: string;
+  _field: TField;
+  _targetEncoding: TEncoding;
+  _i: Integer;
+begin
+  if dataset = nil then
+  begin
+    raise Exception.Create(ERR_MSG_DATASET_NIL);
+  end;
+
+  if fileName = EMPTY_STRING then
+  begin
+    raise Exception.Create(ERR_MSG_FILENAME_EMPTY);
+  end;
+
+  _targetEncoding := options.encoding;
+  if _targetEncoding = nil then
+  begin
+    _targetEncoding := TEncoding.UTF8;
+  end;
+
+  _csvContent := TStringList.Create;
+  try
+    if options.isIncludeHeader then
+    begin
+      _headerRow := EMPTY_STRING;
+      for _i := 0 to dataset.FieldCount - 1 do
+      begin
+        if _i > 0 then
+        begin
+          _headerRow := _headerRow + options.delimiter;
+        end;
+        if options.isQuoteStrings then
+        begin
+          _fieldValue := getQuotedString(dataset.Fields[_i].FieldName, '"');
+        end
+        else
+        begin
+          _fieldValue := dataset.Fields[_i].FieldName;
+        end;
+        _headerRow := _headerRow + _fieldValue;
+      end;
+      _csvContent.Add(_headerRow);
+    end;
+
+    dataset.First;
+    while not dataset.Eof do
+    begin
+      _dataRow := EMPTY_STRING;
+      for _i := 0 to dataset.FieldCount - 1 do
+      begin
+        if _i > 0 then
+        begin
+          _dataRow := _dataRow + options.delimiter;
+        end;
+
+        _field := dataset.Fields[_i];
+        if _field.IsNull then
+        begin
+          _fieldValue := EMPTY_STRING;
+        end
+        else
+        begin
+          case _field.DataType of
+            ftString, ftWideString, ftMemo, ftWideMemo, ftFmtMemo:
+              begin
+                if options.isQuoteStrings then
+                begin
+                  _fieldValue := getQuotedString(_field.AsString, '"');
+                end
+                else
+                begin
+                  _fieldValue := _field.AsString;
+                end;
+              end;
+            ftDateTime, ftDate, ftTime:
+              _fieldValue := getDateTimeWithFormattingAsString(_field.AsDateTime, options.dateFormat);
+            ftFloat, ftCurrency, ftBCD, ftFMTBcd:
+              begin
+                _fieldValue := getDoubleAsString(_field.AsFloat, options.decimalSeparator);
+                if options.isQuoteNumbers then
+                begin
+                  _fieldValue := getQuotedString(_fieldValue, '"');
+                end;
+              end;
+            ftInteger, ftSmallint, ftLargeint, ftWord:
+              begin
+                _fieldValue := _field.AsString;
+                if options.isQuoteNumbers then
+                begin
+                  _fieldValue := getQuotedString(_fieldValue, '"');
+                end;
+              end;
+          else
+            _fieldValue := _field.AsString;
+          end;
+        end;
+
+        _dataRow := _dataRow + _fieldValue;
+      end;
+      _csvContent.Add(_dataRow);
+      dataset.Next;
+    end;
+
+    _csvContent.SaveToFile(fileName, _targetEncoding);
+  finally
+    FreeAndNil(_csvContent);
+  end;
 end;
 
 function getNumberOfLinesInStrFixedWordWrap(source: string): integer;
