@@ -46,12 +46,19 @@ type
   TThreadAdapter = class(TInterfacedObject, IServiceAppPort)
   private
   protected
-    rejectCallBack: TCallBack;
+    function getRejectCallBack: TCallBack;
+    procedure setRejectCallBack(value: TCallBack);
+    function getOnChangeStatus(): TOnChangeStatus;
+    procedure setOnChangeStatus(value: TOnChangeStatus);
   public
-    _myThread: TMyThread;
+    thread: TMyThread;
+
+    property rejectCallBack: TCallBack read getRejectCallBack write setRejectCallBack;
+    property onChangeStatus: TOnChangeStatus read getOnChangeStatus write setOnChangeStatus;
 
     constructor Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil); overload;
-    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil); overload; //if you use this constructor, define your subclass and override Run method
+    //if you use this constructor, define your subclass and override Run method
+    constructor Create(rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil); overload;
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -62,7 +69,7 @@ type
 
     function getStatus: TStatus; virtual;
     function getHandle: integer; virtual;
-    procedure Run; virtual; abstract;
+    procedure run; virtual;
     destructor Destroy; override;
   end;
 
@@ -74,39 +81,37 @@ uses
 
 constructor TThreadAdapter.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil);
 begin
-  Self.rejectCallBack := rejectCallBack;
-  _myThread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
+  Self.thread := TMyThread.Create(executorMethod, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
 constructor TThreadAdapter.Create(rejectCallBack: TCallBack; onChangeStatus: TOnChangeStatus = nil);
 begin
-  Self.rejectCallBack := rejectCallBack;
-  _myThread := TMyThread.Create(run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
+  Self.thread := TMyThread.Create(Self.run, rejectCallBack, FORCE_SUSPEND, onChangeStatus);
 end;
 
 procedure TThreadAdapter.start;
 begin
-  _myThread.myStart();
+  thread.myStart();
 end;
 
 procedure TThreadAdapter.pause;
 begin
-  _myThread.pause;
+  thread.pause;
 end;
 
 procedure TThreadAdapter.resume;
 begin
-  _myThread.myResume;
+  thread.myResume;
 end;
 
 procedure TThreadAdapter.stop;
 begin
-  _myThread.stop;
+  thread.stop;
 end;
 
 procedure TThreadAdapter.restart;
 begin
-  restartMyThread(_myThread);
+  restartMyThread(thread);
 end;
 
 procedure TThreadAdapter.waitUntilIsRunning;
@@ -120,17 +125,42 @@ end;
 
 function TThreadAdapter.getStatus: TStatus;
 begin
-  Result := _myThread.status;
+  Result := thread.status;
 end;
 
 function TThreadAdapter.getHandle: integer;
 begin
-  Result := _myThread.Handle;
+  Result := thread.Handle;
+end;
+
+function TThreadAdapter.getRejectCallBack: TCallBack;
+begin
+  Result := thread.rejectCallback;
+end;
+
+procedure TThreadAdapter.setRejectCallBack(value: TCallBack);
+begin
+  thread.rejectCallback := value;
+end;
+
+function TThreadAdapter.getOnChangeStatus(): TOnChangeStatus;
+begin
+  Result := thread.onChangeStatus;
+end;
+
+procedure TThreadAdapter.setOnChangeStatus(value: TOnChangeStatus);
+begin
+  thread.onChangeStatus := value;
+end;
+
+procedure TThreadAdapter.run;
+begin
+  //override
 end;
 
 destructor TThreadAdapter.Destroy;
 begin
-  FreeAndNil(_myThread);
+  FreeAndNil(thread);
   inherited;
 end;
 

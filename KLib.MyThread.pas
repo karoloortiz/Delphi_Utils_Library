@@ -46,7 +46,6 @@ type
   TMyThread = class(TThread)
   private
     _executorMethod: TAnonymousMethod;
-    _rejectCallBack: TCallBack;
     _CreateSuspended: boolean;
 
     _event: TMyEvent;
@@ -56,6 +55,7 @@ type
   protected
     _status: TStatus;
   public
+    rejectCallBack: TCallBack;
     onChangeStatus: TOnChangeStatus;
     property status: TStatus read _status write _set_status;
     property isRunning: boolean read _get_IsRunning;
@@ -82,7 +82,7 @@ constructor TMyThread.Create(executorMethod: TAnonymousMethod; rejectCallBack: T
   onChangeStatus: TOnChangeStatus = nil);
 begin
   Self._executorMethod := executorMethod;
-  Self._rejectCallBack := rejectCallBack;
+  Self.rejectCallBack := rejectCallBack;
   Self._CreateSuspended := CreateSuspended;
   Self.onChangeStatus := onChangeStatus;
 
@@ -195,7 +195,7 @@ begin
     except
       on E: Exception do
       begin
-        _rejectCallBack(E.Message);
+        rejectCallBack(E.Message);
       end;
     end;
     TThread.Sleep(1000);
@@ -250,7 +250,7 @@ function TMyThread.getACopyMyThread: TMyThread;
 var
   myThread: TMyThread;
 begin
-  myThread := TMyThread.Create(Self._executorMethod, Self._rejectCallBack, Self._CreateSuspended, Self.onChangeStatus);
+  myThread := TMyThread.Create(Self._executorMethod, Self.rejectCallBack, Self._CreateSuspended, Self.onChangeStatus);
 
   Result := myThread;
 end;

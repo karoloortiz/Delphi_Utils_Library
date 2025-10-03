@@ -44,10 +44,9 @@ uses
   System.Classes;
 
 type
-  TMyOnCommandGetAnonymousMethod = KLib.MyIdHTTPServer.TMyOnCommandGetAnonymousMethod;
   TIdContext = KLib.MyIdHTTPServer.TIdContext;
-  TIdHTTPRequestInfo = KLib.MyIdHTTPServer.TIdHTTPRequestInfo;
-  TIdHTTPResponseInfo = KLib.MyIdHTTPServer.TIdHTTPResponseInfo;
+  TMyIdHTTPRequestInfo = KLib.MyIdHTTPServer.TIdHTTPRequestInfo;
+  TMyIdHTTPResponseInfo = KLib.MyIdHTTPServer.TIdHTTPResponseInfo;
 
   THttpServerAdapter = class(TInterfacedObject, IServiceAppPort)
   private
@@ -56,13 +55,23 @@ type
     function _get_defaultServerErrorJSONResponse: string;
     procedure _set_defaultServerErrorJSONResponse(value: string);
   protected
-    rejectCallBack: TCallBack;
+    function getRejectCallBack: TCallBack;
+    procedure setRejectCallBack(value: TCallBack);
+    function getOnChangeStatus(): TOnChangeStatus;
+    procedure setOnChangeStatus(value: TOnChangeStatus);
+
     property defaultServerErrorJSONResponse: string read _get_defaultServerErrorJSONResponse write _set_defaultServerErrorJSONResponse;
   public
-    _server: TMyIdHTTPServer;
+    httpServer: TMyIdHTTPServer;
 
-    constructor Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
+    property rejectCallBack: TCallBack read getRejectCallBack write setRejectCallBack;
+    property onChangeStatus: TOnChangeStatus read getOnChangeStatus write setOnChangeStatus;
+
+    constructor Create(port: integer;
       rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TOnChangeStatus = nil); overload;
+    constructor Create(httpServer: TMyIdHTTPServer); overload;
+    constructor Create(); overload;
+
     procedure start; virtual;
     procedure pause; virtual;
     procedure resume; virtual;
@@ -73,6 +82,7 @@ type
 
     function getStatus: TStatus; virtual;
     function getHandle: integer; virtual;
+
     destructor Destroy; override;
   end;
 
@@ -83,39 +93,49 @@ uses
   Winapi.Windows,
   System.SysUtils;
 
-constructor THttpServerAdapter.Create(myOnCommandGetAnonymousMethod: TMyOnCommandGetAnonymousMethod; port: integer;
+constructor THttpServerAdapter.Create(port: integer;
   rejectCallBack: TCallBack; defaultServerErrorJSONResponse: string = EMPTY_STRING; onChangeStatus: TOnChangeStatus = nil);
 begin
-  Self.rejectCallBack := rejectCallBack;
-  _server := TMyIdHTTPServer.Create(myOnCommandGetAnonymousMethod, port, rejectCallBack, defaultServerErrorJSONResponse,
+  create();
+  httpServer := TMyIdHTTPServer.Create(port, rejectCallBack, defaultServerErrorJSONResponse,
     onChangeStatus);
-  _handle := AllocateHWnd(WndMethod);
+end;
+
+constructor THttpServerAdapter.Create(httpServer: TMyIdHTTPServer);
+begin
+  create();
+  Self.httpServer := httpServer;
+end;
+
+constructor THttpServerAdapter.Create();
+begin
+  Self._handle := AllocateHWnd(WndMethod);
 end;
 
 procedure THttpServerAdapter.start;
 begin
-  _server.Alisten;
+  httpServer.listenAsync();
 end;
 
 procedure THttpServerAdapter.pause;
 begin
-  _server.stop;
+  httpServer.stop;
 end;
 
 procedure THttpServerAdapter.resume;
 begin
-  _server.Alisten;
+  httpServer.listenAsync();
 end;
 
 procedure THttpServerAdapter.stop;
 begin
-  _server.stop;
+  httpServer.stop;
 end;
 
 procedure THttpServerAdapter.restart;
 begin
-  _server.stop(RAISE_EXCEPTION_DISABLED);
-  _server.Alisten;
+  httpServer.stop();
+  httpServer.listenAsync();
 end;
 
 procedure THttpServerAdapter.waitUntilIsRunning;
@@ -126,7 +146,7 @@ end;
 
 function THttpServerAdapter.getStatus: TStatus;
 begin
-  Result := _server.status;
+  Result := httpServer.status;
 end;
 
 function THttpServerAdapter.getHandle: integer;
@@ -141,17 +161,37 @@ end;
 
 function THttpServerAdapter._get_defaultServerErrorJSONResponse: string;
 begin
-  Result := _server.defaultServerErrorJSONResponse;
+  Result := httpServer.defaultServerErrorJSONResponse;
 end;
 
 procedure THttpServerAdapter._set_defaultServerErrorJSONResponse(value: string);
 begin
-  _server.defaultServerErrorJSONResponse := value;
+  httpServer.defaultServerErrorJSONResponse := value;
+end;
+
+function THttpServerAdapter.getRejectCallBack: TCallBack;
+begin
+  Result := httpServer.rejectCallback;
+end;
+
+procedure THttpServerAdapter.setRejectCallBack(value: TCallBack);
+begin
+  httpServer.rejectCallback := value;
+end;
+
+function THttpServerAdapter.getOnChangeStatus(): TOnChangeStatus;
+begin
+  Result := httpServer.onChangeStatus;
+end;
+
+procedure THttpServerAdapter.setOnChangeStatus(value: TOnChangeStatus);
+begin
+  httpServer.onChangeStatus := value;
 end;
 
 destructor THttpServerAdapter.Destroy;
 begin
-  FreeAndNil(_server);
+  FreeAndNil(httpServer);
   DeallocateHWnd(_handle);
   inherited;
 end;
