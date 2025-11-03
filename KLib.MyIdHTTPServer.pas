@@ -1339,7 +1339,7 @@ begin
     if not mainRouter.handleRequest(requestInfo, responseInfo) then
     begin
       responseInfo.status(404);
-      responseInfo.jsonError('Route not found: ' + requestInfo.getCleanPath, 404);
+      responseInfo.jsonError('Route not found: ' + requestInfo.getCleanPath + ' Method: ' + requestInfo.Command , 404);
     end;
   except
     on E: Exception do
