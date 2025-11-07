@@ -212,6 +212,7 @@ procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
 function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
+procedure validate(condition: boolean; errMsg: string);
 
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
 function checkIfIsEmptyOrNull(value: Variant): boolean;
@@ -2282,6 +2283,14 @@ begin
   end;
 
   Result := _result;
+end;
+
+procedure validate(condition: boolean; errMsg: string);
+begin
+  if not condition then
+  begin
+    raise Exception.Create(errMsg);
+  end;
 end;
 
 function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
