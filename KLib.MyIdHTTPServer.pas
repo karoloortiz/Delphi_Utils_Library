@@ -100,7 +100,7 @@ type
     procedure extractParameterNames;
   public
     constructor create(routePath: string; routeMethod: TMyHTTPMethod);
-    destructor destroy; override;
+    destructor Destroy; override;
     procedure addHandler(handler: TMyRouteHandler);
     function match(requestMethod: TMyHTTPMethod; requestPath: string; out routeParams: TMyRouteParams): Boolean;
     procedure executeHandlers(requestInfo: TIdHTTPRequestInfo; responseInfo: TIdHTTPResponseInfo; routeParams: TMyRouteParams);
@@ -117,10 +117,9 @@ type
     function httpMethodFromString(methodStr: string): TMyHTTPMethod;
     function processMiddlewareChain(requestInfo: TIdHTTPRequestInfo; responseInfo: TIdHTTPResponseInfo): Boolean;
     function executeMatchingRoute(requestInfo: TIdHTTPRequestInfo; responseInfo: TIdHTTPResponseInfo): Boolean;
-    function findRoute(requestMethod: TMyHTTPMethod; cleanPath: string): TMyRoute;
   public
     constructor create(routerBasePath: string = '');
-    destructor destroy; override;
+    destructor Destroy; override;
     procedure use(middleware: TMyMiddleware); overload;
     procedure use(path: string; middleware: TMyMiddleware); overload;
     procedure use(router: TMyRouter); overload;
@@ -195,10 +194,10 @@ type
     procedure stop(isRaiseExceptionEnabled: Boolean = True);
     procedure waitUntilRunning;
 
-    destructor destroy; override;
+    destructor Destroy; override;
   end;
 
-// Express-like static file middleware
+  // Express-like static file middleware
 function staticFiles(directory: string; mountPath: string = ''): TMyMiddleware;
 
 // Helper function
@@ -302,7 +301,7 @@ begin
 
             responseInfo.ContentType := getContentType(filePath);
             responseInfo.status(200);
-            Exit;  // File served successfully
+            Exit; // File served successfully
           finally
             FreeAndNil(fileStream);
           end;
@@ -597,7 +596,7 @@ begin
   buildRegexPattern;
 end;
 
-destructor TMyRoute.destroy;
+destructor TMyRoute.Destroy;
 begin
   FreeAndNil(handlers);
   FreeAndNil(paramNames);
@@ -769,7 +768,7 @@ begin
   lock := TCriticalSection.Create;
 end;
 
-destructor TMyRouter.destroy;
+destructor TMyRouter.Destroy;
 begin
   FreeAndNil(routes);
   FreeAndNil(middlewares);
@@ -833,28 +832,6 @@ begin
     begin
       Result := False;
       Break;
-    end;
-  end;
-end;
-
-function TMyRouter.findRoute(requestMethod: TMyHTTPMethod; cleanPath: string): TMyRoute;
-var
-  route: TMyRoute;
-  routeParams: TMyRouteParams;
-begin
-  Result := nil;
-
-  for route in routes do
-  begin
-    routeParams := nil;
-    try
-      if route.match(requestMethod, cleanPath, routeParams) then
-      begin
-        Result := route;
-        Break;
-      end;
-    finally
-      FreeAndNil(routeParams);
     end;
   end;
 end;
@@ -1339,7 +1316,7 @@ begin
     if not mainRouter.handleRequest(requestInfo, responseInfo) then
     begin
       responseInfo.status(404);
-      responseInfo.jsonError('Route not found: ' + requestInfo.getCleanPath + ' Method: ' + requestInfo.Command , 404);
+      responseInfo.jsonError('Route not found: ' + requestInfo.getCleanPath + ' Method: ' + requestInfo.Command, 404);
     end;
   except
     on E: Exception do
@@ -1436,7 +1413,7 @@ begin
   end;
 end;
 
-destructor TMyIdHTTPServer.destroy;
+destructor TMyIdHTTPServer.Destroy;
 begin
   try
     stop(False);
@@ -1450,6 +1427,5 @@ begin
   FreeAndNil(staticPaths);
   inherited;
 end;
-
 
 end.

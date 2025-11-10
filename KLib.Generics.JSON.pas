@@ -608,6 +608,7 @@ var
 begin
   Result := TJSONObject.Create;
 
+  _isRequiredAttribute := false;
   try
     if ClassInstance = nil then
     begin
@@ -767,7 +768,6 @@ begin
         end;
       end;
     end;
-
 
     for Prop in ClassType.GetProperties do
     begin
