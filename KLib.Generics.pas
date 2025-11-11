@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -50,7 +50,7 @@ type
 implementation
 
 uses
-  KLib.Generics.Attributes, KLib.Utils, KLib.Constants,
+  KLib.Generics.Attributes, KLib.Utils, KLib.Constants, KLib.StringUtils,
   System.Generics.Collections, System.SysUtils, System.Rtti, System.Variants;
 
 class function TGenerics.getElementIndexFromArray<T>(myArray: TArray<T>; element: T): integer;

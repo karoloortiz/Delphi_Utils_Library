@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -39,9 +39,10 @@ unit KLib.Types;
 interface
 
 uses
-  Vcl.Graphics,
+  System.Generics.Collections, System.SysUtils,
   IdFTPCommon,
-  System.Generics.Collections, System.SysUtils;
+  Vcl.Graphics,
+  KLib.Generics.Attributes;
 
 const
   ftASCII = TIdFTPTransferType(0);
@@ -74,9 +75,9 @@ type
     token_type: string;
     [DefaultValueAttribute('0')]
     expires_in: integer;
-    [DefaultValueAttribute(EMPTY_STRING)]
+    [DefaultValueAttribute('')]
     refresh_token: string;
-    [DefaultValueAttribute(EMPTY_STRING)]
+    [DefaultValueAttribute('')]
     scope: string;
 
     procedure readFromFile(filename: string);
@@ -239,7 +240,7 @@ type
     procedure clear;
   end;
 
-  TExecutorFunction = reference to procedure(resolve: TCallBack; reject: TCallback);
+  TExecutorFunction = reference to procedure(resolve: TCallBack; reject: TCallBack);
 
   TAsyncifyMethodReply = record
     handle: THandle;
@@ -269,14 +270,14 @@ implementation
 
 uses
 
-  KLib.Utils, KLib.Generics.JSON, KLib.Constants;
+  KLib.FileSystem, KLib.Generics.JSON, KLib.Constants;
 
 procedure TOAuth2Response.readFromFile(filename: string);
 var
   _text: string;
 begin
   _text := getTextFromFile(filename);
-  Self := TJSONGenerics.getParsedJSON<TOAuth2Response>(_text);
+  Self := TJsonGenerics.getParsedJSON<TOAuth2Response>(_text);
 end;
 
 procedure TOAuth2Response.saveToFile(filename: string);
@@ -284,12 +285,12 @@ var
   _text: string;
 begin
   _text := getAsString();
-  KLib.Utils.saveToFile(_text, filename);
+  KLib.FileSystem.saveToFile(_text, filename);
 end;
 
 function TOAuth2Response.getAsString(): string;
 begin
-  Result := TJSONGenerics.getJSONAsString<TOAuth2Response>(Self);
+  Result := TJsonGenerics.getJSONAsString<TOAuth2Response>(Self);
 end;
 
 procedure TOAuth2Response.clear();

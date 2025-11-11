@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -38,8 +38,6 @@ unit KLib.Generics.Attributes;
 
 interface
 
-uses
-  KLib.Types;
 
 type
   FileNameAttribute = class(TCustomAttribute)

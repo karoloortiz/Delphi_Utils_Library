@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.MemoryRAM;
+unit KLib.MemoryRam;
 
 interface
 
@@ -42,7 +42,7 @@ uses
   Winapi.Windows;
 
 type
-  TMemoryRAM = class
+  TMemoryRam = class
   private
     class var RamStats: TMemoryStatusEx;
   public
@@ -61,29 +61,29 @@ uses
   KLib.Constants,
   System.SysUtils;
 
-class procedure TMemoryRAM.initialize;
+class procedure TMemoryRam.initialize;
 begin
   FillChar(RamStats, SizeOf(MemoryStatusEx), #0);
   RamStats.dwLength := SizeOf(MemoryStatusEx);
   GlobalMemoryStatusEx(RamStats);
 end;
 
-class function TMemoryRAM.getTotalMemoryAsString: string;
+class function TMemoryRam.getTotalMemoryAsString: string;
 begin
   result := FloatToStr(RamStats.ullTotalPhys / _1_MB_IN_BYTES) + ' MB';
 end;
 
-class function TMemoryRAM.getTotalMemoryAsDouble: Double;
+class function TMemoryRam.getTotalMemoryAsDouble: Double;
 begin
   result := RamStats.ullTotalPhys / _1_MB_IN_BYTES;
 end;
 
-class function TMemoryRAM.getTotalFreeMemoryAsString: string;
+class function TMemoryRam.getTotalFreeMemoryAsString: string;
 begin
   result := FloatToStr(RamStats.ullAvailPhys / _1_MB_IN_BYTES) + ' MB';
 end;
 
-class function TMemoryRAM.getTotalFreeMemoryAsInteger: integer;
+class function TMemoryRam.getTotalFreeMemoryAsInteger: integer;
 var
   _totalFreeMemoryDouble: double;
   _totalFreeMemoryInteger: integer;
@@ -93,12 +93,12 @@ begin
   Result := _totalFreeMemoryInteger;
 end;
 
-class function TMemoryRAM.getTotalFreeMemoryAsDouble: Double;
+class function TMemoryRam.getTotalFreeMemoryAsDouble: Double;
 begin
   result := RamStats.ullAvailPhys / _1_MB_IN_BYTES;
 end;
 
-class function TMemoryRAM.getPercentageFreeMemoryAsString: string;
+class function TMemoryRam.getPercentageFreeMemoryAsString: string;
 begin
   result := inttostr(RamStats.dwMemoryLoad) + '%';
 end;

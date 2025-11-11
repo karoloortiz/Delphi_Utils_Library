@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -120,7 +120,7 @@ implementation
 
 
 uses
-  KLib.Windows, KLib.Utils, KLib.Constants,
+  KLib.Windows, KLib.StringUtils, KLib.FileSystem, KLib.Constants,
   System.Win.Registry;
 
 procedure TMyService.ServiceCreate(Sender: TObject);

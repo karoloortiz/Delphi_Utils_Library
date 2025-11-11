@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -61,7 +61,7 @@ type
 implementation
 
 uses
-  KLib.Math, KLib.Validate, KLib.Utils,
+  KLib.Math, KLib.Validate, KLib.StringUtils, KLib.FileSystem,
   Winapi.Windows,
   System.IOUtils, System.StrUtils;
 
@@ -188,7 +188,7 @@ procedure TFileSearchReplacer.replace(const oldText: string; const newText: stri
     SetLength(BufStr, _lastIndex);
     sourceFile.Seek(encoding.GetByteCount(BufStr) - ReadedBufLen, soCurrent);
 
-    BufStr := KLib.Utils.myStringReplace(BufStr, oldText, newText, ReplaceFlags);
+    BufStr := KLib.StringUtils.myStringReplace(BufStr, oldText, newText, ReplaceFlags);
     DestBytes := encoding.GetBytes(BufStr);
     tempFile.Write(DestBytes, Length(DestBytes));
   end;

@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.XML;
+unit KLib.Xml;
 
 interface
 
@@ -59,7 +59,7 @@ function getResourceAsXSL(nameResource: string): IXMLDocument;
 implementation
 
 uses
-  KLib.Utils, KLib.Validate, KLib.Types, KLib.Constants,
+  KLib.FileSystem, KLib.Validate, KLib.Types, KLib.Constants,
   Xml.XMLDoc,
   Winapi.ActiveX;
 

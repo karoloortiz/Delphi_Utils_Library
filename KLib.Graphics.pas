@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -143,7 +143,7 @@ procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDe
 implementation
 
 uses
-  KLib.Utils, KLib.Generics, KLib.Validate,
+  KLib.FileSystem, KLib.StringUtils, KLib.Generics, KLib.Validate,
   RTTI,
   Winapi.Windows,
   System.SysUtils, System.Types, System.TypInfo;

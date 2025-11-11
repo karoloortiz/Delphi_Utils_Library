@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -88,7 +88,7 @@ type
 implementation
 
 uses
-  KLib.Windows, KLib.Constants, KLib.Validate, KLib.Utils,
+  KLib.Windows, KLib.Constants, KLib.Validate, KLib.StringUtils, KLib.Common,
   Winapi.Windows,
   System.Classes, System.SysUtils;
 

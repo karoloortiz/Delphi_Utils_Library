@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -75,7 +75,6 @@ type
 implementation
 
 uses
-  KLib.Utils,
   System.SysUtils;
 
 constructor TMyThread.Create(executorMethod: TAnonymousMethod; rejectCallBack: TCallBack; CreateSuspended: boolean = false;
@@ -122,7 +121,7 @@ begin
       end;
   else
     begin
-      Exception.Create('Incorrect status');
+      raise Exception.Create('Incorrect status');
     end;
   end;
 end;
@@ -152,7 +151,7 @@ begin
       end;
   else
     begin
-      Exception.Create('Incorrect status');
+      raise Exception.Create('Incorrect status');
     end;
   end;
 end;
@@ -179,7 +178,7 @@ begin
       end;
   else
     begin
-      Exception.Create('Incorrect status');
+      raise Exception.Create('Incorrect status');
     end;
   end;
 
@@ -241,7 +240,7 @@ begin
       end;
   else
     begin
-      Exception.Create('Incorrect status');
+      raise Exception.Create('Incorrect status');
     end;
   end;
 end;
@@ -272,7 +271,7 @@ end;
 destructor TMyThread.Destroy;
 begin
   stop(FORCE);
-  _event.Free;
+  FreeAndNil(_event);
   inherited;
 end;
 

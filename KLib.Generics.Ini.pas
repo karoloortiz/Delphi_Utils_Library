@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -112,9 +112,9 @@ type
 implementation
 
 uses
+  System.Rtti, System.SysUtils, System.Variants, System.TypInfo,
   KLib.Generics.Attributes, KLib.Generics, KLib.Generics.JSON,
-  KLib.IniFiles, KLib.Windows, KLib.Utils, KLib.Validate,
-  System.Rtti, System.SysUtils, System.Variants;
+  KLib.IniFiles, KLib.Windows, KLib.FileSystem, KLib.StringUtils, KLib.Validate;
 
 class procedure TIniGenerics.saveToFile<T>(iniRecord: T; fileName: string = EMPTY_STRING; sectionName: string = 'default_section');
 var
@@ -391,7 +391,7 @@ begin
 
         if (_rttiField.FieldType.TypeKind = tkDynArray) then
         begin
-          _tempJSONRecord := TJSONGenerics.getParsedJSON<TTempJsonRecord>(
+          _tempJSONRecord := TJsonGenerics.getParsedJSON<TTempJsonRecord>(
             '{"_arrayOfStrings":' + _propertyValue + '}');
 
           TValue.Make(@_tempJSONRecord._arrayOfStrings, TypeInfo(TArrayOfStrings),

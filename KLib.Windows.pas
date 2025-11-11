@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -237,7 +237,7 @@ var
 implementation
 
 uses
-  KLib.Utils, KLib.Validate, KLib.StringListHelper,
+  KLib.FileSystem, KLib.StringUtils, KLib.Validate, KLib.StringListHelper,
   Vcl.Forms,
   Winapi.TLHelp32, Winapi.ActiveX, Winapi.Shlobj, Winapi.Winsock, Winapi.UrlMon, Winapi.Messages,
   System.SysUtils, System.Win.ComObj, System.Win.Registry, System.Variants, System.StrUtils,
@@ -1262,7 +1262,7 @@ begin
       _newValue := GetEnvironmentVariable(copy(_valueToReplace, 2, length(_valueToReplace) - 2));
       if _newValue <> '' then
       begin
-        stringWithEnvVariablesReaded := KLib.Utils.myStringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
+        stringWithEnvVariablesReaded := KLib.StringUtils.myStringReplace(stringWithEnvVariablesReaded, _valueToReplace, _newValue, []);
       end;
     end
     else

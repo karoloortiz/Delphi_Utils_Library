@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.ZPLPrinter;
+unit KLib.ZplPrinter;
 
 interface
 
@@ -44,7 +44,7 @@ uses
 
 type
 
-  TZPLPrinter = class
+  TZplPrinter = class
   private
     hostPort: THostPort;
   public
@@ -59,20 +59,20 @@ type
 implementation
 
 uses
-  KLib.Indy, KLib.Constants, KLib.Utils,
+  KLib.Indy, KLib.Constants, KLib.StringUtils,
   System.SysUtils;
 
-constructor TZPLPrinter.create(hostPort: THostPort);
+constructor TZplPrinter.create(hostPort: THostPort);
 begin
   updateConfig(hostPort);
 end;
 
-procedure TZPLPrinter.printFromFile(filename: string);
+procedure TZplPrinter.printFromFile(filename: string);
 begin
   TCPPrintFromFile(hostPort, filename);
 end;
 
-procedure TZPLPrinter.print(texts: TArray<string>);
+procedure TZplPrinter.print(texts: TArray<string>);
 var
   _text: string;
   _textMod: string;
@@ -89,12 +89,12 @@ begin
   end;
 end;
 
-procedure TZPLPrinter.print(text: string);
+procedure TZplPrinter.print(text: string);
 begin
   TCPPrintText(hostPort, text);
 end;
 
-procedure TZPLPrinter.updateConfig(const hostPort: THostPort);
+procedure TZplPrinter.updateConfig(const hostPort: THostPort);
 begin
   Self.hostPort := hostPort;
 end;

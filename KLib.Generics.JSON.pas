@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -70,7 +70,7 @@
 //  _responseText := TJSONGenerics.getJSONAsString<TResponse>(_response);
 //#####################################
 
-unit KLib.Generics.JSON;
+unit KLib.Generics.Json;
 
 interface
 
@@ -80,7 +80,7 @@ uses
 
 type
 
-  TJSONRecord<T: record > = class
+  TJsonRecord<T: record > = class
   public
     myRecord: T;
     constructor Create(); overload;
@@ -91,7 +91,7 @@ type
     function getAsString(): string;
   end;
 
-  TJSONGenerics = class
+  TJsonGenerics = class
   private
     class function processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
     class function getDefaultTValue(Field: TRttiField): TValue;
@@ -119,38 +119,38 @@ type
 implementation
 
 uses
-  KLib.Utils, KLib.Math, KLib.Constants,
+  KLib.FileSystem, KLib.DateTimeUtils, KLib.Utils, KLib.Math, KLib.Constants,
   System.DateUtils, System.SysUtils, System.Classes, System.Generics.Collections;
 
-constructor TJSONRecord<T>.Create();
+constructor TJsonRecord<T>.Create();
 begin
   myRecord := Default (T);
 end;
 
-constructor TJSONRecord<T>.Create(const ARecord: T);
+constructor TJsonRecord<T>.Create(const ARecord: T);
 begin
   myRecord := ARecord;
 end;
 
-procedure TJSONRecord<T>.readFromFile(filename: string);
+procedure TJsonRecord<T>.readFromFile(filename: string);
 var
   _text: string;
 begin
   _text := getTextFromFile(filename);
-  myRecord := TJSONGenerics.getParsedJSON<T>(_text);
+  myRecord := TJsonGenerics.getParsedJSON<T>(_text);
 end;
 
-procedure TJSONRecord<T>.saveToFile(filename: string);
+procedure TJsonRecord<T>.saveToFile(filename: string);
 var
   _text: string;
 begin
   _text := getAsString();
-  KLib.Utils.saveToFile(_text, filename);
+  KLib.FileSystem.saveToFile(_text, filename);
 end;
 
-function TJSONRecord<T>.getAsString(): string;
+function TJsonRecord<T>.getAsString(): string;
 begin
-  Result := TJSONGenerics.getJSONAsString<T>(myRecord);
+  Result := TJsonGenerics.getJSONAsString<T>(myRecord);
 end;
 
 { TJSONGenerics }
@@ -169,16 +169,16 @@ end;
 //  end;
 //end;
 
-class procedure TJSONGenerics.saveToFile<T>(myRecord: T; filename: string;
+class procedure TJsonGenerics.saveToFile<T>(myRecord: T; filename: string;
   ignoreEmptyStrings: boolean = true);
 var
   _text: string;
 begin
-  _text := TJSONGenerics.getJSONAsString<T>(myRecord);
-  KLib.Utils.saveToFile(_text, filename);
+  _text := TJsonGenerics.getJSONAsString<T>(myRecord);
+  KLib.FileSystem.saveToFile(_text, filename);
 end;
 
-class function TJSONGenerics.getJSONAsString<T>(myRecord: T;
+class function TJsonGenerics.getJSONAsString<T>(myRecord: T;
   ignoreEmptyStrings: boolean = true): string;
 var
   JSONAsString: string;
@@ -191,7 +191,7 @@ begin
   Result := JSONAsString;
 end;
 
-class function TJSONGenerics.getJSONObject<T>(const myRecord: T; ignoreEmptyStrings: Boolean): TJSONObject;
+class function TJsonGenerics.getJSONObject<T>(const myRecord: T; ignoreEmptyStrings: Boolean): TJSONObject;
 var
   Ctx: TRttiContext;
   RttiType: TRttiType;
@@ -224,7 +224,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
+class function TJsonGenerics.processRecord(Instance: Pointer; TypeInfo: PTypeInfo; AIgnoreEmpty: Boolean): TJSONObject;
 var
   Ctx: TRttiContext;
   RttiType: TRttiType;
@@ -300,7 +300,7 @@ begin
         try
           Result.AddPair(JSONPair);
         except
-          JSONPair.Free;
+          FreeAndNil(JSONPair);
           raise;
         end;
       end;
@@ -328,7 +328,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean;
+class function TJsonGenerics.getJSONFromTValue(const AValue: TValue; AIgnoreEmpty: Boolean;
   minValue: double = -1; maxValue: double = -1): TJSONValue;
 var
   _value: TValue;
@@ -424,7 +424,7 @@ begin
             Arr.AddElement(getJSONFromTValue(_value.GetArrayElement(i), AIgnoreEmpty));
           Result := Arr;
         except
-          Arr.Free;
+          FreeAndNil(Arr);
           raise;
         end;
       end;
@@ -464,7 +464,7 @@ begin
 
             Result := Arr;
           except
-            Arr.Free;
+            FreeAndNil(Arr);
             raise;
           end;
         end
@@ -591,7 +591,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.processClass(ClassInstance: TObject; ClassType: TRttiInstanceType; AIgnoreEmpty: Boolean = False): TJSONObject;
+class function TJsonGenerics.processClass(ClassInstance: TObject; ClassType: TRttiInstanceType; AIgnoreEmpty: Boolean = False): TJSONObject;
 var
   Field: TRttiField;
   Prop: TRttiProperty;
@@ -867,7 +867,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
+class function TJsonGenerics.JSONToTValue(JSONValue: TJSONValue; TargetType: TRttiType): TValue;
 var
   Ctx: TRttiContext;
   RecInstance: Pointer;
@@ -1047,16 +1047,16 @@ begin
 end;
 
 //----------------------
-class function TJSONGenerics.readFromFile<T>(filename: string): T;
+class function TJsonGenerics.readFromFile<T>(filename: string): T;
 var
   _text: string;
 begin
   _text := getTextFromFile(filename);
 
-  Result := TJSONGenerics.getParsedJSON<T>(_text);
+  Result := TJsonGenerics.getParsedJSON<T>(_text);
 end;
 
-class function TJSONGenerics.getParsedJSON<T>(JSONAsString: string): T;
+class function TJsonGenerics.getParsedJSON<T>(JSONAsString: string): T;
 var
   _result: T;
 
@@ -1074,7 +1074,7 @@ begin
   Result := _result;
 end;
 
-class function TJSONGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
+class function TJsonGenerics.getParsedJSON<T>(JSONValue: TJSONValue): T;
 var
   Ctx: TRttiContext;
   RttiType: TRttiType;
@@ -1110,7 +1110,7 @@ begin
   end;
 end;
 
-class procedure TJSONGenerics.processJSONObjectClass(Instance: TObject; RttiType: TRttiInstanceType; JSONObject: TJSONObject);
+class procedure TJsonGenerics.processJSONObjectClass(Instance: TObject; RttiType: TRttiInstanceType; JSONObject: TJSONObject);
 var
   Field: TRttiField;
   Prop: TRttiProperty;
@@ -1194,7 +1194,7 @@ begin
   end;
 end;
 
-class procedure TJSONGenerics.processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
+class procedure TJsonGenerics.processJSONObject(Instance: Pointer; RttiType: TRttiType; JSONObject: TJSONObject);
 var
   Field: TRttiField;
   CustomName: string;
@@ -1235,7 +1235,7 @@ begin
   end;
 end;
 
-class function TJSONGenerics.getDefaultTValue(Field: TRttiField): TValue;
+class function TJsonGenerics.getDefaultTValue(Field: TRttiField): TValue;
 var
   _defaultAttr: DefaultValueAttribute;
 begin

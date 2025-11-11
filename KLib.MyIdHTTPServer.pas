@@ -1,5 +1,5 @@
 ﻿{
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -206,7 +206,7 @@ function getContentType(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, IdTCPServer, IdSocketHandle, System.IOUtils, IdGlobal, System.StrUtils;
+  KLib.Validate, KLib.StringUtils, IdTCPServer, IdSocketHandle, System.IOUtils, IdGlobal, System.StrUtils;
 
 function getContentType(fileName: string): string;
 var

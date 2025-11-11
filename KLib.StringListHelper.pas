@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -49,7 +49,7 @@ type
 implementation
 
 uses
-  Klib.Utils,
+  KLib.StringUtils,
   System.SysUtils;
 
 procedure TStringListHelper.addStrings(strings: array of string);

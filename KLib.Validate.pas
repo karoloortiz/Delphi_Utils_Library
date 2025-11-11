@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -122,7 +122,7 @@ procedure tryToValidate(validatingMethod: TMethod; errorLabel: TLabel);
 implementation
 
 uses
-  KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML,
+  KLib.FileSystem, KLib.StringUtils, KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML,
   System.SysUtils;
 
 //############################----REGEX----##################################

@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -82,7 +82,7 @@ implementation
 
 
 uses
-  Klib.Utils, KLib.mystring,
+  KLib.Common, KLib.mystring, KLib.DateTimeUtils, KLib.StringUtils,
   System.SysUtils, System.RegularExpressions;
 
 const

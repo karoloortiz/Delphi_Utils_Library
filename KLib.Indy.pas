@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -85,7 +85,8 @@ function getMD5ChecksumFile(fileName: string): string;
 implementation
 
 uses
-  KLib.Validate, KLib.Utils, KLib.MyIdHTTP, KLib.StringListHelper, Klib.Windows, KLib.Generics.JSON,
+  KLib.Validate, KLib.Common, KLib.FileSystem, KLib.StringUtils, KLib.MyIdHTTP,
+  KLib.StringListHelper, Klib.Windows, KLib.Generics.JSON,
   IdGlobal, IdHash, IdHashMessageDigest, IdSSLOpenSSL, IdFTPCommon, IdTCPClient,
   IdMessage, IdText, IdAttachmentFile, IdExplicitTLSClientServerBase,
   System.SysUtils, System.NetEncoding;

@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -101,7 +101,7 @@ type
 implementation
 
 uses
-  KLib.Utils, KLib.Windows,
+  KLib.StringUtils, KLib.DateTimeUtils, KLib.FileSystem, KLib.Utils, KLib.Common, KLib.Windows,
   System.SysUtils;
 
 procedure TMyStringHelper.setParamAsDoubleQuotedDate(paramName: string; value: TDateTime;
@@ -326,7 +326,7 @@ end;
 
 procedure TMyStringHelper.saveToFile(fileName: string);
 begin
-  KLib.Utils.saveToFile(Self, fileName);
+  KLib.FileSystem.saveToFile(Self, fileName);
 end;
 
 end.

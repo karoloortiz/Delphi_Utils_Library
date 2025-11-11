@@ -1,5 +1,5 @@
 {
-  KLib Version = 3.0
+  KLib Version = 4.0
   The Clear BSD License
 
   Copyright (c) 2020 by Karol De Nery Ortiz LLave. All rights reserved.
@@ -55,7 +55,7 @@ procedure setStringValueToIniFile(fileNameIni: string; nameSection: string; name
 implementation
 
 uses
-  KLib.Utils, KLib.Validate,
+  KLib.FileSystem, KLib.StringUtils, KLib.Validate,
   System.IniFiles, System.SysUtils;
 
 function getIntValueFromIniFile(fileNameIni: string; nameSection: string; nameProperty: string): integer;
