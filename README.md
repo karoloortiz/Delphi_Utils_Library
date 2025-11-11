@@ -3,22 +3,27 @@
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 [![Delphi](https://img.shields.io/badge/Delphi-7%2B-red.svg)](https://www.embarcadero.com/products/delphi)
 [![Version](https://img.shields.io/badge/version-4.0-green.svg)](https://github.com/karoloortiz/Delphi_Utils_Library)
+![Express-like API](https://img.shields.io/badge/Express--like-REST%20API-green)
+  ![Async/Await](https://img.shields.io/badge/Async-Promises-blue)
 
-A comprehensive utility library for Delphi providing **async/await patterns**, **database abstractions**, **Windows services**, **networking**, **Utils functions** and **UI components**.
+A comprehensive utility library for Delphi providing **async/await patterns**, **database abstractions**, **Windows services**, **Http server Express.js - like**, **networking**, **Utils functions** and **UI components**.
 
 ---
 
 ## ✨ Features
 
 - 🔄 **Async/Promise** - JavaScript-style Promises with `then`/`catch`/`finally` chaining
-- 🗄️ **Database** - Coming soon: MySQL, SQLite, PostgreSQL unified interface
+- 🌐 **REST API Server** - Express.js-like HTTP server with routing, middleware, and helpers
 - 🪟 **Windows Services** - Complete service framework with threading and HTTP adapters
-- 🌐 **Network** - Indy HTTP/HTTPS/FTP wrappers with SSL support
-- 🎨 **UI Forms** - Ready-to-use VCL forms (Message, Wait, RTF, Presentation)
-- 🔧 **Utilities** - String, JSON, XML, INI, validation, and more
+- 🔧 **100+ Validation Functions** - Comprehensive validation library for files, services, networks
+- 🎨 **UI Components** - Ready-to-use VCL forms (Message, Wait, RTF, Presentation)
+- 📝 **Fluent String API** - Method chaining for string operations with C#-like extensions
 - 🧵 **Threading** - Enhanced thread management with events and callbacks
-- 📊 **Generics** - Generic JSON/INI serialization with attributes
-- 🖼️ **Graphics** - Color manipulation and image utilities
+- 📊 **JSON Serialization** - Attribute-based RTTI serialization with validation
+- 🔌 **Dependency Injection** - Lightweight DI container with singleton/transient lifetimes
+- 📅 **Date Range Utilities** - Advanced algorithms for splitting and processing date ranges
+- 🖼️ **Helper Extensions** - Class helpers for arrays, string lists, and UI controls
+- 🗄️ **Database** - Coming soon: MySQL, SQLite, PostgreSQL unified interface
 
 ---
 
@@ -222,7 +227,7 @@ end;
 #### 6. Date Range Processing
 Advanced date algorithms for business applications:
 ```pascal
-uses KLib.Common;
+uses KLib.DateTimeUtils;
 
 // Split date range into months
 var months := splitByMonths(StartDate, EndDate);
@@ -236,6 +241,77 @@ begin
 end;
 ```
 **Enterprise reporting utilities** for common date range challenges.
+
+---
+
+#### 7. Express.js-Style REST API
+Modern HTTP server with familiar web framework patterns:
+```pascal
+uses KLib.MyIdHTTPServer;
+
+var app := TMyIdHTTPServer.create(8080);
+var router := app.getRouter;
+
+// RESTful routes with parameters
+router.get('/api/users/:id', procedure(req, res, params)
+begin
+  var userId := params['id'];
+  var user := GetUserById(userId);
+  res.jsonSuccess(user);
+end);
+
+router.post('/api/users', procedure(req, res, params)
+begin
+  var userData := req.parseJSON;
+  CreateUser(userData);
+  res.jsonSuccess(nil, 'User created');
+end);
+
+// Middleware support
+app.use(procedure(req, res, next)
+begin
+  LogRequest(req.Document);
+  next();
+end);
+
+// CORS, static files, error handling
+app.enableCors := true;
+```
+**Web-developer friendly** API patterns for building REST services.
+
+---
+
+#### 8. Class Helper Extensions
+Extend built-in Delphi types with useful methods:
+```pascal
+uses KLib.ArrayHelper, KLib.StringListHelper;
+
+// Array helpers
+if myArray.Contains(searchValue) then
+  index := myArray.IndexOf(searchValue);
+
+// StringList helpers
+myList.AddIfNotExists('unique-value');
+var items := myList.ToArray;
+```
+**Enhanced productivity** with intuitive extension methods.
+
+---
+
+#### 9. Dependency Injection Container
+Lightweight DI container with lifetime management:
+```pascal
+uses KLib.DiContainer;
+
+// Register services
+Container.RegisterSingleton<ILogger>(TFileLogger);
+Container.RegisterTransient<IRepository>(TUserRepository);
+
+// Resolve dependencies
+var logger := Container.Resolve<ILogger>;
+var repo := Container.Resolve<IRepository>;
+```
+**Testable architecture** with minimal configuration overhead.
 
 ---
 
