@@ -120,7 +120,7 @@ implementation
 
 
 uses
-  KLib.Windows, KLib.StringUtils, KLib.FileSystem, KLib.Constants,
+  KLib.Windows, KLib.Utils, KLib.StringUtils, KLib.FileSystem, KLib.Constants,
   System.Win.Registry;
 
 procedure TMyService.ServiceCreate(Sender: TObject);

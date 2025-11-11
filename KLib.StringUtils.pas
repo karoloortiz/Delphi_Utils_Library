@@ -42,14 +42,6 @@ uses
   KLib.Constants, KLib.Types,
   System.SysUtils, System.Classes;
 
-function encryptString(value: string; key: string): string;
-function decryptString(value: string; key: string): string;
-
-function getStatusAsString(status: TStatus): string;
-
-function getValidItalianTelephoneNumber(number: string): string;
-function getValidTelephoneNumber(number: string): string;
-
 function getRandString(size: integer = 5): string;
 
 function getZPLWithTextInsertedAtEOF(zpl: string; extraText: string): string;
@@ -88,9 +80,6 @@ procedure splitStrings(source: string; splitIndex: integer; var destFirstString:
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
-function checkIfEmailIsValid(email: string): boolean;
-function checkIfRegexIsValid(text: string; regex: string): boolean;
-
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 
@@ -106,131 +95,8 @@ implementation
 
 uses
   System.StrUtils, System.Character, System.RegularExpressions,
-  System.Variants, System.NetEncoding, System.Hash,
+  System.Variants, System.NetEncoding,
   KLib.Validate;
-
-function encryptString(value: string; key: string): string;
-var
-  _hashedKey: string;
-  _xorBytes: TBytes;
-  _i: Integer;
-begin
-  _hashedKey := THashSHA2.GetHashString(key);
-  _xorBytes := TEncoding.UTF8.GetBytes(value);
-  for _i := 0 to Length(_xorBytes) - 1 do
-  begin
-    _xorBytes[_i] := _xorBytes[_i] xor Byte(_hashedKey[(_i mod Length(_hashedKey)) + 1]);
-  end;
-  Result := TNetEncoding.Base64.EncodeBytesToString(_xorBytes);
-end;
-
-function decryptString(value: string; key: string): string;
-var
-  _hashedKey: string;
-  _xorBytes: TBytes;
-  _i: Integer;
-begin
-  _hashedKey := THashSHA2.GetHashString(key);
-  _xorBytes := TNetEncoding.Base64.DecodeStringToBytes(value);
-  for _i := 0 to Length(_xorBytes) - 1 do
-  begin
-    _xorBytes[_i] := _xorBytes[_i] xor Byte(_hashedKey[(_i mod Length(_hashedKey)) + 1]);
-  end;
-  Result := TEncoding.UTF8.GetString(_xorBytes);
-end;
-
-function getStatusAsString(status: TStatus): string;
-var
-  status_asString: string;
-begin
-  case status of
-    TStatus._null:
-      status_asString := '_null';
-    TStatus.created:
-      status_asString := 'created';
-    TStatus.stopped:
-      status_asString := 'stopped';
-    TStatus.paused:
-      status_asString := 'paused';
-    TStatus.running:
-      status_asString := 'running';
-  end;
-
-  Result := status_asString;
-end;
-
-function getValidItalianTelephoneNumber(number: string): string;
-var
-  telephoneNumber: string;
-
-  _number: string;
-  i: integer;
-begin
-  telephoneNumber := '';
-  _number := trim(number);
-
-  if _number = '' then
-  begin
-    telephoneNumber := '';
-  end
-  else
-  begin
-    if _number.StartsWith('0039') then
-    begin
-      _number := KLib.StringUtils.myStringReplace(_number, '0039', '+39', []);
-    end;
-
-    if not _number.StartsWith('+') then
-    begin
-      _number := '+39' + _number;
-    end;
-
-    if not _number.StartsWith('+39') then
-    begin
-      _number := myStringReplace(_number, '+', '+39', []);
-    end;
-
-    telephoneNumber := '+';
-    for i := 2 to length(_number) do
-    begin
-      if _number[i].IsNumber then
-      begin
-        telephoneNumber := telephoneNumber + _number[i];
-      end;
-    end;
-  end;
-
-  Result := telephoneNumber;
-end;
-
-function getValidTelephoneNumber(number: string): string;
-const
-  ERR_MSG = 'Telephone number is empty.';
-var
-  telephoneNumber: string;
-
-  _number: string;
-  i: integer;
-begin
-  telephoneNumber := '';
-  _number := trim(number);
-
-  validateThatStringIsNotEmpty(_number, ERR_MSG);
-
-  if _number[1] = '+' then
-  begin
-    telephoneNumber := '+';
-  end;
-  for i := 2 to length(_number) do
-  begin
-    if _number[i].IsNumber then
-    begin
-      telephoneNumber := telephoneNumber + _number[i];
-    end;
-  end;
-
-  Result := telephoneNumber;
-end;
 
 function getRandString(size: integer = 5): string;
 const
@@ -705,20 +571,6 @@ end;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 begin
   Result := firstString + delimiter + secondString;
-end;
-
-function checkIfEmailIsValid(email: string): boolean;
-var
-  emailIsValid: boolean;
-begin
-  emailIsValid := TRegEx.IsMatch(email, REGEX_VALID_EMAIL);
-
-  Result := emailIsValid;
-end;
-
-function checkIfRegexIsValid(text: string; regex: string): boolean;
-begin
-  Result := TRegEx.IsMatch(text, regex);
 end;
 
 function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;

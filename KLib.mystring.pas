@@ -101,7 +101,8 @@ type
 implementation
 
 uses
-  KLib.StringUtils, KLib.DateTimeUtils, KLib.FileSystem, KLib.Utils, KLib.Common, KLib.Windows,
+  KLib.StringUtils, KLib.DateTimeUtils, KLib.FileSystem, KLib.Utils, KLib.Crypto,
+  KLib.Common, KLib.Windows,
   System.SysUtils;
 
 procedure TMyStringHelper.setParamAsDoubleQuotedDate(paramName: string; value: TDateTime;

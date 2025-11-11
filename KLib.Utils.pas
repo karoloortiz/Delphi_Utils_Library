@@ -63,10 +63,16 @@ function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolea
 function checkIfIsEmptyOrNull(value: Variant): boolean;
 function myDefault(typeAsString: string): Variant;
 
+function getValidItalianTelephoneNumber(number: string): string;
+function getValidTelephoneNumber(number: string): string;
+function checkIfEmailIsValid(email: string): boolean;
+function checkIfRegexIsValid(text: string; regex: string): boolean;
+function getStatusAsString(status: TStatus): string;
+
 implementation
 
 uses
-  System.Variants, System.Generics.Collections,
+  System.Variants, System.Generics.Collections, System.RegularExpressions,
   KLib.StringUtils, KLib.DateTimeUtils;
 
 function getCleanJSONString(const JSONStr: string): string;
@@ -404,6 +410,108 @@ begin
   end;
 
   Result := value;
+end;
+
+function getValidItalianTelephoneNumber(number: string): string;
+var
+  telephoneNumber: string;
+  _number: string;
+  i: integer;
+begin
+  telephoneNumber := '';
+  _number := trim(number);
+
+  if _number = '' then
+  begin
+    telephoneNumber := '';
+  end
+  else
+  begin
+    if _number.StartsWith('0039') then
+    begin
+      _number := StringReplace(_number, '0039', '+39', []);
+    end;
+
+    if not _number.StartsWith('+') then
+    begin
+      _number := '+39' + _number;
+    end;
+
+    if not _number.StartsWith('+39') then
+    begin
+      _number := StringReplace(_number, '+', '+39', []);
+    end;
+
+    telephoneNumber := '+';
+    for i := 2 to length(_number) do
+    begin
+      if CharInSet(_number[i], ['0'..'9']) then
+      begin
+        telephoneNumber := telephoneNumber + _number[i];
+      end;
+    end;
+  end;
+
+  Result := telephoneNumber;
+end;
+
+function getValidTelephoneNumber(number: string): string;
+const
+  ERR_MSG = 'Telephone number is empty.';
+var
+  telephoneNumber: string;
+  _number: string;
+  i: integer;
+begin
+  telephoneNumber := '';
+  _number := trim(number);
+
+  if _number = '' then
+    raise Exception.Create(ERR_MSG);
+
+  if _number[1] = '+' then
+  begin
+    telephoneNumber := '+';
+  end;
+  for i := 2 to length(_number) do
+  begin
+    if CharInSet(_number[i], ['0'..'9']) then
+    begin
+      telephoneNumber := telephoneNumber + _number[i];
+    end;
+  end;
+
+  Result := telephoneNumber;
+end;
+
+function checkIfEmailIsValid(email: string): boolean;
+begin
+  Result := TRegEx.IsMatch(email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+end;
+
+function checkIfRegexIsValid(text: string; regex: string): boolean;
+begin
+  Result := TRegEx.IsMatch(text, regex);
+end;
+
+function getStatusAsString(status: TStatus): string;
+var
+  status_asString: string;
+begin
+  case status of
+    TStatus._null:
+      status_asString := '_null';
+    TStatus.created:
+      status_asString := 'created';
+    TStatus.stopped:
+      status_asString := 'stopped';
+    TStatus.paused:
+      status_asString := 'paused';
+    TStatus.running:
+      status_asString := 'running';
+  end;
+
+  Result := status_asString;
 end;
 
 end.
