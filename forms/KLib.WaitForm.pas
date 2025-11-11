@@ -43,7 +43,8 @@ uses
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
   Winapi.Windows, Winapi.Messages,
   System.SysUtils, System.Variants, System.Classes,
-  cxLookAndFeelPainters, cxGraphics, cxControls, cxLookAndFeels, dxActivityIndicator, dxSkinsCore;
+  cxLookAndFeelPainters, cxGraphics, cxControls, cxLookAndFeels, dxActivityIndicator,
+  dxSkinsCore;
 
 const
   WM_TWAITFORM_START = WM_USER + 1000;
@@ -86,6 +87,7 @@ type
 implementation
 
 {$r *.dfm}
+
 
 uses
   Klib.Asyncify;

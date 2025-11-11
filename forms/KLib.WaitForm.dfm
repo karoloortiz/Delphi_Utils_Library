@@ -1,20 +1,16 @@
 object WaitForm: TWaitForm
   Left = 0
   Top = 0
-  Margins.Left = 2
-  Margins.Top = 2
-  Margins.Right = 2
-  Margins.Bottom = 2
   AutoSize = True
   BorderIcons = []
   BorderStyle = bsDialog
   Caption = 'Caricamento'
-  ClientHeight = 88
-  ClientWidth = 128
+  ClientHeight = 322
+  ClientWidth = 621
   Color = clWhite
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -11
+  Font.Height = -17
   Font.Name = 'Tahoma'
   Font.Style = []
   FormStyle = fsStayOnTop
@@ -22,22 +18,46 @@ object WaitForm: TWaitForm
   StyleElements = []
   OnClose = FormClose
   OnShow = FormShow
-  TextHeight = 13
+  PixelsPerInch = 144
+  TextHeight = 21
   object title_lbl: TLabel
     Left = 0
     Top = 0
-    Width = 128
-    Height = 88
+    Width = 621
+    Height = 134
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
     Align = alTop
     Alignment = taCenter
     Caption = #13'Waiting'
     Font.Charset = ANSI_CHARSET
     Font.Color = clBlack
-    Font.Height = -37
+    Font.Height = -56
     Font.Name = 'Roboto'
     Font.Style = [fsBold]
     ParentFont = False
     Transparent = False
     StyleElements = []
+    ExplicitWidth = 192
+  end
+  object activityIndicator: TdxActivityIndicator
+    Left = 0
+    Top = 134
+    Width = 621
+    Height = 188
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Align = alTop
+    LookAndFeel.Kind = lfUltraFlat
+    LookAndFeel.NativeStyle = True
+    PropertiesClassName = 'TdxActivityIndicatorHorizontalDotsProperties'
+    Properties.OverlayColor = -1
+    Properties.DotColor = -16777216
+    Properties.DotSize = 15
+    Active = True
   end
 end

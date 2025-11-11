@@ -42,11 +42,8 @@ uses
   KLib.Types, KLib.Constants,
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Imaging.pngimage,
-  dxGDIPlusClasses
-  {$ifdef KLIB_RAIZE}
-  , RzPanel
-  {$endif}
-  ;
+  dxGDIPlusClasses,
+  RzPanel;
 
 const
   TYPE_PRESENTATION_RESOURCE = JSON_TYPE;
@@ -164,8 +161,8 @@ implementation
 
 
 uses
-  KLib.Graphics, KLib.FileSystem,
-  System.JSON, System.UITypes, System.Generics.Collections;
+  System.JSON, System.UITypes, System.Generics.Collections,
+  KLib.Graphics, KLib.Utils, KLib.FileSystem;
 
 constructor TPresentation.Create(AOwner: TComponent; resourceJSONName: string; callBackMethod: TMethod);
 begin

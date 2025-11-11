@@ -43,9 +43,7 @@ uses
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.OleCtrls, Vcl.ComCtrls, Vcl.StdCtrls,
   Winapi.Windows, Winapi.Messages,
   System.SysUtils, System.Variants, System.Classes,
-  {$ifdef KLIB_RAIZE}
-  , RzEdit
-  {$endif}
+  RzEdit,
   dxGDIPlusClasses;
 
 type
@@ -110,7 +108,7 @@ implementation
 
 
 uses
-  KLib.Graphics, KLib.FileSystem;
+  KLib.Graphics, KLib.Utils, KLib.FileSystem;
 
 const
   RGBCOLOR_DISABLED_BUTTON = '180180180';

@@ -41,12 +41,9 @@ interface
 uses
   KLib.Types,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Graphics, Vcl.Imaging.pngimage, Vcl.ComCtrls,
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes
-  {$ifdef KLIB_RAIZE}
-  , RzLabel, RzPanel, RzEdit
-  {$endif}
-  , dxGDIPlusClasses
-  ;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  RzLabel, RzPanel, RzEdit,
+  dxGDIPlusClasses;
 
 type
   TSizeText = (medium, small, large);
@@ -131,7 +128,7 @@ implementation
 
 
 uses
-  KLib.Graphics, KLib.FileSystem, KLib.Constants;
+  KLib.Graphics, KLib.Utils, KLib.Constants, KLib.FileSystem;
 
 const
   TYPE_RESOURCE = RTF_TYPE;
