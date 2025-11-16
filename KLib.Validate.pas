@@ -111,6 +111,7 @@ procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: s
   errMsg: string = 'No window was found.');
 
 procedure validateThatStringIsNotEmpty(value: string; errMsg: string = 'Value is empty.');
+procedure validateThatStringContainsSubstring(mainString: string; subString: string; errMsg: string = 'The string not contains:');
 
 procedure validateDeleteFile(fileName: string; errMsg: string = 'Cannot delete file.');
 
@@ -122,8 +123,8 @@ procedure tryToValidate(validatingMethod: TMethod; errorLabel: TLabel);
 implementation
 
 uses
-  KLib.FileSystem, KLib.StringUtils, KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML,
-  System.SysUtils;
+  System.SysUtils,
+  KLib.FileSystem, KLib.StringUtils, KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML;
 
 //############################----REGEX----##################################
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
@@ -560,6 +561,14 @@ begin
   if value = '' then
   begin
     raise Exception.Create(errMsg);
+  end;
+end;
+
+procedure validateThatStringContainsSubstring(mainString: string; subString: string; errMsg: string = 'The string not contains:');
+begin
+  if not(checkIfStringContainsSubString(mainString, subString)) then
+  begin
+    raise Exception.Create(errMsg + ' ' + subString);
   end;
 end;
 

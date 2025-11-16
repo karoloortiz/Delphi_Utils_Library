@@ -307,12 +307,12 @@ end;
 
 function TMyStringHelper.checkIfContainsSubStringNoCaseSensitive(subString: string): boolean;
 begin
-  Result := checkIfMainStringContainsSubStringNoCaseSensitive(Self, subString);
+  Result := checkIfStringContainsSubStringNoCaseSensitive(Self, subString);
 end;
 
 function TMyStringHelper.checkIfContainsSubString(subString: string; caseSensitiveSearch: boolean = true): boolean;
 begin
-  Result := checkIfMainStringContainsSubString(Self, subString, caseSensitiveSearch);
+  Result := checkIfStringContainsSubString(Self, subString, caseSensitiveSearch);
 end;
 
 function TMyStringHelper.encrypt(key: string): string;

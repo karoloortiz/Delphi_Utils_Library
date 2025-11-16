@@ -80,8 +80,8 @@ procedure splitStrings(source: string; splitIndex: integer; var destFirstString:
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
-function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
-function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
+function checkIfStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
+function checkIfStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 
 function myStringReplace(mainString: string; OldPattern: array of string; NewPattern: array of string; Flags: TReplaceFlags): string; overload;
 function myStringReplace(const SourceString, OldPattern, NewPattern: string; Flags: TReplaceFlags): string; overload;
@@ -573,12 +573,12 @@ begin
   Result := firstString + delimiter + secondString;
 end;
 
-function checkIfMainStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
+function checkIfStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 begin
-  Result := checkIfMainStringContainsSubString(mainString, subString, NOT_CASE_SENSITIVE);
+  Result := checkIfStringContainsSubString(mainString, subString, NOT_CASE_SENSITIVE);
 end;
 
-function checkIfMainStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
+function checkIfStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 var
   _result: boolean;
 begin
