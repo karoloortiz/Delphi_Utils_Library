@@ -199,6 +199,14 @@ type
     procedure clear;
   end;
 
+  TTimeRange = record
+    _start: TDateTime;
+    _end: TDateTime;
+    function getAsString: string;
+
+    procedure clear;
+  end;
+
   TResource = record
     name: string;
     _type: string;
@@ -328,6 +336,17 @@ begin
   Result := _startDataTimeAsString + ' - ' + _endDataTimeAsString;
 end;
 
+function TTimeRange.getAsString: string;
+var
+  _startTimeAsString: string;
+  _endTimeAsString: string;
+begin
+  _startTimeAsString := TimeToStr(self._start);
+  _endTimeAsString := TimeToStr(self._end);
+
+  Result := _startTimeAsString + ' - ' + _endTimeAsString;
+end;
+
 procedure THostPort.clear;
 const
   EMPTY: THostPort = ();
@@ -416,6 +435,13 @@ end;
 procedure TDateTimeRange.clear;
 const
   EMPTY: TDateTimeRange = ();
+begin
+  Self := EMPTY;
+end;
+
+procedure TTimeRange.clear;
+const
+  EMPTY: TTimeRange = ();
 begin
   Self := EMPTY;
 end;

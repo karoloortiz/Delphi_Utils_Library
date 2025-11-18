@@ -57,12 +57,15 @@ function getDateAsString(date: TDateTime): string;
 function getCurrentTimeStamp: string;
 function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
+
 function getCurrentDateTime: TDateTime;
+function getDateFromString(value: string; formatting: string = EMPTY_STRING): TDate;
+function getTimeFromString(value: string; formatting: string = EMPTY_STRING): TTime;
 
 implementation
 
 uses
-  KLib.StringUtils;
+  KLib.StringUtils, KLib.Validate;
 
 function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>;
 var
@@ -269,6 +272,51 @@ end;
 function getCurrentDateTime: TDateTime;
 begin
   Result := Now;
+end;
+
+function getDateFromString(value: string; formatting: string = EMPTY_STRING): TDate;
+var
+  date: TDate;
+  _formatSettings: TFormatSettings;
+begin
+  _formatSettings := TFormatSettings.Create;
+  if (formatting <> EMPTY_STRING) then
+  begin
+    _formatSettings.DateSeparator := #0;
+    if (checkIfStringContainsSubString(formatting, '-')) then
+    begin
+      _formatSettings.DateSeparator := '-';
+    end;
+    if (checkIfStringContainsSubString(formatting, '/')) then
+    begin
+      _formatSettings.DateSeparator := '/';
+    end;
+    _formatSettings.ShortDateFormat := formatting;
+  end;
+  Result := StrToDate(value, _formatSettings)
+end;
+
+function getTimeFromString(value: string; formatting: string = EMPTY_STRING): TTime;
+var
+  date: TTime;
+  _formatSettings: TFormatSettings;
+begin
+  _formatSettings := TFormatSettings.Create;
+  if (formatting <> EMPTY_STRING) then
+  begin
+    _formatSettings.TimeSeparator := #0;
+    if (checkIfStringContainsSubString(formatting, ':')) then
+    begin
+      _formatSettings.TimeSeparator := ':';
+    end;
+    if (checkIfStringContainsSubString(formatting, '.')) then
+    begin
+      _formatSettings.TimeSeparator := '.';
+    end;
+    _formatSettings.LongTimeFormat := formatting;
+  end;
+
+  Result := StrToTime(value, _formatSettings)
 end;
 
 end.
