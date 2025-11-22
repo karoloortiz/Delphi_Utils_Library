@@ -181,6 +181,7 @@ function getLocaleDecimalSeparator: char;
 procedure terminateCurrentProcess(exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 
+function getExecutionMode: TExecutionMode;
 //###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
 function checkIfCurrentProcessIsAServiceProcess: boolean;
 function checkIfIsAServiceProcess(processHandle: THandle): boolean;
@@ -1819,6 +1820,31 @@ begin
   begin
     raiseLastSysErrorMessage;
   end;
+end;
+
+function getExecutionMode: TExecutionMode;
+var
+  executionMode: TExecutionMode;
+
+  _serviceModeEnabled: boolean;
+  _desktopModeEnabled: boolean;
+begin
+  _serviceModeEnabled := checkIfCurrentProcessIsAServiceProcess;
+  _desktopModeEnabled := myParamCount = 0;
+  if _serviceModeEnabled then
+  begin
+    executionMode := TExecutionMode.service;
+  end
+  else if _desktopModeEnabled then
+  begin
+    executionMode := TExecutionMode.desktop;
+  end
+  else
+  begin
+    executionMode := TExecutionMode.cli;
+  end;
+
+  Result := executionMode;
 end;
 
 function checkIfCurrentProcessIsAServiceProcess: boolean;
