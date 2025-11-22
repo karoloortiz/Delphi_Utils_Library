@@ -77,6 +77,8 @@ const
   DLL_TYPE = 'DLL';
   SQL_TYPE = 'SQL';
   CSV_TYPE = 'CSV';
+  YAML_TYPE = 'YAML';
+  HTML_TYPE = 'HTML';
 
   INCLUDE_HEADER = true;
   EXCLUDE_HEADER = false;

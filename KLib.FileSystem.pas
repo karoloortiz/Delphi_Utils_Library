@@ -91,8 +91,10 @@ function checkMD5File(fileName: string; MD5: string): boolean;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
 function getPNGResource(nameResource: string): TPngImage;
-procedure getResourceAsEXEFile(nameResource: string; destinationFileName: string);
-procedure getResourceAsZIPFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsExeFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsZipFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsYamlFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsHtmlFile(nameResource: string; destinationFileName: string);
 procedure getResourceAsFile(resource: TResource; destinationFileName: string);
 function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
@@ -643,7 +645,7 @@ var
 begin
   _tempZipFileName := getRandString + '.' + ZIP_TYPE;
   _tempZipFileName := getCombinedPath(destinationDir, _tempZipFileName);
-  getResourceAsZIPFile(nameResource, _tempZipFileName);
+  getResourceAsZipFile(nameResource, _tempZipFileName);
   unzip(_tempZipFileName, destinationDir, DELETE_ZIP_AFTER_UNZIP);
 end;
 
@@ -669,14 +671,24 @@ end;
 
 procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string); forward;
 
-procedure getResourceAsEXEFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsExeFile(nameResource: string; destinationFileName: string);
 begin
   _getResourceAsFile_(nameResource, EXE_TYPE, destinationFileName);
 end;
 
-procedure getResourceAsZIPFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsZipFile(nameResource: string; destinationFileName: string);
 begin
   _getResourceAsFile_(nameResource, ZIP_TYPE, destinationFileName);
+end;
+
+procedure getResourceAsYamlFile(nameResource: string; destinationFileName: string);
+begin
+  _getResourceAsFile_(nameResource, YAML_TYPE, destinationFileName);
+end;
+
+procedure getResourceAsHtmlFile(nameResource: string; destinationFileName: string);
+begin
+  _getResourceAsFile_(nameResource, HTML_TYPE, destinationFileName);
 end;
 
 procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string);
