@@ -2004,7 +2004,7 @@ var
   _result: string;
 begin
   _result := getCombinedPath(DirExe, pathToCombine);
-  _result:= getValidFullPathInWindowsStyle(_result);
+  _result := getValidFullPathInWindowsStyle(_result);
 
   Result := _result;
 end;
@@ -2238,6 +2238,9 @@ begin
   _result := _result + [_applicationPath];
 
   _applicationPath := getDoubleQuotedString(_applicationPath) + ' ';
+{$ifdef WIN64}
+  _applicationPath := _applicationPath.Trim;
+{$endif}
   _commandLine := GetCommandLine;
 
   _params := _commandLine.Replace(_applicationPath, EMPTY_STRING);
