@@ -2004,6 +2004,7 @@ var
   _result: string;
 begin
   _result := getCombinedPath(DirExe, pathToCombine);
+  _result:= getValidFullPathInWindowsStyle(_result);
 
   Result := _result;
 end;
