@@ -36,6 +36,9 @@
 
 unit KLib.Indy;
 
+//USING INDY WITH SSL (E.G downloadFileWithIndy) YOU NEED libeay32.dll, ssleay32.dll
+//INCLUDE RESOURCES IN YOUR PROJECT KLib.Assets.rc
+
 interface
 
 uses
@@ -68,14 +71,10 @@ function HTTP_post(url: string; body: string; idHTTPRequest: TIdHTTPRequest = ni
 function HTTP_post(url: string; paramList: TStringList; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
 function HTTP_delete(url: string; bearerToken: string): string; overload;
 function HTTP_delete(url: string; idHTTPRequest: TIdHTTPRequest = nil): string; overload;
-//USING INDY WITH SSL (E.G downloadFileWithIndy) YOU NEED libeay32.dll, libssl32.dll, ssleay32.dll
-//INCLUDE RESOURCES IN YOUR PROJECT
-//  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
-//  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: DLL_TYPE);
-//  RESOURCE_SSLEAY32: TResource = (name: 'SSLEAY32'; _type: DLL_TYPE);
 procedure downloadZipFileAndExtract(info: TDownloadInfo; forceOverwrite: boolean;
   destinationPath: string; forceDeleteZipFile: boolean = false);
 procedure downloadFile(info: TDownloadInfo; forceOverwrite: boolean);
+procedure tryGetOpenSSLDLLsFromResource;
 procedure getOpenSSLDLLsFromResource;
 procedure tryToDeleteOpenSSLDLLsIfExists;
 procedure deleteOpenSSLDLLsIfExists;
@@ -634,33 +633,42 @@ begin
 end;
 
 const
-  RESOURCE_LIBEAY32: TResource = (name: 'LIBEAY32'; _type: DLL_TYPE);
-  RESOURCE_LIBSSL32: TResource = (name: 'LIBSSL32'; _type: DLL_TYPE);
-  RESOURCE_SSLEAY32: TResource = (name: 'SSLEAY32'; _type: DLL_TYPE);
-  FILENAME_LIBSSL32 = 'libssl32.dll';
   FILENAME_LIBEAY32 = 'libeay32.dll';
   FILENAME_SSLEAY32 = 'ssleay32.dll';
+
+procedure tryGetOpenSSLDLLsFromResource;
+begin
+  try
+    getOpenSSLDLLsFromResource;
+  except
+    on E: Exception do
+  end;
+end;
 
 procedure getOpenSSLDLLsFromResource;
 var
   _path_libeay32: string;
-  _path_libssl32: string;
   _path_ssleay32: string;
 begin
   _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   if not checkIfFileExists(_path_libeay32) then
   begin
-    getResourceAsFile(RESOURCE_LIBEAY32, _path_libeay32);
-  end;
-  _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
-  if not checkIfFileExists(_path_libssl32) then
-  begin
-    getResourceAsFile(RESOURCE_LIBSSL32, _path_libssl32);
+{$ifdef WIN32}
+    getResourceAsDllFile('LIBEAY32_X86', _path_libeay32);
+{$endif}
+{$ifdef WIN64}
+    getResourceAsDllFile('LIBEAY32_X64', _path_libeay32);
+{$endif}
   end;
   _path_ssleay32 := getCombinedPathWithCurrentDir(FILENAME_SSLEAY32);
   if not checkIfFileExists(_path_ssleay32) then
   begin
-    getResourceAsFile(RESOURCE_SSLEAY32, _path_ssleay32);
+{$ifdef WIN32}
+    getResourceAsDllFile('SSLEAY32_X86', _path_ssleay32);
+{$endif}
+{$ifdef WIN64}
+    getResourceAsDllFile('SSLEAY32_X64', _path_ssleay32);
+{$endif}
   end;
 end;
 
@@ -672,15 +680,13 @@ end;
 procedure deleteOpenSSLDLLsIfExists;
 var
   _path_libeay32: string;
-  _path_libssl32: string;
   _path_ssleay32: string;
 begin
   UnLoadOpenSSLLibrary;
 
   _path_libeay32 := getCombinedPathWithCurrentDir(FILENAME_LIBEAY32);
   deleteFileIfExists(_path_libeay32);
-  _path_libssl32 := getCombinedPathWithCurrentDir(FILENAME_LIBSSL32);
-  deleteFileIfExists(_path_libssl32);
+
   _path_ssleay32 := getCombinedPathWithCurrentDir(FILENAME_SSLEAY32);
   deleteFileIfExists(_path_ssleay32);
 end;
@@ -706,5 +712,9 @@ begin
 
   Result := MD5;
 end;
+
+initialization
+
+tryGetOpenSSLDLLsFromResource;
 
 end.
