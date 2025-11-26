@@ -473,6 +473,7 @@ KLIB_RAIZE
 ### Network Security Requirements
 
 - **OpenSSL Libraries** - HTTPS/SSL support - [Indy OpenSSL Binaries](https://github.com/IndySockets/OpenSSL-Binaries)
+Clone repo with assets (git lfs), and add KLib.Assets.rc to your project.
 
 ---
 

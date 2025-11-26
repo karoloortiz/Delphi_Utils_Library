@@ -81,7 +81,7 @@ begin
   if installOptions.isFileAResource then
   begin
     _pathFileName := getCombinedPathWithCurrentDir(installOptions.fileNameInstaller);
-    getResourceAsEXEFile(installOptions.fileNameInstaller, _pathFileName);
+    getResourceAsExeFile(installOptions.fileNameInstaller, _pathFileName);
   end;
 
   executeAndWaitExe(_pathFileName);

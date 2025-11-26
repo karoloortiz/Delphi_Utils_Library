@@ -181,6 +181,7 @@ function getLocaleDecimalSeparator: char;
 procedure terminateCurrentProcess(exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 procedure myTerminateProcess(processHandle: THandle; exitCode: Cardinal = 0; isRaiseExceptionEnabled: boolean = RAISE_EXCEPTION);
 
+function getExecutionMode: TExecutionMode;
 //###########-----NOT WORK ON WINDOWS XP, WINDOWS SERVER 2003, AND EARLIER VERSIONS OF THE WINDOWS OPERATING SYSTEM------------############
 function checkIfCurrentProcessIsAServiceProcess: boolean;
 function checkIfIsAServiceProcess(processHandle: THandle): boolean;
@@ -1821,6 +1822,31 @@ begin
   end;
 end;
 
+function getExecutionMode: TExecutionMode;
+var
+  executionMode: TExecutionMode;
+
+  _serviceModeEnabled: boolean;
+  _desktopModeEnabled: boolean;
+begin
+  _serviceModeEnabled := checkIfCurrentProcessIsAServiceProcess;
+  _desktopModeEnabled := myParamCount = 0;
+  if _serviceModeEnabled then
+  begin
+    executionMode := TExecutionMode.service;
+  end
+  else if _desktopModeEnabled then
+  begin
+    executionMode := TExecutionMode.desktop;
+  end
+  else
+  begin
+    executionMode := TExecutionMode.cli;
+  end;
+
+  Result := executionMode;
+end;
+
 function checkIfCurrentProcessIsAServiceProcess: boolean;
 var
   _currentProcess: THandle;
@@ -1978,6 +2004,7 @@ var
   _result: string;
 begin
   _result := getCombinedPath(DirExe, pathToCombine);
+  _result := getValidFullPathInWindowsStyle(_result);
 
   Result := _result;
 end;
@@ -2211,6 +2238,9 @@ begin
   _result := _result + [_applicationPath];
 
   _applicationPath := getDoubleQuotedString(_applicationPath) + ' ';
+{$ifdef WIN64}
+  _applicationPath := _applicationPath.Trim;
+{$endif}
   _commandLine := GetCommandLine;
 
   _params := _commandLine.Replace(_applicationPath, EMPTY_STRING);

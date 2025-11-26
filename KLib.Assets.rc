@@ -1,0 +1,5 @@
+LIBEAY32_X86 DLL assets/x86/libeay32.dll
+SSLEAY32_X86 DLL assets/x86/ssleay32.dll
+
+LIBEAY32_X64 DLL assets/x64/libeay32.dll
+SSLEAY32_X64 DLL assets/x64/ssleay32.dll

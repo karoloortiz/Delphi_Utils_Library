@@ -276,7 +276,6 @@ end;
 
 function getDateFromString(value: string; formatting: string = EMPTY_STRING): TDate;
 var
-  date: TDate;
   _formatSettings: TFormatSettings;
 begin
   _formatSettings := TFormatSettings.Create;
@@ -293,12 +292,12 @@ begin
     end;
     _formatSettings.ShortDateFormat := formatting;
   end;
+
   Result := StrToDate(value, _formatSettings)
 end;
 
 function getTimeFromString(value: string; formatting: string = EMPTY_STRING): TTime;
 var
-  date: TTime;
   _formatSettings: TFormatSettings;
 begin
   _formatSettings := TFormatSettings.Create;

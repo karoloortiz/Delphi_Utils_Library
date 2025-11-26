@@ -91,9 +91,13 @@ function checkMD5File(fileName: string; MD5: string): boolean;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
 function getPNGResource(nameResource: string): TPngImage;
-procedure getResourceAsEXEFile(nameResource: string; destinationFileName: string);
-procedure getResourceAsZIPFile(nameResource: string; destinationFileName: string);
-procedure getResourceAsFile(resource: TResource; destinationFileName: string);
+procedure getResourceAsExeFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsZipFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsYamlFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsHtmlFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsDllFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsFile(nameResource: string; typeResource: string; destinationFileName: string); overload;
+procedure getResourceAsFile(resource: TResource; destinationFileName: string); overload;
 function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
 
@@ -643,7 +647,7 @@ var
 begin
   _tempZipFileName := getRandString + '.' + ZIP_TYPE;
   _tempZipFileName := getCombinedPath(destinationDir, _tempZipFileName);
-  getResourceAsZIPFile(nameResource, _tempZipFileName);
+  getResourceAsZipFile(nameResource, _tempZipFileName);
   unzip(_tempZipFileName, destinationDir, DELETE_ZIP_AFTER_UNZIP);
 end;
 
@@ -667,28 +671,40 @@ begin
   Result := resourceAsPNG;
 end;
 
-procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string); forward;
-
-procedure getResourceAsEXEFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsExeFile(nameResource: string; destinationFileName: string);
 begin
-  _getResourceAsFile_(nameResource, EXE_TYPE, destinationFileName);
+  getResourceAsFile(nameResource, EXE_TYPE, destinationFileName);
 end;
 
-procedure getResourceAsZIPFile(nameResource: string; destinationFileName: string);
+procedure getResourceAsZipFile(nameResource: string; destinationFileName: string);
 begin
-  _getResourceAsFile_(nameResource, ZIP_TYPE, destinationFileName);
+  getResourceAsFile(nameResource, ZIP_TYPE, destinationFileName);
 end;
 
-procedure _getResourceAsFile_(nameResource: string; typeResource: string; destinationFileName: string);
+procedure getResourceAsYamlFile(nameResource: string; destinationFileName: string);
+begin
+  getResourceAsFile(nameResource, YAML_TYPE, destinationFileName);
+end;
+
+procedure getResourceAsHtmlFile(nameResource: string; destinationFileName: string);
+begin
+  getResourceAsFile(nameResource, HTML_TYPE, destinationFileName);
+end;
+
+procedure getResourceAsDllFile(nameResource: string; destinationFileName: string);
+begin
+  getResourceAsFile(nameResource, DLL_TYPE, destinationFileName);
+end;
+
+procedure getResourceAsFile(nameResource: string; typeResource: string; destinationFileName: string);
 var
   _resource: TResource;
   _destinationFileName: string;
 begin
-  with _resource do
-  begin
-    name := nameResource;
-    _type := typeResource;
-  end;
+  _resource.clear;
+  _resource.name := nameResource;
+  _resource._type := typeResource;
+
   _destinationFileName := destinationFileName;
   if not LowerCase(_destinationFileName).EndsWith('.' + LowerCase(typeResource)) then
   begin
@@ -707,7 +723,7 @@ begin
 
   _resourceStream := getResourceAsStream(resource);
   _resourceStream.SaveToFile(destinationFileName);
-  _resourceStream.Free;
+  FreeAndNil(_resourceStream);
 end;
 
 function getResourceAsString(resource: TResource): string;
