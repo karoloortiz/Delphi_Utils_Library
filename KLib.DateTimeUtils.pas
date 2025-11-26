@@ -55,8 +55,8 @@ function getDateTimeAsString(date: TDateTime): string;
 function getCurrentDateAsString: string;
 function getDateAsString(date: TDateTime): string;
 function getCurrentTimeStamp: string;
-function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
-function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATETIME_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATETIME_FORMAT): string;
 
 function getCurrentDateTime: TDateTime;
 function getDateFromString(value: string; formatting: string = EMPTY_STRING): TDate;
@@ -255,12 +255,12 @@ begin
   Result := getCurrentDateTimeWithFormattingAsString(TIMESTAMP_FORMAT);
 end;
 
-function getCurrentDateTimeWithFormattingAsString(formatting: string = DATE_FORMAT): string;
+function getCurrentDateTimeWithFormattingAsString(formatting: string = DATETIME_FORMAT): string;
 begin
   Result := getDateTimeWithFormattingAsString(Now, formatting);
 end;
 
-function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATE_FORMAT): string;
+function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATETIME_FORMAT): string;
 var
   dateTimeAsStringWithFormatting: string;
 begin

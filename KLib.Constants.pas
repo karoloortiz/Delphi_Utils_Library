@@ -48,6 +48,9 @@ const
   DATE_FORMAT_ITALIAN = 'dd/mm/yyyy';
   DATETIME_FORMAT = 'yyyy-mm-dd hh:nn:ss';
   DATETIME_FORMAT_ITALIAN = 'dd/mm/yyyy hh:nn:ss';
+
+  DATETIME_FORMAT_FILE = 'yyyymmdd_hhnnss';
+
   TIMESTAMP_FORMAT = 'yyyymmddhhnnss';
 
   SEMICOLON_DELIMITER = ';';
