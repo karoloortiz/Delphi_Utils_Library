@@ -62,10 +62,20 @@ function getCurrentDateTime: TDateTime;
 function getDateFromString(value: string; formatting: string = EMPTY_STRING): TDate;
 function getTimeFromString(value: string; formatting: string = EMPTY_STRING): TTime;
 
+function isWorkingDay(date: TDateTime = 0): boolean;
+function isHoliday(date: TDateTime = 0): boolean;
+function isMonday(date: TDateTime = 0): boolean;
+function isTuesday(date: TDateTime = 0): boolean;
+function isWednesday(date: TDateTime = 0): boolean;
+function isThursday(date: TDateTime = 0): boolean;
+function isFriday(date: TDateTime = 0): boolean;
+function isSaturday(date: TDateTime = 0): boolean;
+function isSunday(date: TDateTime = 0): boolean;
+
 implementation
 
 uses
-  KLib.StringUtils, KLib.Validate;
+  KLib.StringUtils, KLib.Validate, KLib.Common;
 
 function splitByMonths(startDate: TDateTime; endDate: TDateTime): TArray<TDateTimeRange>;
 var
@@ -316,6 +326,91 @@ begin
   end;
 
   Result := StrToTime(value, _formatSettings)
+end;
+
+function isWorkingDay(date: TDateTime = 0): boolean;
+var
+  _day: integer;
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+  _day := DayOfTheWeek(_date);
+
+  Result := ((_day >= 1) and (_day <= 5));
+end;
+
+function isHoliday(date: TDateTime = 0): boolean;
+var
+  _day: integer;
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+  _day := DayOfTheWeek(_date);
+
+  Result := ((_day = 6) or (_day <= 7));
+end;
+
+function isMonday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 1;
+end;
+
+function isTuesday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 2;
+end;
+
+function isWednesday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 3;
+end;
+
+function isThursday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 4;
+end;
+
+function isFriday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 5;
+end;
+
+function isSaturday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 6;
+end;
+
+function isSunday(date: TDateTime = 0): boolean;
+var
+  _date: TDateTime;
+begin
+  _date := ifThen(date = 0, now, date);
+
+  Result := DayOfTheWeek(_date) = 7;
 end;
 
 end.
