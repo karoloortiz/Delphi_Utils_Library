@@ -53,7 +53,9 @@ procedure tryToExecuteProcedure(myProcedure: TProcedure; isRaiseExceptionEnabled
 procedure executeProcedure(myProcedure: TAnonymousMethod); overload;
 procedure executeProcedure(myProcedure: TCallBack); overload;
 
-function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
+function ifThen(condition: boolean; trueDateTime: TDateTime; falseDateTime: TDateTime = 0): TDateTime; overload;
+function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string; overload;
+
 procedure validate(condition: boolean; errMsg: string);
 
 function myIsDebuggerPresent: boolean;
@@ -155,10 +157,30 @@ begin
   myProcedure('');
 end;
 
+function ifThen(condition: boolean; trueDateTime: TDateTime; falseDateTime: TDateTime = 0): TDateTime;
+var
+  _result: TDateTime;
+begin
+  _result := 0;
+
+  if (condition) then
+  begin
+    _result := trueDateTime;
+  end;
+  if (not condition) then
+  begin
+    _result := falseDateTime;
+  end;
+
+  Result := _result;
+end;
+
 function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string;
 var
   _result: string;
 begin
+  _result := EMPTY_STRING;
+
   if (condition) then
   begin
     _result := trueString;
