@@ -59,9 +59,9 @@ function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte
 function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
 function getWordWithBitSetted(const sourceValue: Cardinal; const bitIndex: Byte; const bitValue: Boolean): Cardinal;
 
-function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string = EMPTY_STRING): boolean;
 function checkIfIsEmptyOrNull(value: Variant): boolean;
-function myDefault(typeAsString: string): Variant;
+function myDefault(typeAsString: string = EMPTY_STRING): Variant;
 
 function getValidItalianTelephoneNumber(number: string): string;
 function getValidTelephoneNumber(number: string): string;
@@ -363,7 +363,7 @@ begin
   Result := (sourceValue or (1 shl bitIndex)) xor (Cardinal(not bitValue) shl bitIndex);
 end;
 
-function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string): boolean;
+function checkIfVariantTypeIsEmpty(value: Variant; typeAsString: string = EMPTY_STRING): boolean;
 var
   isEmpty: boolean;
 
@@ -384,29 +384,33 @@ begin
   end;
 end;
 
-function myDefault(typeAsString: string): Variant;
+function myDefault(typeAsString: string = EMPTY_STRING): Variant;
 var
   value: Variant;
 begin
   if typeAsString = 'string' then
   begin
     value := Default (string);
-  end
-  else if typeAsString = 'Integer' then
+  end;
+  if typeAsString = 'Integer' then
   begin
     value := Default (Integer);
-  end
-  else if typeAsString = 'Double' then
+  end;
+  if typeAsString = 'Double' then
   begin
     value := Default (Double);
-  end
-  else if typeAsString = 'Char' then
+  end;
+  if typeAsString = 'Char' then
   begin
     value := Default (Char);
-  end
-  else if typeAsString = 'Boolean' then
+  end;
+  if typeAsString = 'Boolean' then
   begin
     value := Default (Boolean);
+  end;
+  if (typeAsString = 'Variant') or (typeAsString = EMPTY_STRING) then
+  begin
+    value := Default (Variant);
   end;
 
   Result := value;
@@ -445,7 +449,7 @@ begin
     telephoneNumber := '+';
     for i := 2 to length(_number) do
     begin
-      if CharInSet(_number[i], ['0'..'9']) then
+      if CharInSet(_number[i], ['0' .. '9']) then
       begin
         telephoneNumber := telephoneNumber + _number[i];
       end;
@@ -475,7 +479,7 @@ begin
   end;
   for i := 2 to length(_number) do
   begin
-    if CharInSet(_number[i], ['0'..'9']) then
+    if CharInSet(_number[i], ['0' .. '9']) then
     begin
       telephoneNumber := telephoneNumber + _number[i];
     end;
