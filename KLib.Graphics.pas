@@ -44,7 +44,7 @@ uses
   RzDBCmbo,
 {$endif}
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
-  System.Classes;
+  System.Classes, System.Rtti;
 
 type
   TLabelLoading = class
@@ -106,7 +106,9 @@ procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; value: string);
 procedure setFormInCenterOfScreen(form: TForm);
 procedure setComponentInMiddlePosition(control: TControl);
 
-procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: boolean = true);
+procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = True);
+procedure setEnabledOnChildren(parent: TWinControl; enabledValue: Boolean = True);
+procedure setPropertyOnChildren(parent: TWinControl; propertyName: string; value: TValue);
 
 procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
 //!not include in realease!
@@ -143,10 +145,9 @@ procedure setDBComboBox(control: TRzDBComboBox; codeDescriptions: TArray<TCodeDe
 implementation
 
 uses
-  KLib.FileSystem, KLib.StringUtils, KLib.Generics, KLib.Validate,
-  RTTI,
+  System.SysUtils, System.Types, System.TypInfo,
   Winapi.Windows,
-  System.SysUtils, System.Types, System.TypInfo;
+  KLib.FileSystem, KLib.StringUtils, KLib.Generics, KLib.Validate;
 
 //    dxGDIPlusClasses,   todo keep version with devexpress and see the differences
 //!not include in release!
@@ -458,36 +459,58 @@ begin
 end;
 
 procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = True);
-var
-  i: Integer;
-  ctx: TRttiContext;
-  rttiType: TRttiType;
-  prop: TRttiProperty;
 begin
-  ctx := TRttiContext.Create;
+  setPropertyOnChildren(parent, 'ReadOnly', TValue.From<Boolean>(readOnlyValue));
+end;
+
+procedure setEnabledOnChildren(parent: TWinControl; enabledValue: Boolean = True);
+begin
+  setPropertyOnChildren(parent, 'Enabled', TValue.From<Boolean>(enabledValue));
+end;
+
+procedure setPropertyOnChildren(parent: TWinControl; propertyName: string; value: TValue);
+var
+  _index: Integer;
+  _childControl: TControl;
+  _childWinControl: TWinControl;
+  _rttiContext: TRttiContext;
+  _rttiType: TRttiType;
+  _rttiProperty: TRttiProperty;
+begin
+  _rttiContext := TRttiContext.Create;
   try
-    for i := 0 to parent.ControlCount - 1 do
+    for _index := 0 to parent.ControlCount - 1 do
     begin
-      if not(parent.Controls[i] is TWinControl) then
+      _childControl := parent.Controls[_index];
+
+      _rttiType := _rttiContext.GetType(_childControl.ClassType);
+      _rttiProperty := nil;
+
+      while (_rttiType <> nil) and (_rttiProperty = nil) do
       begin
-        Continue;
+        _rttiProperty := _rttiType.GetProperty(propertyName);
+        _rttiType := _rttiType.BaseType;
       end;
 
-      rttiType := ctx.GetType(parent.Controls[i].ClassType);
-      prop := rttiType.GetProperty('ReadOnly');
-      if (prop <> nil) and (prop.Visibility = mvPublished) and prop.IsWritable then
+      if (_rttiProperty <> nil) and
+        (_rttiProperty.Visibility = mvPublished) and
+        (_rttiProperty.IsWritable) then
       begin
-        prop.SetValue(parent.Controls[i], readOnlyValue);
+        _rttiProperty.SetValue(_childControl, value);
       end;
 
-      // recursion
-      if parent.Controls[i] is TWinControl then
+      if _childControl is TWinControl then
       begin
-        SetReadOnlyOnChildren(TWinControl(parent.Controls[i]), readOnlyValue);
+        _childWinControl := TWinControl(_childControl);
+        setPropertyOnChildren(
+          _childWinControl,
+          propertyName,
+          value
+          );
       end;
     end;
   finally
-    ctx.Free;
+    _rttiContext.free;
   end;
 end;
 
