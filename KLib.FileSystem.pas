@@ -57,6 +57,8 @@ procedure replaceTextInFile(oldText: string; newText: string; filename: string; 
   replaceFlags: TReplaceFlags = [rfReplaceAll]);
 function getTextFromFile(fileName: string): string;
 
+function getFileLastModified(const fileName: string): TDateTime;
+
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 function getFreeSpaceOnDrive(drive: char): int64;
 function getIndexOfDrive(drive: char): integer;
@@ -72,7 +74,7 @@ function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter:
 function getValidFullPath(fileName: string): string;
 function checkIfIsAPath(path: string): boolean;
 function getCombinedPath(path1: string; path2: string): string;
-function getTempfolderPath: string;
+function getTempFolderPath: string;
 
 function getParentDir(source: string): string;
 
@@ -282,6 +284,11 @@ begin
   Result := text;
 end;
 
+function getFileLastModified(const fileName: string): TDateTime;
+begin
+  Result := TFile.GetLastWriteTime(fileName);
+end;
+
 function checkIfThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64): boolean;
 var
   isSpaceAvailableOnDrive: boolean;
@@ -475,7 +482,7 @@ begin
   Result := TPath.Combine(path1, path2);
 end;
 
-function getTempfolderPath: string;
+function getTempFolderPath: string;
 var
   path: string;
 begin
