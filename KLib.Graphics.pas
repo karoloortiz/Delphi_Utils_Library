@@ -94,6 +94,15 @@ type
     procedure setPositionFromComponent(component: TControl);
   end;
 
+function getAlphaFromColor(color: LongWord): Byte;
+function getRedFromColor(color: LongWord): Byte;
+function getGreenFromColor(color: LongWord): Byte;
+function getBlueFromColor(color: LongWord): Byte;
+function getHexColor(color: LongWord): string;
+function getColorFromHex(const hex: string; alpha: Byte = 255): LongWord;
+
+function getTColorFromHex(const hex: string): TColor;
+
 function TColorToString(color: TColor): string;
 function RGBStringToTColor(colorRGB: string): TColor;
 
@@ -307,6 +316,72 @@ begin
   Self.position.left := _componentPositionInScreenCoordinates.X;
   Self.position.bottom := _componentPositionInScreenCoordinates.Y + Self.size.heightAsInteger;
   Self.position.right := _componentPositionInScreenCoordinates.X + Self.size.widthAsInteger;
+end;
+
+function getAlphaFromColor(color: LongWord): Byte;
+begin
+  Result := (color shr 24) and $ff;
+end;
+
+function getRedFromColor(color: LongWord): Byte;
+begin
+  Result := (color shr 16) and $ff;
+end;
+
+function getGreenFromColor(color: LongWord): Byte;
+begin
+  Result := (color shr 8) and $ff;
+end;
+
+function getBlueFromColor(color: LongWord): Byte;
+begin
+  Result := color and $ff;
+end;
+
+function getHexColor(color: LongWord): string;
+begin
+  Result := Format('#%.2X%.2X%.2X',
+    [getRedFromColor(color), getGreenFromColor(color), getBlueFromColor(color)]);
+end;
+
+function getColorFromHex(const hex: string; alpha: Byte = 255): LongWord;
+var
+  _r, _g, _b: Byte;
+  _hex: string;
+begin
+  _hex := StringReplace(hex, '#', '', []);
+
+  if Length(_hex) <> 6 then
+    raise Exception.Create('Hex color must be RRGGBB');
+
+  _r := StrToInt('$' + Copy(_hex, 1, 2));
+  _g := StrToInt('$' + Copy(_hex, 3, 2));
+  _b := StrToInt('$' + Copy(_hex, 5, 2));
+
+  Result :=
+    (LongWord(alpha) shl 24) or
+    (LongWord(_r) shl 16) or
+    (LongWord(_g) shl 8) or
+    LongWord(_b);
+end;
+
+function getTColorFromHex(const hex: string): TColor;
+var
+  _hex: string;
+  _r: Byte;
+  _g: Byte;
+  _b: Byte;
+begin
+  _hex := StringReplace(hex, '#', '', []);
+
+  if Length(_hex) <> 6 then
+    raise Exception.Create('Invalid HEX color format');
+
+  _r := StrToInt('$' + Copy(_hex, 1, 2));
+  _g := StrToInt('$' + Copy(_hex, 3, 2));
+  _b := StrToInt('$' + Copy(_hex, 5, 2));
+
+  Result := RGB(_r, _g, _b);
 end;
 
 function TColorToString(color: TColor): string;
