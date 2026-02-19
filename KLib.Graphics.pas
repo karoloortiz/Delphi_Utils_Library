@@ -43,6 +43,7 @@ uses
 {$ifdef KLIB_RAIZE}
   RzDBCmbo,
 {$endif}
+  SHDocVw,
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, Vcl.Dialogs, Vcl.Forms,
   System.Classes, System.Rtti;
 
@@ -119,8 +120,9 @@ procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = Tr
 procedure setEnabledOnChildren(parent: TWinControl; enabledValue: Boolean = True);
 procedure setPropertyOnChildren(parent: TWinControl; propertyName: string; value: TValue);
 
-procedure loadImgFileToTImage(img: TImage; pathImgFile: string); //todo keep version with devexpress and see the differences
-//!not include in realease!
+procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
+procedure loadSvgToTWebBrowser(webBrowser: TWebBrowser; fileName: string);
+procedure loadFileToTWebBrowser(webBrowser: TWebBrowser; fileName: string);
 
 function getImageAsAnsiString(fileName: string): AnsiString;
 
@@ -598,6 +600,8 @@ begin
   img.Picture := _img;
 end;
 
+//todo keep version with devexpress and see the differences
+//!not include in realease!
 //procedure loadImgFileToTImage(img: TImage; pathImgFile: string);
 //var
 //  _img: TdxSmartImage;
@@ -606,6 +610,20 @@ end;
 //  _img.LoadFromFile(pathImgFile);
 //  img.Picture.Graphic := _img;
 //end;
+
+procedure loadSvgToTWebBrowser(webBrowser: TWebBrowser; fileName: string);
+begin
+  loadFileToTWebBrowser(webBrowser, fileName);
+end;
+
+procedure loadFileToTWebBrowser(webBrowser: TWebBrowser; fileName: string);
+var
+  _url: string;
+begin
+  _url := 'file:///' + getPathInLinuxStyle(fileName);
+
+  webBrowser.Navigate(_url);
+end;
 
 function getImageAsAnsiString(fileName: string): AnsiString;
 var
