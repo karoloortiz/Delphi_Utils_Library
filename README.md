@@ -1,12 +1,14 @@
 # KLib - Modern Delphi Utility Library
 
-[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
-[![Delphi](https://img.shields.io/badge/Delphi-7%2B-red.svg)](https://www.embarcadero.com/products/delphi)
 [![Version](https://img.shields.io/badge/version-4.0-green.svg)](https://github.com/karoloortiz/Delphi_Utils_Library)
-![Express-like API](https://img.shields.io/badge/Express--like-REST%20API-green)
-  ![Async/Await](https://img.shields.io/badge/Async-Promises-blue)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
+[![Delphi](https://img.shields.io/badge/Delphi-XE7-red.svg)](https://www.embarcadero.com/products/delphi)
+![Express-like API](https://img.shields.io/badge/Express%20like%20Server%20REST%20API-blue)
+![Async-Await](https://img.shields.io/badge/Async%20Promises-blue)
+![Json Serialization](https://img.shields.io/badge/Json%20Serialization%20Deserialization-blue)
+![Template Engine](https://img.shields.io/badge/Template%20Engine-blue)
 
-A comprehensive utility library for Delphi providing **async/await patterns**, **database abstractions**, **Windows services**, **Http server Express.js - like**, **networking**, **Utils functions** and **UI components**.
+A comprehensive utility library for Delphi providing **async/await patterns**, **Json serialization/deserialization**, **database abstractions**, **Windows services**, **Http server Express.js - like**, **template engine**, **networking**, **Utils functions** and **UI components**.
 
 ---
 
@@ -19,10 +21,11 @@ A comprehensive utility library for Delphi providing **async/await patterns**, *
 - 🎨 **UI Components** - Ready-to-use VCL forms (Message, Wait, RTF, Presentation)
 - 📝 **Fluent String API** - Method chaining for string operations with C#-like extensions
 - 🧵 **Threading** - Enhanced thread management with events and callbacks
-- 📊 **JSON Serialization** - Attribute-based RTTI serialization with validation
+- 📊 **JSON Serialization and Deserialization** - Attribute-based RTTI with validation
 - 🔌 **Dependency Injection** - Lightweight DI container with singleton/transient lifetimes
 - 📅 **Date Range Utilities** - Advanced algorithms for splitting and processing date ranges
 - 🖼️ **Helper Extensions** - Class helpers for arrays, string lists, and UI controls
+- 📄 **Template Engine** - Jinja2-inspired template rendering with inheritance, macros, 48+ filters, autoescape, sandbox, and caching
 - 🗄️ **Database** - Coming soon: MySQL, SQLite, PostgreSQL unified interface
 
 ---
@@ -315,6 +318,56 @@ var repo := Container.Resolve<IRepository>;
 
 ---
 
+#### 10. Jinja2-Inspired Template Engine
+Full-featured template engine for generating HTML, emails, reports or any text output:
+```pascal
+uses KLib.Template;
+
+type
+  TOrder = record
+    customer: string;
+    items: TArray<TItem>;
+    total: Double;
+  end;
+
+var
+  _order: TOrder;
+begin
+  // Render from file (auto-cached after first call)
+  Result := TTemplate.renderFromFile<TOrder>('templates\order.html', _order);
+end;
+```
+
+**order.html:**
+```html
+<h1>Order for {{ customer }}</h1>
+<table>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.name | escape }}</td>
+    <td>{{ item.price | round }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<p>Total: {{ total | default(0) }}</p>
+```
+
+**Key features:**
+- **23 statement types**: `if/elif/else`, `for`, `set`, `macro`, `block/extends`, `include/import`, `switch/case`, `while`, `with`, `raw`, `compress`, `attempt/recover`, and more
+- **48+ built-in filters**: string, numeric, array, hash (md5/sha256), date, base64, and more
+- **Template inheritance**: `{% extends 'base.html' %}` + `{% block %}` + `{{ super() }}`
+- **Macros**: reusable components with default/named arguments
+- **Autoescape**: automatic HTML escaping with `| safe` bypass
+- **Sandbox mode**: restrict filesystem access, limit recursion and output
+- **Thread-safe**: MREW lock, multiple renders can execute in parallel
+- **Token caching**: files parsed once, re-evaluated with different data
+- **Custom filters**: register your own `string → string` or `TValue → TValue` filters
+- **Error reporting**: `ETemplateError` with template name, line and column
+
+See [KLib.Template.Guide.md](KLib.Template.Guide.md) for the full syntax reference.
+
+---
+
 ### Production-Ready Quality
 
 - ✅ **Memory Safe**: All resources properly managed with `FreeAndNil`
@@ -555,6 +608,16 @@ Clone repo with assets (git lfs), and add KLib.Assets.rc to your project.
 | `KLib.VC_Redist` | Visual C++ Redistributable |
 | `KLib.ZplPrinter` | ZPL printer support |
 
+### Template Engine
+| Unit | Description |
+|------|-------------|
+| `KLib.Template` | Public API — `render`, `renderFromFile`, configuration |
+| `KLib.Template.Lexer` | Tokenizer with custom delimiter support |
+| `KLib.Template.Evaluator` | Expression evaluator and statement processor |
+| `KLib.Template.Filters` | 48+ built-in filters and custom filter registry |
+| `KLib.Template.Cache` | Token cache with file modification tracking |
+| `KLib.Template.Exceptions` | `ETemplateError` with template name, line, column |
+
 ### Dependency Injection
 | Unit | Description |
 |------|-------------|
@@ -575,7 +638,7 @@ Explore the `examples/` directory for comprehensive implementations:
 
 ## 🛠️ Compatibility Matrix
 
-- **Delphi Versions:** Delphi 7 and later (tested up to Delphi 11.x)
+- **Delphi Versions:** Delphi XE7 and later (tested up to Delphi 11.x)
 - **Platforms:** Windows (Win32, Win64)
 - **Framework:** VCL (FireMonkey/FMX not supported)
 
