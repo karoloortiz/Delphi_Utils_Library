@@ -57,6 +57,7 @@ function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
 function getStringFromTValue(const value: TValue): string;
 function checkIfTValueIsTruthy(const value: TValue): Boolean;
 function getFieldValue(const data: TValue; const fieldName: string): TValue;
+function resolveFieldPath(const data: TValue; const path: string): TValue;
 
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
@@ -470,6 +471,35 @@ begin
           end;
         end;
       end;
+    end;
+  end;
+end;
+
+function resolveFieldPath(const data: TValue; const path: string): TValue;
+var
+  _dotPos: Integer;
+  _remaining: string;
+  _segment: string;
+begin
+  _remaining := path;
+  Result := data;
+  while _remaining <> '' do
+  begin
+    _dotPos := Pos('.', _remaining);
+    if _dotPos > 0 then
+    begin
+      _segment := Copy(_remaining, 1, _dotPos - 1);
+      _remaining := Copy(_remaining, _dotPos + 1, MaxInt);
+    end
+    else
+    begin
+      _segment := _remaining;
+      _remaining := '';
+    end;
+    Result := getFieldValue(Result, _segment);
+    if Result.IsEmpty then
+    begin
+      Exit;
     end;
   end;
 end;
