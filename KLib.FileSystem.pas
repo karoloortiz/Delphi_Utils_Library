@@ -43,6 +43,7 @@ uses
   Vcl.Imaging.pngimage,
   System.SysUtils, System.Classes;
 
+procedure copyFile(sourceFileName: string; destinationFileName: string; isOverWriteEnabled: boolean = false);
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 procedure deleteFilesInDirWithStartingFileName(dirName: string; startingFileName: string; fileType: string = EMPTY_STRING);
 procedure createEmptyFileIfNotExists(filename: string);
@@ -114,6 +115,11 @@ uses
   KLib.StringUtils,
   System.Zip, System.IOUtils, System.StrUtils,
   System.NetEncoding;
+
+procedure copyFile(sourceFileName: string; destinationFileName: string; isOverWriteEnabled: boolean = false);
+begin
+  TFile.Copy(sourceFileName, destinationFileName, isOverWriteEnabled);
+end;
 
 procedure deleteFilesInDir(pathDir: string; const filesToKeep: array of string);
 var
