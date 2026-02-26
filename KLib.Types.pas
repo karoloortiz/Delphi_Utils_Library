@@ -128,7 +128,7 @@ type
     procedure clear;
   end;
 
-  TFTPCredentials = record
+  TFtpCredentials = record
     credentials: TCredentials;
     server: string;
     pathFTPDir: string;
@@ -265,6 +265,10 @@ type
 
   TArrayOfWord = array of Word;
 
+  TSafeString = record
+    value: string;
+  end;
+
   EExit = class(EAbort);
   //####--EXAMPLE USE
   //    raise EExit.Create('force exit in reject procedure');
@@ -368,9 +372,9 @@ begin
   Self := EMPTY;
 end;
 
-procedure TFTPCredentials.clear;
+procedure TFtpCredentials.clear;
 const
-  EMPTY: TFTPCredentials = ();
+  EMPTY: TFtpCredentials = ();
 begin
   Self := EMPTY;
 end;

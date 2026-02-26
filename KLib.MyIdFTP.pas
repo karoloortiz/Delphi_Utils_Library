@@ -46,7 +46,7 @@ type
   TMyIdFTP = class(TIdFTP)
   public
     defaultDir: string;
-    constructor create(FTPCredentials: TFTPCredentials); overload;
+    constructor create(ftpCredentials: TFtpCredentials); overload;
     procedure Connect; reintroduce;
     procedure put(sourceFileName: string; targetFileName: string; force: boolean = NOT_FORCE_OVERWRITE); overload;
     procedure deleteFileIfExists(filename: string);
@@ -62,9 +62,9 @@ uses
   IdFTPCommon,
   System.Classes;
 
-constructor TMyIdFTP.create(FTPCredentials: TFTPCredentials);
+constructor TMyIdFTP.create(ftpCredentials: TFtpCredentials);
 begin
-  Self := getValidTMyIdFTP(FTPCredentials);
+  Self := getValidTMyIdFTP(ftpCredentials);
 end;
 
 procedure TMyIdFTP.Connect;

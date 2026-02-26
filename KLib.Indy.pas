@@ -52,11 +52,19 @@ procedure TCPPrintFilesInDirWithStartingFileName(hostPort: THostPort;
 procedure TCPPrintFromFile(hostPort: THostPort; fileName: string);
 procedure TCPPrintText(hostPort: THostPort; text: string);
 
-procedure putFtpFile(FTPCredentials: TFTPCredentials;
-  sourceFileName: string; targetFileName: string; isOverwriteEnabledForced: boolean = NOT_FORCE_OVERWRITE);
-function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
-function getValidTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
-function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+procedure putFtpFile(ftpCredentials: TFtpCredentials;
+  sourceFileName: string; isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE); overload;
+procedure putFtpFile(ftpCredentials: TFtpCredentials;
+  sourceFileName: string; targetFileName: string;
+  isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE); overload;
+procedure putFtpFiles(ftpCredentials: TFtpCredentials;
+  sourceFileNames: TStringList; isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE); overload;
+procedure putFtpFiles(ftpCredentials: TFtpCredentials;
+  sourceFileNames: TStringList; targetFileNames: TStringList;
+  isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE); overload;
+function checkFtpCredentials(ftpCredentials: TFtpCredentials): boolean;
+function getValidTMyIdFTP(ftpCredentials: TFtpCredentials): TMyIdFTP;
+function getTMyIdFTP(ftpCredentials: TFtpCredentials): TMyIdFTP;
 
 procedure sendEmail(settings: TSMTPSettings; email: TEmailMessage); overload;
 procedure sendEmail(smtp: TIdSMTP; email: TEmailMessage); overload;
@@ -143,34 +151,81 @@ begin
   end;
 end;
 
-procedure putFtpFile(FTPCredentials: TFTPCredentials;
-  sourceFileName: string; targetFileName: string; isOverwriteEnabledForced: boolean = NOT_FORCE_OVERWRITE);
+procedure putFtpFile(ftpCredentials: TFtpCredentials;
+  sourceFileName: string; isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE);
+begin
+  putFtpFile(ftpCredentials, sourceFileName, EMPTY_STRING, isOverwriteEnabled);
+end;
+
+procedure putFtpFile(ftpCredentials: TFtpCredentials;
+  sourceFileName: string; targetFileName: string;
+  isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE);
 var
   _connection: TMyIdFTP;
+  _targetFileName: string;
 begin
-  _connection := getValidTMyIdFTP(FTPCredentials);
+  _targetFileName := targetFileName;
+  if _targetFileName = EMPTY_STRING then
+  begin
+    _targetFileName := ExtractFileName(sourceFileName);
+  end;
+
+  _connection := getValidTMyIdFTP(ftpCredentials);
   try
     _connection.Connect;
-    _connection.put(sourceFileName, targetFileName, isOverwriteEnabledForced);
+    _connection.put(sourceFileName, _targetFileName, isOverwriteEnabled);
   finally
-    begin
-      FreeAndNil(_connection);
-    end;
+    FreeAndNil(_connection);
   end;
 end;
 
-function checkFTPCredentials(FTPCredentials: TFTPCredentials): boolean;
+procedure putFtpFiles(ftpCredentials: TFtpCredentials;
+  sourceFileNames: TStringList; isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE);
+begin
+  putFtpFiles(ftpCredentials, sourceFileNames, nil, isOverwriteEnabled);
+end;
+
+procedure putFtpFiles(ftpCredentials: TFtpCredentials;
+  sourceFileNames: TStringList; targetFileNames: TStringList;
+  isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE);
+var
+  _connection: TMyIdFTP;
+  _targetFileName: string;
+  i: integer;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    for i := 0 to sourceFileNames.Count - 1 do
+    begin
+      if Assigned(targetFileNames) and (i < targetFileNames.Count)
+        and (targetFileNames[i] <> EMPTY_STRING) then
+      begin
+        _targetFileName := targetFileNames[i];
+      end
+      else
+      begin
+        _targetFileName := ExtractFileName(sourceFileNames[i]);
+      end;
+      _connection.put(sourceFileNames[i], _targetFileName, isOverwriteEnabled);
+    end;
+  finally
+    FreeAndNil(_connection);
+  end;
+end;
+
+function checkFtpCredentials(ftpCredentials: TFtpCredentials): boolean;
 var
   _connection: TMyIdFTP;
   _result: boolean;
 begin
   _result := true;
-  _connection := getTMyIdFTP(FTPCredentials);
+  _connection := getTMyIdFTP(ftpCredentials);
   try
     _connection.Connect;
-    if FTPCredentials.pathFTPDir <> EMPTY_STRING then
+    if ftpCredentials.pathFTPDir <> EMPTY_STRING then
     begin
-      _connection.ChangeDir(FTPCredentials.pathFTPDir);
+      _connection.ChangeDir(ftpCredentials.pathFTPDir);
     end;
   except
     on E: Exception do
@@ -184,28 +239,28 @@ begin
   Result := _result;
 end;
 
-function getValidTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+function getValidTMyIdFTP(ftpCredentials: TFTPCredentials): TMyIdFTP;
 var
   connection: TMyIdFTP;
 begin
-  validateFTPCredentials(FTPCredentials);
-  connection := getTMyIdFTP(FTPCredentials);
+  validateFtpCredentials(ftpCredentials);
+  connection := getTMyIdFTP(ftpCredentials);
   Result := connection;
 end;
 
-function getTMyIdFTP(FTPCredentials: TFTPCredentials): TMyIdFTP;
+function getTMyIdFTP(ftpCredentials: TFtpCredentials): TMyIdFTP;
 var
   connection: TMyIdFTP;
 begin
-  validateRequiredFTPProperties(FTPCredentials);
+  validateRequiredFtpProperties(ftpCredentials);
   connection := TMyIdFTP.Create(nil);
   with connection do
   begin
-    Host := FTPCredentials.server;
-    Username := FTPCredentials.credentials.username;
-    Password := FTPCredentials.credentials.password;
-    Port := FTPCredentials.port;
-    TransferType := TIdFTPTransferType(FTPCredentials.transferType);
+    Host := ftpCredentials.server;
+    Username := ftpCredentials.credentials.username;
+    Password := ftpCredentials.credentials.password;
+    Port := ftpCredentials.port;
+    TransferType := TIdFTPTransferType(ftpCredentials.transferType);
   end;
 
   if connection.Port = 0 then
@@ -220,7 +275,7 @@ begin
   end;
   connection.Passive := true;
 
-  connection.defaultDir := FTPCredentials.pathFTPDir;
+  connection.defaultDir := ftpCredentials.pathFTPDir;
 
   Result := connection;
 end;
@@ -243,6 +298,7 @@ procedure sendEmail(smtp: TIdSMTP; email: TEmailMessage);
 var
   _mail: TIdMessage;
   _bodyPart: TIdText;
+  i: Integer;
 begin
   _mail := TIdMessage.Create(nil);
   try
@@ -251,17 +307,17 @@ begin
     _mail.From.Address := email.FromAddress;
     _mail.Subject := email.Subject;
 
-    for var i := 0 to Length(email.ToAddresses) - 1 do
+    for i := 0 to Length(email.ToAddresses) - 1 do
     begin
       validateThatEmailIsValid(email.ToAddresses[i]);
       _mail.Recipients.Add.Address := email.ToAddresses[i];
     end;
-    for var i := 0 to Length(email.CcAddresses) - 1 do
+    for i := 0 to Length(email.CcAddresses) - 1 do
     begin
       validateThatEmailIsValid(email.CcAddresses[i]);
       _mail.CCList.Add.Address := email.CcAddresses[i];
     end;
-    for var i := 0 to Length(email.BccAddresses) - 1 do
+    for i := 0 to Length(email.BccAddresses) - 1 do
     begin
       validateThatEmailIsValid(email.BccAddresses[i]);
       _mail.BCCList.Add.Address := email.BccAddresses[i];
@@ -278,7 +334,7 @@ begin
     end;
     _bodyPart.Body.Text := email.Body + sLineBreak + email.Signature;
 
-    for var i := 0 to Length(email.Attachments) - 1 do
+    for i := 0 to Length(email.Attachments) - 1 do
     begin
       validateThatFileExists(email.Attachments[i]);
       TIdAttachmentFile.Create(_mail.MessageParts, email.Attachments[i]);

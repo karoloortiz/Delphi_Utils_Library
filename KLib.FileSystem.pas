@@ -106,7 +106,7 @@ function getResourceAsStream(resource: TResource): TResourceStream;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 
-function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
+function checkRequiredFtpProperties(ftpCredentials: TFtpCredentials): boolean;
 
 implementation
 
@@ -797,12 +797,12 @@ begin
   end;
 end;
 
-function checkRequiredFTPProperties(FTPCredentials: TFTPCredentials): boolean;
+function checkRequiredFtpProperties(ftpCredentials: TFtpCredentials): boolean;
 begin
-  Result := (FTPCredentials.server <> EMPTY_STRING)
-    and (FTPCredentials.credentials.username <> EMPTY_STRING)
-    and (FTPCredentials.credentials.password <> EMPTY_STRING)
-    and (FTPCredentials.port >= 0);
+  Result := (ftpCredentials.server <> EMPTY_STRING)
+    and (ftpCredentials.credentials.username <> EMPTY_STRING)
+    and (ftpCredentials.credentials.password <> EMPTY_STRING)
+    and (ftpCredentials.port >= 0);
 end;
 
 initialization

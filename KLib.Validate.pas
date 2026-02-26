@@ -70,8 +70,8 @@ procedure validateThatAddressIsNotLocalhost(address: string; errMsg: string = 'T
 procedure validateThatWindowsGroupOrUserExists(windowsGroupOrUser: string; errMsg: string = 'Not exists in Windows Groups/Users.');
 procedure validateThatWindowsGroupOrUserNotExists(windowsGroupOrUser: string; errMsg: string = 'Already exists in Windows Groups/Users.');
 
-procedure validateFTPCredentials(FTPCredentials: TFTPCredentials; errMsg: string = 'Invalid FTP credentials.');
-procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials; errMsg: string = 'FTP credentials were not being fully specified.');
+procedure validateFtpCredentials(ftpCredentials: TFtpCredentials; errMsg: string = 'Invalid FTP credentials.');
+procedure validateRequiredFtpProperties(ftpCredentials: TFtpCredentials; errMsg: string = 'FTP credentials were not being fully specified.');
 
 procedure validateThatThereIsSpaceAvailableOnDrive(drive: char; requiredSpaceInBytes: int64; errMsg: string = 'There is not enough space available on the Drive.');
 
@@ -311,17 +311,17 @@ begin
   end;
 end;
 
-procedure validateFTPCredentials(FTPCredentials: TFTPCredentials; errMsg: string = 'Invalid FTP credentials.');
+procedure validateFtpCredentials(ftpCredentials: TFtpCredentials; errMsg: string = 'Invalid FTP credentials.');
 begin
-  if not checkFTPCredentials(FTPCredentials) then
+  if not checkFtpCredentials(ftpCredentials) then
   begin
     raise Exception.Create(errMsg);
   end;
 end;
 
-procedure validateRequiredFTPProperties(FTPCredentials: TFTPCredentials; errMsg: string = 'FTP credentials were not being fully specified.');
+procedure validateRequiredFtpProperties(ftpCredentials: TFtpCredentials; errMsg: string = 'FTP credentials were not being fully specified.');
 begin
-  if not checkRequiredFTPProperties(FTPCredentials) then
+  if not checkRequiredFtpProperties(ftpCredentials) then
   begin
     raise Exception.Create(errMsg);
   end;
