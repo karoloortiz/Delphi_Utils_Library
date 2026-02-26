@@ -54,6 +54,10 @@ function getDefaultTValue(AType: TRttiType): TValue;
 
 function checkIfTValueIsEmpty(const AValue: TValue): Boolean;
 
+function getStringFromTValue(const value: TValue): string;
+function checkIfTValueIsTruthy(const value: TValue): Boolean;
+function getFieldValue(const data: TValue; const fieldName: string): TValue;
+
 function getBitValueOfWord(const sourceValue: Cardinal; const bitIndex: Byte): Boolean;
 function getWordWithBitEnabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
 function getWordWithBitDisabled(const sourceValue: Cardinal; const bitIndex: Byte): Cardinal;
@@ -336,6 +340,137 @@ begin
       Result := AValue.AsOrdinal < 0;
   else
     Result := False;
+  end;
+end;
+
+function getStringFromTValue(const value: TValue): string;
+begin
+  if value.IsEmpty then
+  begin
+    Result := '';
+  end
+  else
+  begin
+    case value.Kind of
+      tkString, tkLString, tkWString, tkUString:
+        Result := value.AsString;
+      tkInteger, tkInt64:
+        Result := IntToStr(value.AsInt64);
+      tkFloat:
+        Result := FloatToStr(value.AsExtended);
+      tkEnumeration:
+        if value.TypeInfo = TypeInfo(Boolean) then
+        begin
+          if value.AsBoolean then
+            Result := 'true'
+          else
+            Result := 'false';
+        end
+        else
+          Result := value.ToString;
+    else
+      Result := value.ToString;
+    end;
+  end;
+end;
+
+function checkIfTValueIsTruthy(const value: TValue): Boolean;
+begin
+  if value.IsEmpty then
+  begin
+    Result := False;
+  end
+  else
+  begin
+    case value.Kind of
+      tkString, tkLString, tkWString, tkUString:
+        Result := value.AsString <> '';
+      tkInteger, tkInt64:
+        Result := value.AsInt64 <> 0;
+      tkFloat:
+        Result := value.AsExtended <> 0;
+      tkEnumeration:
+        if value.TypeInfo = TypeInfo(Boolean) then
+          Result := value.AsBoolean
+        else
+          Result := True;
+      tkDynArray:
+        Result := value.GetArrayLength > 0;
+      tkClass:
+        Result := (not value.IsEmpty) and (value.AsObject <> nil);
+    else
+      Result := True;
+    end;
+  end;
+end;
+
+function getFieldValue(const data: TValue; const fieldName: string): TValue;
+var
+  _ctx: TRttiContext;
+  _rttiType: TRttiType;
+  _field: TRttiField;
+  _prop: TRttiProperty;
+  _lowerName: string;
+  _found: Boolean;
+  _dict: TDictionary<string, TValue>;
+begin
+  _lowerName := LowerCase(fieldName);
+  _found := False;
+  Result := TValue.Empty;
+  if data.Kind = tkRecord then
+  begin
+    _rttiType := _ctx.GetType(data.TypeInfo);
+    for _field in _rttiType.GetFields do
+    begin
+      if not _found and (LowerCase(_field.Name) = _lowerName) then
+      begin
+        Result := _field.GetValue(data.GetReferenceToRawData);
+        _found := True;
+      end;
+    end;
+  end
+  else if data.Kind = tkClass then
+  begin
+    if not (data.IsEmpty or (data.AsObject = nil)) then
+    begin
+      // Check TDictionary<string, TValue> first (used by dict literals and namespace)
+      if data.AsObject is TDictionary<string, TValue> then
+      begin
+        _dict := TDictionary<string, TValue>(data.AsObject);
+        if _dict.TryGetValue(_lowerName, Result) then
+        begin
+          _found := True;
+        end;
+      end;
+      if not _found then
+      begin
+        _rttiType := _ctx.GetType(data.TypeInfo);
+        for _field in _rttiType.GetFields do
+        begin
+          if not _found and (LowerCase(_field.Name) = _lowerName) then
+          begin
+            Result := _field.GetValue(data.AsObject);
+            _found := True;
+          end;
+        end;
+      end;
+      if not _found then
+      begin
+        for _prop in _rttiType.GetProperties do
+        begin
+          if not _found and (LowerCase(_prop.Name) = _lowerName) then
+          begin
+            try
+              Result := _prop.GetValue(data.AsObject);
+              _found := True;
+            except
+              on E: Exception do
+                ;
+            end;
+          end;
+        end;
+      end;
+    end;
   end;
 end;
 
