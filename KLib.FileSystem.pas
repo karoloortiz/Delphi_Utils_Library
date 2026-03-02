@@ -75,6 +75,7 @@ function checkIfIsSubDir(subDir: string; mainDir: string; trailingPathDelimiter:
 function getValidFullPath(fileName: string): string;
 function checkIfIsAPath(path: string): boolean;
 function getCombinedPath(path1: string; path2: string): string;
+function getTempFileName: string;
 function getTempFolderPath: string;
 
 function getParentDir(source: string): string;
@@ -86,6 +87,8 @@ procedure appendToFileInNewLine(fileName: string; text: string; forceCreationFil
 procedure appendToFile(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveBase64ToFile(text: string; fileName: string);
+function saveToFileInTempFileName(text: string): string; overload;
+function saveToFileInTempFileName(text: string; encoding: TEncoding): string; overload;
 procedure saveToFile(text: string; fileName: string); overload;
 procedure saveToFile(text: string; fileName: string; encoding: TEncoding;
   forceOverwrite: boolean = FORCE_OVERWRITE); overload;
@@ -488,6 +491,11 @@ begin
   Result := TPath.Combine(path1, path2);
 end;
 
+function getTempFileName: string;
+begin
+  Result := getCombinedPath(getTempFolderPath, TPath.GetRandomFileName);
+end;
+
 function getTempFolderPath: string;
 var
   path: string;
@@ -613,6 +621,21 @@ begin
   finally
     FreeAndNil(_stream);
   end;
+end;
+
+function saveToFileInTempFileName(text: string): string;
+begin
+  Result := saveToFileInTempFileName(text, TEncoding.UTF8);
+end;
+
+function saveToFileInTempFileName(text: string; encoding: TEncoding): string;
+var
+  tempFileName: string;
+begin
+  tempFileName := getTempFileName;
+  saveToFile(text, tempFileName, encoding);
+
+  Result := tempFileName;
 end;
 
 procedure saveToFile(text: string; fileName: string);
