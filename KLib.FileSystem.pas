@@ -87,12 +87,13 @@ procedure appendToFileInNewLine(fileName: string; text: string; forceCreationFil
 procedure appendToFile(fileName: string; text: string; forceCreationFile: boolean = NOT_FORCE;
   forceAppendInNewLine: boolean = NOT_FORCE); overload;
 procedure saveBase64ToFile(text: string; fileName: string);
-function saveToFileInTempFileName(text: string): string; overload;
-function saveToFileInTempFileName(text: string; encoding: TEncoding): string; overload;
+function saveToFileInTempFileName(text: string; ext: string = EMPTY_STRING): string; overload;
+function saveToFileInTempFileName(text: string; encoding: TEncoding; ext: string = EMPTY_STRING): string; overload;
 procedure saveToFile(text: string; fileName: string); overload;
 procedure saveToFile(text: string; fileName: string; encoding: TEncoding;
   forceOverwrite: boolean = FORCE_OVERWRITE); overload;
 
+function normalizeExtension(const ext: string): string;
 function checkMD5File(fileName: string; MD5: string): boolean;
 
 procedure unzipResource(nameResource: string; destinationDir: string);
@@ -623,16 +624,16 @@ begin
   end;
 end;
 
-function saveToFileInTempFileName(text: string): string;
+function saveToFileInTempFileName(text: string; ext: string = EMPTY_STRING): string;
 begin
-  Result := saveToFileInTempFileName(text, TEncoding.UTF8);
+  Result := saveToFileInTempFileName(text, TEncoding.UTF8, ext);
 end;
 
-function saveToFileInTempFileName(text: string; encoding: TEncoding): string;
+function saveToFileInTempFileName(text: string; encoding: TEncoding; ext: string = EMPTY_STRING): string;
 var
   tempFileName: string;
 begin
-  tempFileName := getTempFileName;
+  tempFileName := getTempFileName + normalizeExtension(ext);
   saveToFile(text, tempFileName, encoding);
 
   Result := tempFileName;
@@ -660,6 +661,24 @@ begin
     _stringList.SaveToFile(fileName, encoding);
   finally
     FreeAndNil(_stringList);
+  end;
+end;
+
+function normalizeExtension(const ext: string): string;
+var
+  cleanExt: string;
+begin
+  cleanExt := Trim(ext);
+
+  while (cleanExt <> '') and (cleanExt[1] = '.') do
+  begin
+    Delete(cleanExt, 1, 1);
+  end;
+
+  Result := '';
+  if cleanExt <> '' then
+  begin
+    Result := '.' + cleanExt;
   end;
 end;
 
