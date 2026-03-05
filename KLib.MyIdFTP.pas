@@ -52,6 +52,7 @@ type
     procedure deleteFileIfExists(filename: string);
     procedure makeDirIfNotExists(dirName: string);
     function checkIfFileExists(filename: string): boolean;
+    function checkIfDirExists(dirName: string): boolean;
     destructor Destroy; overload; override;
   end;
 
@@ -59,7 +60,7 @@ implementation
 
 uses
   KLib.Indy, KLib.Validate,
-  IdFTPCommon,
+  IdFTPCommon, IdFTPList,
   System.Classes;
 
 constructor TMyIdFTP.create(ftpCredentials: TFtpCredentials);
@@ -101,30 +102,54 @@ end;
 
 procedure TMyIdFTP.makeDirIfNotExists(dirName: string);
 var
-  _existsFile: boolean;
+  _existsDir: boolean;
 begin
-  _existsFile := checkIfFileExists(dirName);
-  if not _existsFile then
+  _existsDir := checkIfDirExists(dirName);
+  if not _existsDir then
   begin
     MakeDir(dirName);
   end;
 end;
 
+//NOTE: List('*', false) forces NLST command which supports wildcards.
+//  List with ADetails=true and UseMLIS=true sends MLSD which does NOT accept file masks.
+//  ref: https://stackoverflow.com/questions/30867501/delphi-bug-in-indy-ftp-list-method
 function TMyIdFTP.checkIfFileExists(filename: string): boolean;
 var
-  existsFile: boolean;
-  i: integer;
+  _existsFile: boolean;
+  _i: integer;
 begin
-  List('*', false); //TODO https://stackoverflow.com/questions/30867501/delphi-bug-in-indy-ftp-list-method
+  List('*', false);
 
-  existsFile := false;
-  i := 0;
-  while not existsFile and (i <= DirectoryListing.Count - 1) do
+  _existsFile := false;
+  _i := 0;
+  while not _existsFile and (_i <= DirectoryListing.Count - 1) do
   begin
-    existsFile := DirectoryListing[i].FileName = fileName;
-    inc(i);
+    _existsFile := (DirectoryListing[_i].FileName = fileName)
+      and (DirectoryListing[_i].ItemType = ditFile);
+    inc(_i);
   end;
-  result := existsFile;
+
+  Result := _existsFile;
+end;
+
+function TMyIdFTP.checkIfDirExists(dirName: string): boolean;
+var
+  _existsDir: boolean;
+  _i: integer;
+begin
+  List('*', false);
+
+  _existsDir := false;
+  _i := 0;
+  while not _existsDir and (_i <= DirectoryListing.Count - 1) do
+  begin
+    _existsDir := (DirectoryListing[_i].FileName = dirName)
+      and (DirectoryListing[_i].ItemType = ditDirectory);
+    inc(_i);
+  end;
+
+  Result := _existsDir;
 end;
 
 destructor TMyIdFTP.Destroy;

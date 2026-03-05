@@ -62,6 +62,11 @@ procedure putFtpFiles(ftpCredentials: TFtpCredentials;
 procedure putFtpFiles(ftpCredentials: TFtpCredentials;
   sourceFileNames: TStringList; targetFileNames: TStringList;
   isOverwriteEnabled: boolean = NOT_FORCE_OVERWRITE); overload;
+procedure deleteFtpFile(ftpCredentials: TFtpCredentials; fileName: string);
+procedure deleteFtpFileIfExists(ftpCredentials: TFtpCredentials; fileName: string);
+procedure makeFtpDirIfNotExists(ftpCredentials: TFtpCredentials; dirName: string);
+function checkIfFtpFileExists(ftpCredentials: TFtpCredentials; fileName: string): boolean;
+function checkIfFtpDirExists(ftpCredentials: TFtpCredentials; dirName: string): boolean;
 function checkFtpCredentials(ftpCredentials: TFtpCredentials): boolean;
 function getValidTMyIdFTP(ftpCredentials: TFtpCredentials): TMyIdFTP;
 function getTMyIdFTP(ftpCredentials: TFtpCredentials): TMyIdFTP;
@@ -212,6 +217,77 @@ begin
   finally
     FreeAndNil(_connection);
   end;
+end;
+
+procedure deleteFtpFile(ftpCredentials: TFtpCredentials; fileName: string);
+var
+  _connection: TMyIdFTP;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    _connection.Delete(fileName);
+  finally
+    FreeAndNil(_connection);
+  end;
+end;
+
+procedure deleteFtpFileIfExists(ftpCredentials: TFtpCredentials; fileName: string);
+var
+  _connection: TMyIdFTP;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    _connection.deleteFileIfExists(fileName);
+  finally
+    FreeAndNil(_connection);
+  end;
+end;
+
+procedure makeFtpDirIfNotExists(ftpCredentials: TFtpCredentials; dirName: string);
+var
+  _connection: TMyIdFTP;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    _connection.makeDirIfNotExists(dirName);
+  finally
+    FreeAndNil(_connection);
+  end;
+end;
+
+function checkIfFtpFileExists(ftpCredentials: TFtpCredentials; fileName: string): boolean;
+var
+  _connection: TMyIdFTP;
+  _result: boolean;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    _result := _connection.checkIfFileExists(fileName);
+  finally
+    FreeAndNil(_connection);
+  end;
+
+  Result := _result;
+end;
+
+function checkIfFtpDirExists(ftpCredentials: TFtpCredentials; dirName: string): boolean;
+var
+  _connection: TMyIdFTP;
+  _result: boolean;
+begin
+  _connection := getValidTMyIdFTP(ftpCredentials);
+  try
+    _connection.Connect;
+    _result := _connection.checkIfDirExists(dirName);
+  finally
+    FreeAndNil(_connection);
+  end;
+
+  Result := _result;
 end;
 
 function checkFtpCredentials(ftpCredentials: TFtpCredentials): boolean;
