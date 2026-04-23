@@ -154,7 +154,7 @@ end;
 procedure TSQLStringHelper.paramByNameAsNull(paramName: string;
   caseSensitive: boolean = NOT_CASE_SENSITIVE);
 begin
-  setParamAsString(paramName, 'NULL', caseSensitive);
+  setParamAsString(paramName, 'NULL', caseSensitive, ENABLE_SQL_SEPARATORS);
 end;
 
 procedure TSQLStringHelper.setParamAsDoubleQuotedString(
