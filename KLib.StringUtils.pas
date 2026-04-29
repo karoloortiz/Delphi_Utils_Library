@@ -50,6 +50,8 @@ function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;
 function getEscapedHTMLString(mainString: string): string;
 function getEscapedXMLString(mainString: string): string;
 function getEscapedJSONString(mainString: string): string;
+function getMySQLDoubleQuotedString(mainString: string): string;
+function getMySQLSingleQuotedString(mainString: string): string;
 function getDoubleQuotedString(mainString: string): string;
 function getSingleQuotedString(mainString: string): string;
 function getQuotedString(mainString: string; quoteCharacter: Char): string;
@@ -139,6 +141,16 @@ begin
     ['\', #39, #34, #0, #10, #13, #26],
     ['\\', '\'#39, '\'#34, '\0', '\n', '\r', '\Z'],
     [rfReplaceAll]);
+end;
+
+function getMySQLDoubleQuotedString(mainString: string): string;
+begin
+  Result := '"' + getEscapedMySQLString(mainString) + '"';
+end;
+
+function getMySQLSingleQuotedString(mainString: string): string;
+begin
+  Result := '''' + getEscapedMySQLString(mainString) + '''';
 end;
 
 function getHTTPGetEncodedUrl(url: string; paramList: TStringList): string;

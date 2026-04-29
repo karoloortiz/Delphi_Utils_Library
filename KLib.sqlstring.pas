@@ -166,7 +166,7 @@ procedure TSQLStringHelper.setParamAsDoubleQuotedString(
 var
   _doubleQuotedValue: string;
 begin
-  _doubleQuotedValue := getDoubleQuotedString(value);
+  _doubleQuotedValue := getMySQLDoubleQuotedString(value);
   setParamAsString(paramName, _doubleQuotedValue, caseSensitive, isSQLSeparatorsEnabled);
 end;
 
@@ -182,6 +182,7 @@ var
   _param: string;
   _pattern: string;
   _flags: string;
+  _safeReplacement: string;
   _regex: TRegEx;
 begin
   _param := trim(paramName);
@@ -207,7 +208,9 @@ begin
     end;
     _pattern := '(?<!\w)' + TRegEx.Escape(_param) + '(?!\w)';
     _regex := TRegEx.Create(_flags + _pattern);
-    Self := _regex.Replace(Self, value);
+    _safeReplacement := StringReplace(value, '\', '\\', [rfReplaceAll]);
+    _safeReplacement := StringReplace(_safeReplacement, '$', '$$', [rfReplaceAll]);
+    Self := _regex.Replace(Self, _safeReplacement);
   end;
   if (not isSQLSeparatorsEnabled) then
   begin
