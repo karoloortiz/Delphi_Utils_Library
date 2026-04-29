@@ -887,6 +887,7 @@ var
   _keyValue, _valueValue: TValue;
   _jsonObject: TJSONObject;
   _jsonPair: TJSONPair;
+  _jsonKeyString: TJSONString;
 begin
   case TargetType.TypeKind of
     tkInteger:
@@ -998,7 +999,12 @@ begin
               begin
                 _jsonPair := _jsonObject.Pairs[i];
 
-                _keyValue := JSONToTValue(TJSONString.Create(_jsonPair.JsonString.Value), _keyType);
+                _jsonKeyString := TJSONString.Create(_jsonPair.JsonString.Value);
+                try
+                  _keyValue := JSONToTValue(_jsonKeyString, _keyType);
+                finally
+                  _jsonKeyString.Free;
+                end;
 
                 _valueValue := JSONToTValue(_jsonPair.JsonValue, _valueType);
 
