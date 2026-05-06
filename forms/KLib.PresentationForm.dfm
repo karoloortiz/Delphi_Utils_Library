@@ -1,8 +1,8 @@
-object Presentation: TPresentation
+object PresentationForm: TPresentationForm
   Left = 0
   Top = 0
   BorderStyle = bsToolWindow
-  Caption = 'Presentation'
+  Caption = 'PresentationForm'
   ClientHeight = 693
   ClientWidth = 817
   Color = clWhite
@@ -58,7 +58,7 @@ object Presentation: TPresentation
     object lbl_subtitle: TLabel
       Left = 1
       Top = 84
-      Width = 118
+      Width = 815
       Height = 35
       Align = alTop
       Alignment = taCenter
@@ -71,11 +71,12 @@ object Presentation: TPresentation
       ParentFont = False
       Transparent = False
       StyleElements = []
+      ExplicitWidth = 118
     end
     object lbl_title: TLabel
       Left = 1
       Top = 26
-      Width = 73
+      Width = 815
       Height = 43
       Align = alTop
       Alignment = taCenter
@@ -88,6 +89,7 @@ object Presentation: TPresentation
       ParentFont = False
       Transparent = False
       StyleElements = []
+      ExplicitWidth = 73
     end
   end
   object pnl_bottom: TPanel
@@ -122,8 +124,8 @@ object Presentation: TPresentation
         object lbl_countSlide: TLabel
           Left = 0
           Top = 0
-          Width = 32
-          Height = 50
+          Width = 204
+          Height = 66
           Align = alClient
           Alignment = taCenter
           Caption = #13'1/6'
@@ -135,6 +137,8 @@ object Presentation: TPresentation
           ParentFont = False
           Transparent = False
           StyleElements = []
+          ExplicitWidth = 32
+          ExplicitHeight = 50
         end
       end
       object _pnl_box_button_back: TPanel
@@ -439,8 +443,8 @@ object Presentation: TPresentation
         object lbl_extraDescription: TLabel
           Left = 32
           Top = 0
-          Width = 183
-          Height = 29
+          Width = 551
+          Height = 35
           Align = alClient
           Alignment = taCenter
           Caption = 'Extra Description'
@@ -452,6 +456,8 @@ object Presentation: TPresentation
           ParentFont = False
           Transparent = False
           StyleElements = []
+          ExplicitWidth = 183
+          ExplicitHeight = 29
         end
       end
     end

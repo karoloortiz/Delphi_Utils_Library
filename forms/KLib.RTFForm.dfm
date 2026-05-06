@@ -1,10 +1,10 @@
-object RTFForm: TRTFForm
+object RtfForm: TRtfForm
   Left = 0
   Top = 0
   ActiveControl = pnl_head
   BorderIcons = []
   BorderStyle = bsSingle
-  Caption = 'RTFForm'
+  Caption = 'RtfForm'
   ClientHeight = 758
   ClientWidth = 894
   Color = clWhite

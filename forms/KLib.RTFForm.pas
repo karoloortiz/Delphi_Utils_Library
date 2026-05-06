@@ -34,7 +34,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 }
 
-unit KLib.RTFForm;
+unit KLib.RtfForm;
 
 interface
 
@@ -59,7 +59,7 @@ type
     colorRGBConfirmButton: string;
   end;
 
-  TRTFForm = class(TForm)
+  TRtfForm = class(TForm)
     pnl_bottom: TPanel;
     _img_checkBox_unCheck: TImage;
     _img_checkBox_check: TImage;
@@ -100,7 +100,7 @@ procedure showRTF(myRTFPath: string; mytitleCaption: string = '');
 function showCustomRTF(infoCreate: TRTFFormCreate): boolean;
 
 var
-  RTFForm: TRTFForm;
+  RtfForm: TRtfForm;
 
 implementation
 
@@ -139,7 +139,7 @@ begin
   FreeAndNil(_RTFForm);
 end;
 
-constructor TRTFForm.Create(AOwner: TComponent; createInfo: TRTFFormCreate);
+constructor TRtfForm.Create(AOwner: TComponent; createInfo: TRTFFormCreate);
 var
   _sizes: set of TSizeRTF;
 begin
@@ -168,14 +168,14 @@ begin
   initializeGraphicSettings;
 end;
 
-procedure TRTFForm.initializeVariables;
+procedure TRtfForm.initializeVariables;
 begin
   result := false;
   isCheckBoxChecked := false;
   setColorButtom;
 end;
 
-procedure TRTFForm.setColorButtom;
+procedure TRtfForm.setColorButtom;
 begin
   colorButtom.disabled := RGBStringToTColor(RGBCOLOR_DISABLED_BUTTON);
   if colorRGBConfirmButton <> '' then
@@ -188,7 +188,7 @@ begin
   end;
 end;
 
-procedure TRTFForm.initializeGraphicSettings;
+procedure TRtfForm.initializeGraphicSettings;
 begin
   Caption := Application.Title;
   makePanelVisibleOnlyIfStringIsNotNull(pnl_checkbox, lbl_checkBox.Caption);
@@ -203,7 +203,7 @@ begin
   bodyText_richEdit.HideScrollBars := not showScrollbar;
 end;
 
-procedure TRTFForm.setSizeRTF;
+procedure TRtfForm.setSizeRTF;
 var
   _modifiedHeight: integer;
 begin
@@ -218,12 +218,12 @@ begin
   end;
 end;
 
-procedure TRTFForm.FormCreate(Sender: TObject);
+procedure TRtfForm.FormCreate(Sender: TObject);
 begin
   loadRTFFromFile;
 end;
 
-procedure TRTFForm.loadRTFFromFile;
+procedure TRtfForm.loadRTFFromFile;
 var
   _fiileStream: TFileStream;
 begin
@@ -233,7 +233,7 @@ begin
   FreeAndNil(_fiileStream);
 end;
 
-procedure TRTFForm.checkBox_imgClick(Sender: TObject);
+procedure TRtfForm.checkBox_imgClick(Sender: TObject);
 begin
   isCheckBoxChecked := not isCheckBoxChecked;
   if isCheckBoxChecked then
@@ -248,25 +248,25 @@ begin
   end;
 end;
 
-procedure TRTFForm.disableConfirmButtom;
+procedure TRtfForm.disableConfirmButtom;
 begin
   buttom_pnl_confirm.Enabled := false;
   setTColorToTPanel(buttom_pnl_confirm, colorButtom.disabled);
 end;
 
-procedure TRTFForm.enableConfirmButtom;
+procedure TRtfForm.enableConfirmButtom;
 begin
   setTColorToTPanel(buttom_pnl_confirm, colorButtom.enabled);
   buttom_pnl_confirm.Enabled := true;
 end;
 
-procedure TRTFForm.buttom_pnl_confirmClick(Sender: TObject);
+procedure TRtfForm.buttom_pnl_confirmClick(Sender: TObject);
 begin
   result := true;
   close;
 end;
 
-procedure TRTFForm.button_exitClick(Sender: TObject);
+procedure TRtfForm.button_exitClick(Sender: TObject);
 begin
   close;
 end;

@@ -80,7 +80,7 @@ type
     extraDescriptionHint: string;
   end;
 
-  TPresentation = class(TForm)
+  TPresentationForm = class(TForm)
     pnl_head: TPanel;
     _spacer_head_top: TRzSpacer;
     _spacer_head_titleSubtitle: TRzSpacer;
@@ -153,7 +153,7 @@ type
   end;
 
 var
-  Presentation: TPresentation;
+  PresentationForm: TPresentationForm;
 
 implementation
 
@@ -164,14 +164,14 @@ uses
   System.JSON, System.UITypes, System.Generics.Collections,
   KLib.Graphics, KLib.Utils, KLib.FileSystem;
 
-constructor TPresentation.Create(AOwner: TComponent; resourceJSONName: string; callBackMethod: TMethod);
+constructor TPresentationForm.Create(AOwner: TComponent; resourceJSONName: string; callBackMethod: TMethod);
 begin
   Self.resourceJSONName := resourceJSONName;
   self.callBackMethod := callBackMethod;
   Create(AOwner);
 end;
 
-procedure TPresentation.FormCreate(Sender: TObject);
+procedure TPresentationForm.FormCreate(Sender: TObject);
 begin
   setVerticalSpacersDimensions;
   setComponentInMiddlePosition(pnl_buttons);
@@ -184,12 +184,12 @@ begin
   currentSlide := 0;
 end;
 
-procedure TPresentation.FormShow(Sender: TObject);
+procedure TPresentationForm.FormShow(Sender: TObject);
 begin
   loadFirstSlide;
 end;
 
-procedure TPresentation.loadNextSlide;
+procedure TPresentationForm.loadNextSlide;
 begin
   currentSlide := currentSlide + 1;
   pnl_button_back.Visible := true;
@@ -205,7 +205,7 @@ begin
   end;
 end;
 
-procedure TPresentation.loadPreviousSlide;
+procedure TPresentationForm.loadPreviousSlide;
 begin
   currentSlide := currentSlide - 1;
   pnl_button_back.Visible := true;
@@ -221,7 +221,7 @@ begin
   end;
 end;
 
-procedure TPresentation.loadFirstSlide;
+procedure TPresentationForm.loadFirstSlide;
 begin
   currentSlide := 0;
   loadCurrentSlide;
@@ -230,7 +230,7 @@ begin
   pnl_button_end.Visible := false;
 end;
 
-procedure TPresentation.loadLastSlide;
+procedure TPresentationForm.loadLastSlide;
 begin
   currentSlide := lastSlide;
   loadCurrentSlide;
@@ -239,7 +239,7 @@ begin
   pnl_button_end.Visible := true;
 end;
 
-procedure TPresentation.loadCurrentSlide;
+procedure TPresentationForm.loadCurrentSlide;
 begin
   with slides[currentSlide] do
   begin
@@ -255,12 +255,12 @@ begin
   end;
 end;
 
-procedure TPresentation.setCountSlide;
+procedure TPresentationForm.setCountSlide;
 begin
   lbl_countSlide.Caption := sLineBreak + IntToStr(currentSlide + 1) + '/' + IntToStr(countSlides);
 end;
 
-procedure TPresentation.loadJSONResource;
+procedure TPresentationForm.loadJSONResource;
 var
   _resource: KLib.Types.TResource;
   resourceSchemaAsString: String;
@@ -330,22 +330,22 @@ begin
   end;
 end;
 
-procedure TPresentation.button_img_backClick(Sender: TObject);
+procedure TPresentationForm.button_img_backClick(Sender: TObject);
 begin
   loadPreviousSlide;
 end;
 
-procedure TPresentation.button_img_nextClick(Sender: TObject);
+procedure TPresentationForm.button_img_nextClick(Sender: TObject);
 begin
   loadNextSlide;
 end;
 
-procedure TPresentation.lbl_button_endClick(Sender: TObject);
+procedure TPresentationForm.lbl_button_endClick(Sender: TObject);
 begin
   myClose;
 end;
 
-procedure TPresentation.myClose;
+procedure TPresentationForm.myClose;
 begin
   if Assigned(callBackMethod) then
   begin
@@ -354,7 +354,7 @@ begin
   close;
 end;
 
-procedure TPresentation.createSlides;
+procedure TPresentationForm.createSlides;
 var
   i: integer;
 begin
@@ -400,7 +400,7 @@ begin
   end;
 end;
 
-procedure TPresentation.setMainColor;
+procedure TPresentationForm.setMainColor;
 var
   _RGB: TRGB;
 begin
@@ -410,19 +410,19 @@ begin
   setColorButtonEnd;
 end;
 
-procedure TPresentation.setColorButtonNext;
+procedure TPresentationForm.setColorButtonNext;
 begin
   _shape_button_next.Brush.Color := getDarkerTColor(pnl_head.Color, 1);
   _shape_button_next.Pen.Color := _shape_button_next.Brush.Color;
 end;
 
-procedure TPresentation.setColorButtonEnd;
+procedure TPresentationForm.setColorButtonEnd;
 begin
   _shape_button_end.Brush.Color := getDarkerTColor(pnl_head.Color, 1);
   _shape_button_end.Pen.Color := _shape_button_end.Brush.Color;
 end;
 
-procedure TPresentation.setWhiteAsSecondColor;
+procedure TPresentationForm.setWhiteAsSecondColor;
 var
   _color: TColor;
 begin
@@ -434,7 +434,7 @@ begin
   lbl_button_end.Font.Color := _color;
 end;
 
-procedure TPresentation.setVerticalSpacersDimensions;
+procedure TPresentationForm.setVerticalSpacersDimensions;
 begin
   _spacer_image_right.Width := _spacer_image_left.Width;
   _spacer_extraDescription_right.Width := _spacer_extraDescription_left.Width;
