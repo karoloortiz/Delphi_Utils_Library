@@ -377,6 +377,7 @@ const
   EMPTY: TFtpCredentials = ();
 begin
   Self := EMPTY;
+  Self.TransferType := ftBinary;
 end;
 
 procedure TDownloadInfo.clear;
