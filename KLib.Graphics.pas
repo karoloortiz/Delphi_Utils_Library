@@ -116,6 +116,8 @@ procedure makePanelVisibleOnlyIfStringIsNotNull(myPanel: TPanel; value: string);
 procedure setFormInCenterOfScreen(form: TForm);
 procedure setComponentInMiddlePosition(control: TControl);
 
+procedure setFocusDeferred(control: TWinControl);
+
 procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = True);
 procedure setEnabledOnChildren(parent: TWinControl; enabledValue: Boolean = True);
 procedure setPropertyOnChildren(parent: TWinControl; propertyName: string; value: TValue);
@@ -533,6 +535,18 @@ var
 begin
   _left := trunc(control.Parent.Width / 2) - trunc(control.Width / 2);
   control.Left := _left;
+end;
+
+procedure setFocusDeferred(control: TWinControl);
+begin
+  TThread.ForceQueue(nil,
+    procedure
+    begin
+      if Assigned(control) and control.CanFocus then
+      begin
+        control.SetFocus;
+      end;
+    end);
 end;
 
 procedure setReadOnlyOnChildren(parent: TWinControl; readOnlyValue: Boolean = True);
