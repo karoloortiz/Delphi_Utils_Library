@@ -2,13 +2,14 @@
 
 [![Version](https://img.shields.io/badge/version-4.0-green.svg)](https://github.com/karoloortiz/Delphi_Utils_Library)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
-[![Delphi](https://img.shields.io/badge/Delphi-XE7-red.svg)](https://www.embarcadero.com/products/delphi)
+[![Delphi](https://img.shields.io/badge/Delphi-XE7%2B-red.svg)](https://www.embarcadero.com/products/delphi)
 ![Express-like API](https://img.shields.io/badge/Express%20like%20Server%20REST%20API-blue)
 ![Async-Await](https://img.shields.io/badge/Async%20Promises-blue)
 ![Json Serialization](https://img.shields.io/badge/Json%20Serialization%20Deserialization-blue)
 ![Template Engine](https://img.shields.io/badge/Template%20Engine-blue)
+![SFTP FTP](https://img.shields.io/badge/SFTP%20%2F%20FTP%20File%20Transfer-blue)
 
-A comprehensive utility library for Delphi providing **async/await patterns**, **Json serialization/deserialization**, **database abstractions**, **Windows services**, **Http server Express.js - like**, **template engine**, **networking**, **Utils functions** and **UI components**.
+A comprehensive utility library for Delphi providing **async/await patterns**, **Json serialization/deserialization**, **SFTP/FTP file transfer**, **database abstractions**, **Windows services**, **Http server Express.js - like**, **template engine**, **networking**, **Utils functions** and **UI components**.
 
 ---
 
@@ -26,6 +27,7 @@ A comprehensive utility library for Delphi providing **async/await patterns**, *
 - 📅 **Date Range Utilities** - Advanced algorithms for splitting and processing date ranges
 - 🖼️ **Helper Extensions** - Class helpers for arrays, string lists, and UI controls
 - 📄 **Template Engine** - Jinja2-inspired template rendering with inheritance, macros, 48+ filters, autoescape, sandbox, and caching
+- 🔐 **SFTP & FTP File Transfer** - One `IFileTransferClient` interface over **SFTP** (libssh2 — password & private-key auth, `known_hosts` host-key verification) and **FTP**; native DLLs embedded and auto-deployed, so there is nothing to ship alongside your `.exe`
 - 🗄️ **Database** - Coming soon: MySQL, SQLite, PostgreSQL unified interface
 
 ---
@@ -368,6 +370,35 @@ See [KLib.Template.Guide.md](KLib.Template.Guide.md) for the full syntax referen
 
 ---
 
+#### 11. Protocol-Agnostic File Transfer (SFTP & FTP)
+Upload and download over **SFTP** or **FTP** behind a single interface — your business code never has to know which protocol is in use. Pick the protocol by which credentials you build; everything else is identical:
+```pascal
+uses KLib.FileTransfer;
+
+var
+  _client: IFileTransferClient;
+begin
+  // getFileTransferClient is overloaded: pass TSFTPCredentials or TFtpCredentials
+  _client := getFileTransferClient(sftpCredentials); // or ftpCredentials
+  _client.connect;
+  try
+    _client.uploadFile('C:\out\invoice.pdf', 'invoice.pdf');
+  finally
+    _client.disconnect;
+  end;
+end; // reference-counted interface: no manual Free
+```
+
+**SFTP** is built on [libssh2](https://libssh2.org) (loaded dynamically) and provides:
+- 🔑 **Password** and **private-key** authentication (with optional passphrase)
+- 🛡️ **Host-key verification** against an OpenSSH `known_hosts` file (anti-MITM) — opt-in
+- 📦 **Embedded native DLLs**: `libssh2` + OpenSSL 3 are shipped as resources and auto-extracted next to your executable on first use (**x86 and x64**) — zero manual DLL deployment
+- 🧷 **Atomic downloads** (temp file + rename), **IPv4/IPv6**, and thread-safe on-demand initialization
+
+**Secure file transfer** with the ergonomics of a high-level client — no OpenSSH command line, no PuTTY/`psftp` shelling out.
+
+---
+
 ### Production-Ready Quality
 
 - ✅ **Memory Safe**: All resources properly managed with `FreeAndNil`
@@ -526,7 +557,9 @@ KLIB_RAIZE
 ### Network Security Requirements
 
 - **OpenSSL Libraries** - HTTPS/SSL support - [Indy OpenSSL Binaries](https://github.com/IndySockets/OpenSSL-Binaries)
-Clone repo with assets (git lfs), and add KLib.Assets.rc to your project.
+- **SFTP (libssh2)** - `KLib.SFTP` / `KLib.FileTransfer` ship `libssh2.dll` + OpenSSL 3 as **embedded resources** (x86/x64) that are auto-extracted at runtime — no manual DLL deployment.
+
+Clone repo with assets (git lfs), and add `KLib.Assets.rc` to your project so the native binaries are compiled into your executable.
 
 ---
 
@@ -568,6 +601,9 @@ Clone repo with assets (git lfs), and add KLib.Assets.rc to your project.
 | `KLib.MyIdHTTPServer` | HTTP server wrapper |
 | `KLib.MyIdFTP` | FTP client wrapper |
 | `KLib.Indy` | Indy utilities |
+| `KLib.FileTransfer` | Protocol-agnostic FTP/SFTP client (`IFileTransferClient`) + factory |
+| `KLib.SFTP` | SFTP client over libssh2: password/key auth, `known_hosts` verification |
+| `KLib.libssh2` | Dynamic libssh2 bindings (loaded on demand, x86/x64) |
 
 ### Data & Serialization
 | Unit | Description |

@@ -48,7 +48,7 @@ const
   ftASCII = TIdFTPTransferType(0);
   ftBinary = TIdFTPTransferType(1);
 
-type
+  type
 {$scopedenums ON}
   TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
 
@@ -134,6 +134,24 @@ type
     pathFTPDir: string;
     port: integer;
     transferType: TIdFTPTransferType;
+
+    procedure clear;
+  end;
+
+{$scopedenums OFF}
+  TSFTPAuthMethod = (sftpAuthPassword, sftpAuthPrivateKey);
+{$scopedenums ON}
+
+  TSFTPCredentials = record
+    credentials: TCredentials;
+    host: string;
+    port: integer;
+    authMethod: TSFTPAuthMethod;
+    privateKeyPath: string;
+    publicKeyPath: string;
+    passphrase: string;
+    knownHostsPath: string;
+    remoteDir: string;
 
     procedure clear;
   end;
@@ -378,6 +396,14 @@ const
 begin
   Self := EMPTY;
   Self.TransferType := ftBinary;
+end;
+
+procedure TSFTPCredentials.clear;
+const
+  EMPTY: TSFTPCredentials = ();
+begin
+  Self := EMPTY;
+  Self.port := SFTP_DEFAULT_PORT;
 end;
 
 procedure TDownloadInfo.clear;

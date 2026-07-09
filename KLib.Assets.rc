@@ -3,3 +3,13 @@ SSLEAY32_X86 DLL assets/x86/ssleay32.dll
 
 LIBEAY32_X64 DLL assets/x64/libeay32.dll
 SSLEAY32_X64 DLL assets/x64/ssleay32.dll
+
+LIBSSH2_X86 DLL "assets/x86/libssh2.dll"
+LIBCRYPTO3_X86 DLL "assets/x86/libcrypto-3.dll"
+LIBSSL3_X86 DLL "assets/x86/libssl-3.dll"
+ZLIB_X86 DLL "assets/x86/z.dll"
+
+LIBSSH2_X64 DLL "assets/x64/libssh2.dll"
+LIBCRYPTO3_X64 DLL "assets/x64/libcrypto-3-x64.dll"
+LIBSSL3_X64 DLL "assets/x64/libssl-3-x64.dll"
+ZLIB_X64 DLL "assets/x64/z.dll"
