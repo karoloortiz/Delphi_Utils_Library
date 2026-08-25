@@ -55,6 +55,7 @@ procedure executeProcedure(myProcedure: TCallBack); overload;
 
 function ifThen(condition: boolean; trueDateTime: TDateTime; falseDateTime: TDateTime = 0): TDateTime; overload;
 function ifThen(condition: boolean; trueString: string; falseString: string = EMPTY_STRING): string; overload;
+function ifThen(condition: boolean; trueValue: integer; falseValue: integer = 0): integer; overload;
 
 procedure validate(condition: boolean; errMsg: string);
 
@@ -188,6 +189,22 @@ begin
   if (not condition) then
   begin
     _result := falseString;
+  end;
+
+  Result := _result;
+end;
+
+function ifThen(condition: boolean; trueValue: integer; falseValue: integer): integer; overload;
+var
+  _result: integer;
+begin
+  if (condition) then
+  begin
+    _result := trueValue;
+  end;
+  if (not condition) then
+  begin
+    _result := falseValue;
   end;
 
   Result := _result;
