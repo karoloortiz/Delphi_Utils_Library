@@ -56,6 +56,7 @@ function getCurrentDateAsString: string;
 function getDateAsString(date: TDateTime): string;
 function getCurrentTimeStamp: string;
 function getCurrentDateTimeWithFormattingAsString(formatting: string = DATETIME_FORMAT): string;
+function getDateWithFormattingAsString(value: TDate; formatting: string = DATE_FORMAT): string;
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATETIME_FORMAT): string;
 
 function getCurrentDateTime: TDateTime;
@@ -268,6 +269,11 @@ end;
 function getCurrentDateTimeWithFormattingAsString(formatting: string = DATETIME_FORMAT): string;
 begin
   Result := getDateTimeWithFormattingAsString(Now, formatting);
+end;
+
+function getDateWithFormattingAsString(value: TDate; formatting: string = DATE_FORMAT): string;
+begin
+  Result := getDateTimeWithFormattingAsString(value, formatting);
 end;
 
 function getDateTimeWithFormattingAsString(value: TDateTime; formatting: string = DATETIME_FORMAT): string;
