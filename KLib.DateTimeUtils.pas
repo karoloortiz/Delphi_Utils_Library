@@ -48,6 +48,11 @@ function splitByMonths(datetimeRange: TDateTimeRange): TArray<TDateTimeRange>; o
 function divideDateRange(startDate: TDateTime; endDate: TDateTime; divisions: integer = 2): TArray<TDateTimeRange>; overload;
 function divideDateRange(datetimeRange: TDateTimeRange; divisions: integer = 2): TArray<TDateTimeRange>; overload;
 
+function getFirstDateOfYear(year: Integer): TDateTime;
+
+function checkIfDateIsInYear(date: TDateTime; year: integer): boolean;
+function checkIfDateIsInDateRange(date: TDateTime; datetimeRange: TDateTimeRange): boolean;
+
 function getCurrentDayOfWeekAsString: string;
 function getDayOfWeekAsString(date: TDateTime): string;
 function getCurrentDateTimeAsString: string;
@@ -194,6 +199,21 @@ begin
   end;
 
   Result := dateRanges;
+end;
+
+function getFirstDateOfYear(year: Integer): TDateTime;
+begin
+  Result := EncodeDate(year, 1, 1);
+end;
+
+function checkIfDateIsInYear(date: TDateTime; year: integer): boolean;
+begin
+  Result := YearOf(date) = year;
+end;
+
+function checkIfDateIsInDateRange(date: TDateTime; datetimeRange: TDateTimeRange): boolean;
+begin
+  Result := (date >= datetimeRange._start) and (date <= datetimeRange._end);
 end;
 
 function getCurrentDayOfWeekAsString: string;

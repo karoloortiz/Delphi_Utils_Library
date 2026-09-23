@@ -110,6 +110,11 @@ procedure validateThatIsSubDir(subDir: string; mainDir: string; trailingPathDeli
 procedure validateThatWindowExists(className: string = 'TMyForm'; captionForm: string = 'Caption of MyForm';
   errMsg: string = 'No window was found.');
 
+procedure validateThatDateIsInYear(date: TDateTime; year: integer;
+  errMsg: string = 'Date is not in year :');
+procedure validateThatDateIsInDateRange(date: TDateTime; datetimeRange: TDateTimeRange;
+  errMsg: string = 'Date is not in a valid date range :');
+
 procedure validateThatStringIsNotEmpty(value: string; errMsg: string = 'Value is empty.');
 procedure validateThatStringContainsSubstring(mainString: string; subString: string; errMsg: string = 'The string not contains:');
 
@@ -124,7 +129,9 @@ implementation
 
 uses
   System.SysUtils,
-  KLib.FileSystem, KLib.StringUtils, KLib.Utils, KLib.Windows, KLib.WindowsService, KLib.Indy, KLib.XML;
+  KLib.FileSystem, KLib.StringUtils, KLib.Utils, KLib.DateTimeUtils,
+  KLib.Windows, KLib.WindowsService,
+  KLib.Indy, KLib.XML;
 
 //############################----REGEX----##################################
 procedure validateThatEmailIsValid(email: string; errMsg: string = 'Invalid email.');
@@ -552,6 +559,30 @@ begin
   if not checkIfWindowExists(className, captionForm) then
   begin
     _errMsg := getDoubleQuotedString(captionForm) + ' : ' + errMsg;
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatDateIsInYear(date: TDateTime; year: integer;
+  errMsg: string = 'Date is not in year :');
+var
+  _errMsg: string;
+begin
+  if not checkIfDateIsInYear(date, year) then
+  begin
+    _errMsg := getDateAsString(date) + ' : ' + errMsg + ' ' + inttostr(year);
+    raise Exception.Create(_errMsg);
+  end;
+end;
+
+procedure validateThatDateIsInDateRange(date: TDateTime; datetimeRange: TDateTimeRange;
+  errMsg: string = 'Date is not in a valid date range :');
+var
+  _errMsg: string;
+begin
+  if not checkIfDateIsInDateRange(date, datetimeRange) then
+  begin
+    _errMsg := getDateAsString(date) + ' : ' + errMsg + ' ' + datetimeRange.getAsString;
     raise Exception.Create(_errMsg);
   end;
 end;
