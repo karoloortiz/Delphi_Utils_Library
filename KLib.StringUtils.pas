@@ -82,6 +82,8 @@ procedure splitStrings(source: string; splitIndex: integer; var destFirstString:
 procedure splitStrings(source: string; delimiterPosition: integer; delimiterLength: integer; var destFirstString: string; var destSecondString: string); overload;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 
+function joinStrings(values: TArray<string>; separator: string = ','; quoteChar: Char = '"'): string;
+
 function checkIfStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
 function checkIfStringContainsSubString(mainString: string; subString: string; caseSensitiveSearch: boolean = CASE_SENSITIVE): boolean;
 
@@ -97,7 +99,7 @@ implementation
 
 uses
   System.StrUtils, System.Character, System.RegularExpressions,
-  System.Variants, System.NetEncoding,
+  System.Variants, System.NetEncoding, System.Generics.Collections,
   KLib.Validate;
 
 function getRandString(size: integer = 5): string;
@@ -583,6 +585,24 @@ end;
 function getMergedStrings(firstString: string; secondString: string; delimiter: string = EMPTY_STRING): string;
 begin
   Result := firstString + delimiter + secondString;
+end;
+
+function joinStrings(values: TArray<string>; separator: string = ','; quoteChar: Char = '"'): string;
+var
+  _result: string;
+
+  i: Integer;
+  _value: string;
+begin
+  for i := Low(values) to High(values) do
+  begin
+    if i > Low(values) then
+      _result := _result + Separator;
+
+    _result := _result + quoteChar + values[i] + quoteChar;
+  end;
+
+  Result := _result;
 end;
 
 function checkIfStringContainsSubStringNoCaseSensitive(mainString: string; subString: string): boolean;
