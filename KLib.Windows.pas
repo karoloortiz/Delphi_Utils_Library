@@ -202,17 +202,17 @@ function getDirExe: string;
 function exeFileName: string;
 function getExeFileName: string;
 
-function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
-function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterNames: TArray<string>): string; overload; //get first param value finded
+function getValueOfParameter(parameterNames: TArray<string>; valuesExcluded: TArray<string>): string; overload; //get first param value finded
 function getValueOfParameter(parameterName: string): string; overload;
-function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string; overload;
-function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean; overload;
+function getValueOfParameter(parameterName: string; valuesExcluded: TArray<string>): string; overload;
+function checkIfParameterExists(parameterNames: TArray<string>): boolean; overload;
 function checkIfParameterExists(parameterName: string): boolean; overload;
 
 function myParamCount: integer;
 function myParamStr(index: integer): string;
 function getShellParamsAsString: string;
-function getShellParams: TArrayOfStrings;
+function getShellParams: TArray<string>;
 //################################################################################
 function getFileCreationDateTime(fileName: string): TDateTime;
 function getFileModifiedDateTime(fileName: string): TDateTime;
@@ -233,7 +233,7 @@ function AttachConsole(ProcessId: DWORD): BOOL; stdcall;
   external 'kernel32.dll' name 'AttachConsole';
 
 var
-  shellParams: TArrayOfStrings;
+  shellParams: TArray<string>;
 
 implementation
 
@@ -2029,12 +2029,12 @@ begin
   Result := myParamStr(0);
 end;
 
-function getValueOfParameter(parameterNames: TArrayOfStrings): string; overload; //get first param value finded
+function getValueOfParameter(parameterNames: TArray<string>): string; overload; //get first param value finded
 begin
   Result := getValueOfParameter(parameterNames, EMPTY_ARRAY_OF_STRINGS);
 end;
 
-function getValueOfParameter(parameterNames: TArrayOfStrings; valuesExcluded: TArrayOfStrings): string; //get first param value finded
+function getValueOfParameter(parameterNames: TArray<string>; valuesExcluded: TArray<string>): string; //get first param value finded
 var
   parameterValue: string;
 
@@ -2072,7 +2072,7 @@ begin
   Result := getValueOfParameter(parameterName, EMPTY_ARRAY_OF_STRINGS);
 end;
 
-function getValueOfParameter(parameterName: string; valuesExcluded: TArrayOfStrings): string;
+function getValueOfParameter(parameterName: string; valuesExcluded: TArray<string>): string;
 var
   parameterValue: string;
 
@@ -2116,7 +2116,7 @@ begin
   Result := parameterValue;
 end;
 
-function checkIfParameterExists(parameterNames: TArrayOfStrings): boolean;
+function checkIfParameterExists(parameterNames: TArray<string>): boolean;
 var
   parameterExists: boolean;
 
@@ -2215,9 +2215,9 @@ begin
   Result := shellParamsAsString;
 end;
 
-function getShellParams: TArrayOfStrings;
+function getShellParams: TArray<string>;
 var
-  _result: TArrayOfStrings;
+  _result: TArray<string>;
 
   _applicationPath: string;
   _commandLine: string;

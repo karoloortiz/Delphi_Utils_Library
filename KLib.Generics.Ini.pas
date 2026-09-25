@@ -106,7 +106,7 @@ type
   end;
 
   TTempJsonRecord = record
-    _arrayOfStrings: TArrayOfStrings;
+    _arrayOfStrings: TArray<string>;
   end;
 
 implementation
@@ -394,7 +394,7 @@ begin
           _tempJSONRecord := TJsonGenerics.getParsedJSON<TTempJsonRecord>(
             '{"_arrayOfStrings":' + _propertyValue + '}');
 
-          TValue.Make(@_tempJSONRecord._arrayOfStrings, TypeInfo(TArrayOfStrings),
+          TValue.Make(@_tempJSONRecord._arrayOfStrings, TypeInfo(TArray<string>),
             _newTValue);
           _rttiField.SetValue(@_record, _newTValue);
         end;

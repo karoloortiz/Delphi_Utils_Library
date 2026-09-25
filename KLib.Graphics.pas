@@ -134,7 +134,7 @@ function mySaveDialog(initialDir: string = EMPTY_STRING;
 
 procedure myShowMessage(msg: string; title: string = ''; confirmValue: string = 'ok');
 function confirmMessage(msg: string; title: string = ''; yesValue: string = 'yes'; noValue: string = 'no'): boolean;
-function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
+function myMessageDlg(title: string; msg: string; buttons: TArray<string>; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string; //new version of customMessageDlg
 function customMessageDlg(msg: string; dlgType: TMsgDlgType; buttons: TMsgDlgButtons;
   captionButtons: array of string; dlgCaption: string): Integer; deprecated;
@@ -761,7 +761,7 @@ begin
   Result := myMessageDlg(_title, msg, [yesValue, noValue]) = yesValue;
 end;
 
-function myMessageDlg(title: string; msg: string; buttons: TArrayOfStrings; defaultButton: string = '';
+function myMessageDlg(title: string; msg: string; buttons: TArray<string>; defaultButton: string = '';
   msgDlgType: TMsgDlgType = TMsgDlgType.mtCustom): string;
 const
   MAX_NUMBER_BUTTONS = 8;

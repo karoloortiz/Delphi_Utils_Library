@@ -48,7 +48,7 @@ const
   ftASCII = TIdFTPTransferType(0);
   ftBinary = TIdFTPTransferType(1);
 
-  type
+type
 {$scopedenums ON}
   TTypeOfProcedure = (_null, _procedure, _method, _anonymousMethod);
 
@@ -139,6 +139,7 @@ const
   end;
 
 {$scopedenums OFF}
+
   TSFTPAuthMethod = (sftpAuthPassword, sftpAuthPrivateKey);
 {$scopedenums ON}
 
@@ -278,8 +279,6 @@ const
 
   TListOfDoubles = class(TList<Double>)
   end;
-
-  TArrayOfStrings = TArray<string>;
 
   TArrayOfWord = array of Word;
 

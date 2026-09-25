@@ -108,7 +108,7 @@ const
   SPACE_STRING = ' ';
   EMPTY_STRING = '';
 
-  EMPTY_ARRAY_OF_STRINGS: TArrayOfStrings = [];
+  EMPTY_ARRAY_OF_STRINGS: TArray<string> = [];
 
   AUTO_CLEAN = true;
   RUN_AS_ADMIN = true;

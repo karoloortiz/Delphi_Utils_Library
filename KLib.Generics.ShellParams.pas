@@ -143,8 +143,8 @@ var
   _rttiField: TRttiField;
 
   _parameterExists: boolean;
-  _paramNames: TArrayOfStrings;
-  _valuesExcluded: TArrayOfStrings;
+  _paramNames: TArray<string>;
+  _valuesExcluded: TArray<string>;
 
   _parentDir: string;
 begin
