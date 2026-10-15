@@ -108,6 +108,7 @@ procedure getResourceAsFile(resource: TResource; destinationFileName: string); o
 function getResourceAsString(resource: TResource): string;
 function getResourceAsStream(resource: TResource): TResourceStream;
 
+procedure zip(fileNames: TArray<string>; zipFileName: string);
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
 
 function checkRequiredFtpProperties(ftpCredentials: TFtpCredentials): boolean;
@@ -819,6 +820,25 @@ begin
   end;
 
   Result := resourceStream;
+end;
+
+procedure zip(fileNames: TArray<string>; zipFileName: string);
+var
+  _zipFile: TZipFile;
+  _fileName: string;
+begin
+  deleteFileIfExists(zipFileName);
+  _zipFile := TZipFile.Create;
+  try
+    _zipFile.Open(zipFileName, zmWrite);
+    for _fileName in fileNames do
+    begin
+      _zipFile.Add(_fileName, ExtractFileName(_fileName));
+    end;
+    _zipFile.Close;
+  finally
+    FreeAndNil(_zipFile);
+  end;
 end;
 
 procedure unzip(zipFileName: string; destinationDir: string; deleteZipAfterUnzip: boolean = false);
