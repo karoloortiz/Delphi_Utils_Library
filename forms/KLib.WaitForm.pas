@@ -64,6 +64,7 @@ type
   private
     customAnonymousMethod: KLib.Types.TAnonymousMethod;
     e: Exception;
+    oldCursor: TCursor;
 
     function getTitle: string;
     procedure setTitle(value: string);
@@ -179,6 +180,7 @@ begin
   begin
     Self.title_lbl.Font.Size := 20;
   end;
+  Self.oldCursor := Screen.cursor;
 end;
 
 procedure TWaitForm.FormShow(Sender: TObject);
@@ -204,12 +206,12 @@ var
 begin
   if Assigned(customAnonymousMethod) then
   begin
-    with _reply do
-    begin
-      handle := Self.Handle;
-      msg_resolve := WM_TWAITFORM_METHOD_OK;
-      msg_reject := WM_TWAITFORM_METHOD_ERR;
-    end;
+    Screen.Cursor := crHourGlass;
+
+    _reply.handle := Self.Handle;
+    _reply.msg_resolve := WM_TWAITFORM_METHOD_OK;
+    _reply.msg_reject := WM_TWAITFORM_METHOD_ERR;
+
     asyncify(customAnonymousMethod, _reply);
   end;
 end;
@@ -244,6 +246,7 @@ end;
 procedure TWaitForm.close;
 begin
   Release;
+  Screen.Cursor := oldCursor;
   inherited close;
 end;
 
