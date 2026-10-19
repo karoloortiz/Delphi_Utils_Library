@@ -585,6 +585,7 @@ Clone repo with assets (git lfs), and add `KLib.Assets.rc` to your project so th
 | `KLib.ServiceApp.ThreadAdapter` | Thread-based service adapter |
 | `KLib.ServiceApp.HttpServerAdapter` | HTTP server adapter |
 | `KLib.Windows.EventLog` | Windows Event Log integration |
+| `KLib.Logger` | Winston-like logger: levels, transports (daily rotated file with retention, callback), child loggers with category |
 
 ### UI Forms (VCL)
 | Unit | Description |
